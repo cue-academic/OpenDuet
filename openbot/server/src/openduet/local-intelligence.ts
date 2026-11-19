@@ -330,6 +330,13 @@ export function startLocalIntelligence(options: {
         if (!item.runId) item.runId = runId;
         rememberEvent(thread, item);
         broadcast(thread, item);
+        // The platform frees a web run's lock when the run ends: the runtime only cleans it up on
+        // failure, so holding it to its TTL here refuses the next message with 409.
+        if (
+          (item.type === "RUN_FINISHED" || item.type === "RUN_ERROR") &&
+          thread.lock?.runId === item.runId
+        )
+          thread.lock = null;
       }
       reply(ws, joinRef, ref, topic, {});
       return;
