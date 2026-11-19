@@ -1229,8 +1229,12 @@ describe("Tonight plan saves", () => {
     ]);
     const plans = await store.list("jordan", "plan", { status: "applied" });
     expect(plans).toHaveLength(1);
+    const savedTotalMinutes = plans[0]?.data.totalMinutes;
+    if (typeof savedTotalMinutes !== "number") {
+      throw new Error("saved Tonight plan has no numeric totalMinutes");
+    }
     expect(concurrent.map((result) => result.body.plan.totalMinutes)).toContain(
-      plans[0]?.data.totalMinutes,
+      savedTotalMinutes,
     );
   });
 
