@@ -277,6 +277,48 @@ function harness(options: {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test("reports only this turn's named tool results, in order, after cleanup", async () => {
+  const h = harness({
+    drive: ({ agent, observer }) => {
+      agent.messages.push(
+        {
+          id: "calls",
+          role: "assistant",
+          toolCalls: [
+            {
+              id: "make",
+              type: "function",
+              function: { name: "make_page", arguments: "{}" },
+            },
+          ],
+        },
+        {
+          id: "orphan",
+          role: "tool",
+          toolCallId: "unknown",
+          content: "Ignored",
+        },
+        {
+          id: "result",
+          role: "tool",
+          toolCallId: "make",
+          content: '"Refused. Invalid blocks."',
+        },
+        { id: "reply", role: "assistant", content: "Couldn't save." },
+      );
+      observer.complete();
+    },
+  });
+  const results: string[][] = [];
+  await h.run({
+    onToolResult: (name, content) => {
+      expect(h.calls.cleaned).toHaveLength(1);
+      results.push([name, content]);
+    },
+  });
+  expect(results).toEqual([["make_page", '"Refused. Invalid blocks."']]);
+});
+
 const THREE_ROWS: HistoryRow[] = [
   { id: "m1", role: "user", content: "Hello." },
   { id: "m2", role: "assistant", content: "Hello back." },

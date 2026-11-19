@@ -1,7 +1,13 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { recordAuditEvent } from "../../audit";
-import { mcpTools, pluginGrants, skills } from "../../db/schema";
+import { agents, mcpTools, pluginGrants, skills } from "../../db/schema";
+import { catalogueEntry } from "../catalogue";
 import type { StoreContext } from "./context";
+import {
+  isPackageGrantRevoked,
+  PACKAGE_GRANT,
+  PACKAGE_GRANT_REVOKED,
+} from "./grant-origin";
 import {
   type GrantedPlugins,
   grantTargetType,
@@ -47,15 +53,58 @@ export function grantMethods(context: StoreContext) {
       agentId: string,
       by: string,
     ): Promise<void> {
-      await database
-        .delete(pluginGrants)
-        .where(
-          and(
-            eq(pluginGrants.kind, kind),
-            eq(pluginGrants.ref, ref),
-            eq(pluginGrants.agentId, agentId),
-          ),
-        );
+      await database.transaction(async (transaction) => {
+        const [existing] = await transaction
+          .select({ grantedBy: pluginGrants.grantedBy })
+          .from(pluginGrants)
+          .where(
+            and(
+              eq(pluginGrants.kind, kind),
+              eq(pluginGrants.ref, ref),
+              eq(pluginGrants.agentId, agentId),
+            ),
+          )
+          .for("update")
+          .limit(1);
+        const [agent] =
+          kind === "mcp"
+            ? await transaction
+                .select({ packageId: agents.packageId })
+                .from(agents)
+                .where(eq(agents.id, agentId))
+                .limit(1)
+            : [];
+        const serverId = ref.split("/")[0] ?? "";
+        const packageBuiltin =
+          !!agent?.packageId &&
+          catalogueEntry(serverId)?.auth.kind === "builtin";
+        if (
+          kind === "mcp" &&
+          existing &&
+          (existing.grantedBy === PACKAGE_GRANT || packageBuiltin)
+        ) {
+          await transaction
+            .update(pluginGrants)
+            .set({ grantedBy: PACKAGE_GRANT_REVOKED, updatedAt: new Date() })
+            .where(
+              and(
+                eq(pluginGrants.kind, kind),
+                eq(pluginGrants.ref, ref),
+                eq(pluginGrants.agentId, agentId),
+              ),
+            );
+        } else if (existing && !isPackageGrantRevoked(existing.grantedBy)) {
+          await transaction
+            .delete(pluginGrants)
+            .where(
+              and(
+                eq(pluginGrants.kind, kind),
+                eq(pluginGrants.ref, ref),
+                eq(pluginGrants.agentId, agentId),
+              ),
+            );
+        }
+      });
 
       await recordAuditEvent(auditStore, {
         eventType: "configuration.changed",
@@ -77,12 +126,15 @@ export function grantMethods(context: StoreContext) {
         .select()
         .from(pluginGrants)
         .where(eq(pluginGrants.agentId, agentId));
-      if (held.length === 0) return { tools: [], skills: [] };
+      const active = held.filter(
+        (row) => !isPackageGrantRevoked(row.grantedBy),
+      );
+      if (active.length === 0) return { tools: [], skills: [] };
 
-      const toolRefs = held
+      const toolRefs = active
         .filter((row) => row.kind === "mcp")
         .map((row) => row.ref);
-      const skillSlugs = held
+      const skillSlugs = active
         .filter((row) => row.kind === "skill")
         .map((row) => row.ref);
 

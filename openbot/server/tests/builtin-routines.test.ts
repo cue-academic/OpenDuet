@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { withApprovalContext } from "../src/approvals/types";
+import { withCurrentRunChannel } from "../src/openduet/run-channel";
 import {
   callTool,
   listTools,
@@ -188,6 +190,41 @@ describe("the tool list", () => {
 });
 
 describe("dispatch", () => {
+  test("create_routine uses the current channel for 'here' and passes the trusted thread", async () => {
+    const calls = recordingTools();
+    const channel = {
+      channelId: "current-channel",
+      name: "Study",
+      purpose: null,
+    };
+    await withApprovalContext(
+      {
+        threadId: "current-thread",
+        runId: "current-run",
+        messages: [],
+        context: [],
+        state: {},
+        forwardedProps: {},
+        toolCallId: "call",
+        toolName: "mcp__routines__create_routine",
+        args: {},
+      },
+      async () => {
+        await withCurrentRunChannel(channel, async () =>
+          callTool(CONNECTION, "create_routine", {
+            instruction: "Review my notes.",
+            cron: "0 9 * * 1-5",
+            channelId: "here",
+          }),
+        );
+      },
+    );
+    expect(calls[0]).toMatchObject({
+      method: "create",
+      input: { channelId: "current-channel", sourceThreadId: "current-thread" },
+    });
+  });
+
   test("create_routine reaches create, attributed to the connection", async () => {
     const calls = recordingTools();
     const result = await callTool(CONNECTION, "create_routine", {

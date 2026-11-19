@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { CopilotKitProvider } from "@copilotkit/react-core/v2";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -12,9 +13,13 @@ import {
 import { cleanup, render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { AppAccessCard } from "@/components/channels/app-access-card";
-import { ServerToolLine } from "@/components/channels/chat-transcript";
+import {
+  ServerToolLine,
+  TranscriptToolCall,
+} from "@/components/channels/chat-transcript";
 import type { AppAccess } from "@/lib/app-access/queries";
 import { ActiveBotProvider, useActiveBot } from "@/lib/copilot/active-bot";
+import { PracticeCardTool } from "@/lib/copilot/practice-card-tool";
 import { REFUSAL_MARKER } from "@/lib/plugins/tool-result";
 import {
   type ConnectPrompt,
@@ -53,6 +58,8 @@ function serving(live: AppAccess | null) {
   global.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
     asked.push(url);
+    if (url.endsWith("/api/copilotkit/info"))
+      return Response.json({ version: "1.77.0", agents: {} });
     if (url.includes("/apps/"))
       return live
         ? Response.json({ app: live })
@@ -105,6 +112,167 @@ const card = (view: ReturnType<typeof mount>) =>
     if (!found?.getAttribute("data-state")) throw new Error("not drawn yet");
     return found as HTMLElement;
   });
+
+test("server-only app access reaches the Request access card through the SDK provider", async () => {
+  serving(
+    appAccess({ state: "disabled", requestKind: "enable", granted: false }),
+  );
+  const view = mount(
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <TranscriptToolCall
+        delay={0}
+        toolCallId="access"
+        name={SHOW_APP_ACCESS_TOOL}
+        args='{"app":"Gmail"}'
+        result={connectAppRefusal(prompt({ reason: "access" }))}
+      />
+    </CopilotKitProvider>,
+  );
+  await card(view);
+  expect(
+    view.getByRole("button", { name: "Request access to Gmail" }),
+  ).toBeTruthy();
+});
+
+test.each([
+  undefined,
+  "",
+  JSON.stringify({
+    className: "Earth Science",
+    level: "full",
+    label: "Full help",
+    may: "Explain, quiz, and give feedback.",
+  }),
+  JSON.stringify({ error: "Name the class." }),
+  JSON.stringify(
+    JSON.stringify({
+      className: "Earth Science",
+      level: "hints",
+      label: "Hints only",
+      source: "default",
+      attribution: "That's the app's default.",
+      may: "Explain the concept and practice from the notes. Do not solve work they will turn in.",
+    }),
+  ),
+  JSON.stringify(
+    JSON.stringify({
+      className: "Earth Science",
+      level: "hints",
+      label: "Hints only",
+      source: "default",
+      may: "Explain the concept and practice from the notes. Do not solve work they will turn in.",
+    }),
+  ),
+])("class_help has a visible fallback for %s", async (result) => {
+  serving(null);
+  const view = mount(
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <TranscriptToolCall
+        delay={0}
+        toolCallId="class"
+        name="class_help"
+        args='{"class":"Earth Science"}'
+        result={result}
+      />
+    </CopilotKitProvider>,
+  );
+  expect(await view.findByText("Class help")).toBeTruthy();
+  expect(view.queryByText(/Couldn't show/)).toBeNull();
+});
+
+test.each([1, 2])(
+  "a notes quiz after class_help renders with %s JSON encodings",
+  async (encodings) => {
+    serving(null);
+    const original = global.fetch;
+    global.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/practice/water"))
+        return Response.json({
+          practice: {
+            id: "water",
+            title: "Water cycle",
+            className: "Earth Science",
+            mode: "quiz",
+            suggestedMinutes: 5,
+            result: null,
+            items: [
+              {
+                id: "q1",
+                kind: "mcq",
+                prompt: "What drives evaporation?",
+                choices: ["The Sun", "Gravity"],
+                points: 1,
+                topic: "Water cycle",
+              },
+            ],
+          },
+        });
+      return original(input, init);
+    }) as typeof fetch;
+    let result = JSON.stringify({
+      kind: "practice",
+      id: "water",
+      title: "Water cycle",
+      className: "Earth Science",
+      count: 1,
+      mode: "quiz",
+    });
+    if (encodings === 2) result = JSON.stringify(result);
+    const view = mount(
+      <CopilotKitProvider runtimeUrl="/api/copilotkit">
+        <PracticeCardTool />
+        <TranscriptToolCall
+          delay={0}
+          toolCallId="class"
+          name="class_help"
+          args='{"class":"Earth Science"}'
+          result={JSON.stringify({
+            className: "Earth Science",
+            level: "full",
+            label: "Full help",
+          })}
+        />
+        <TranscriptToolCall
+          delay={0}
+          toolCallId="quiz"
+          name="make_notes_quiz"
+          args='{"class":"Earth Science"}'
+          result={result}
+        />
+      </CopilotKitProvider>,
+    );
+    expect(await view.findByText("What drives evaporation?")).toBeTruthy();
+    expect(view.queryByText(/Couldn't show/)).toBeNull();
+  },
+);
+
+test.each([
+  undefined,
+  "",
+  '{"error":"No notes"}',
+  JSON.stringify("Refused. No class notes are loaded. Call make_quiz instead."),
+])("a notes quiz never leaves an empty card for %s", async (result) => {
+  serving(null);
+  const view = mount(
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <PracticeCardTool />
+      <TranscriptToolCall
+        delay={0}
+        toolCallId="quiz"
+        name="make_notes_quiz"
+        args="{}"
+        result={result}
+      />
+    </CopilotKitProvider>,
+  );
+  expect(
+    await view.findByText(
+      result === undefined
+        ? "Making your quiz"
+        : "Couldn't make your quiz, didn't work",
+    ),
+  ).toBeTruthy();
+});
 
 test("asks about the app on the Bot that refused, not on another", async () => {
   const asked = serving(appAccess({ state: "not_connected" }));

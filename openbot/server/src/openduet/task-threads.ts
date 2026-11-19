@@ -18,6 +18,7 @@ import {
 } from "../proactive/engine";
 import type { createTaskReplyContext } from "./task-reply-context";
 import { plainFailure, type TaskStore } from "./task-store";
+import { PAGE_TOOL } from "./pages";
 
 /*
  * The two halves of a task the proactive engine leaves to the server's assembly: making its
@@ -210,6 +211,8 @@ export function createTaskTurn(deps: {
             ...context.attachments,
           ]
         : text;
+      let makeAttempted = false;
+      let makeSaved = false;
       const turn = deps.runTurn({
         ...scope,
         routineId: input.runId,
@@ -227,6 +230,19 @@ export function createTaskTurn(deps: {
             }
           : {}),
         initiator: PERSON_INITIATOR,
+        onToolResult(name, content) {
+          if (name !== PAGE_TOOL) return;
+          makeAttempted = true;
+          try {
+            let saved = JSON.parse(content);
+            if (typeof saved === "string") saved = JSON.parse(saved);
+            makeSaved ||= !!(
+              saved &&
+              typeof saved.id === "string" &&
+              typeof saved.kind === "string"
+            );
+          } catch {}
+        },
         signal: failing
           ? AbortSignal.any([input.signal, cut.signal])
           : input.signal,
@@ -244,6 +260,10 @@ export function createTaskTurn(deps: {
         );
       }
       const result = await turn;
+      const needsInput =
+        replyEnding(result.replyText).asks || result.replyChips === true;
+      if (makeAttempted && !makeSaved && !needsInput)
+        throw new Error("The Make artifact could not be saved.");
       /*
        * Recorded as how the reply ends, its next step, rather than how it starts: a task's
        * conversation is never listed by its preview, and Tasks shows this line after the task's
@@ -255,7 +275,7 @@ export function createTaskTurn(deps: {
           replyTail(result.replyText) ?? result.replyText,
           scope.agentId,
           `${input.runId}:reply`,
-          replyEnding(result.replyText).asks || result.replyChips === true,
+          needsInput,
         );
     } catch (error) {
       if (!(error instanceof HeadlessToolSuspension)) {

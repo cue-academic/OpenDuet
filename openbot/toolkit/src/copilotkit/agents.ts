@@ -19,7 +19,10 @@ import {
   takeUntil,
 } from "rxjs";
 import { sanitizeSeededHistory } from "../history-sanitize";
-import { nativeApprovalRun } from "../native-approval";
+import {
+  bindNativeApprovalContext,
+  nativeApprovalRun,
+} from "../native-approval";
 import { historyOrEmpty } from "../thread-history";
 
 /**
@@ -135,6 +138,7 @@ export class BuiltInAgentWithSaneHistory extends BuiltInAgent {
    * another one of THIS class, and a seam lost in a clone is a seam that never runs.
    */
   private readonly hooks: BuiltInAgentHooks;
+  private activeNative?: BuiltInAgent;
 
   constructor(
     configuration: BuiltInAgentConfiguration,
@@ -162,7 +166,7 @@ export class BuiltInAgentWithSaneHistory extends BuiltInAgent {
      */
     if (!inline)
       return nativeApprovalRun({ ...input, messages: history }, () =>
-        observe(super.run({ ...input, messages: history })),
+        observe(this.runNative({ ...input, messages: history })),
       );
     /*
      * Deferred, because `run` has to answer with a stream straight away and reading the bytes is a
@@ -176,11 +180,43 @@ export class BuiltInAgentWithSaneHistory extends BuiltInAgent {
       ).pipe(
         switchMap((messages) =>
           nativeApprovalRun({ ...input, messages }, () =>
-            observe(super.run({ ...input, messages })),
+            observe(this.runNative({ ...input, messages })),
           ),
         ),
       ),
     );
+  }
+
+  private runNative(input: RunAgentInput): Observable<BaseEvent> {
+    const configuration = this.configuration;
+    const boundConfiguration =
+      "tools" in configuration
+        ? {
+            ...configuration,
+            tools: configuration.tools?.map((tool) => ({
+              ...tool,
+              ...(tool.execute
+                ? { execute: bindNativeApprovalContext(tool.execute) }
+                : {}),
+            })),
+          }
+        : configuration;
+    const agent = new BuiltInAgent(boundConfiguration);
+    type WithMiddlewares = { middlewares: unknown[] };
+    (agent as unknown as WithMiddlewares).middlewares = [
+      ...(this as unknown as WithMiddlewares).middlewares,
+    ];
+    this.activeNative = agent;
+    return agent.run(input).pipe(
+      finalize(() => {
+        if (this.activeNative === agent) this.activeNative = undefined;
+      }),
+    );
+  }
+
+  abortRun(): void {
+    this.activeNative?.abortRun();
+    super.abortRun();
   }
 
   /**

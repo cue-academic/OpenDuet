@@ -8,6 +8,7 @@ import {
 import { defer, from, Observable, switchMap } from "rxjs";
 import type { ActorAgentResolver } from "../agents/agent-resolver";
 import type { RunChannel } from "./channels";
+import { withClassRules } from "./class-rules";
 
 /*
  * Which channel a run is in, read from the run itself.
@@ -40,6 +41,13 @@ const store = new AsyncLocalStorage<RunChannel | null>();
 /** The dressed channel the current run is in, or null for Everything and anywhere else. */
 export function currentRunChannelId(): string | null {
   return store.getStore()?.channelId ?? null;
+}
+
+export function withCurrentRunChannel<T>(
+  channel: RunChannel | null,
+  run: () => T,
+): T {
+  return store.run(channel, run);
 }
 
 /** The id of the system message, so a run that already carries one is not told twice. */
@@ -124,10 +132,11 @@ export class RunChannelMiddleware extends Middleware {
         (channel) =>
           new Observable<BaseEvent>((subscriber) => {
             // Null is set too, so a run inside another never inherits the outer one's channel.
-            const subscription = store.run(channel, () =>
-              this.runNext(withRunChannel(input, channel), next).subscribe(
-                subscriber,
-              ),
+            const subscription = withCurrentRunChannel(channel, () =>
+              this.runNext(
+                withClassRules(withRunChannel(input, channel)),
+                next,
+              ).subscribe(subscriber),
             );
             return () => subscription.unsubscribe();
           }),

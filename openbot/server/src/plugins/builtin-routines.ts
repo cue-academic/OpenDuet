@@ -1,4 +1,6 @@
+import { currentApprovalContext } from "../approvals/types";
 import { cutAtCodeUnits } from "../channels/text";
+import { currentRunChannelId } from "../openduet/run-channel";
 import {
   callTriggerTool,
   isTriggerTool,
@@ -100,9 +102,9 @@ const TOOLS: readonly McpTool[] = Object.freeze([
       "time — the default is UTC and there is no deployment timezone to inherit, so a schedule set without",
       "one fires at a UTC hour rather than at theirs.",
       "",
-      "The routine posts its reply into a channel. Leave `channelId` out and it goes to the one channel you",
-      "share with this person; when you share more than one you will be told so and asked to pick, and the",
-      "answer to that is to ask them which.",
+      "The routine posts its reply into a channel. Leave `channelId` out (or say `here`) for the current",
+      "conversation. You may also give a shared channel's id or unambiguous name. Outside a channel,",
+      "one shared channel is chosen automatically; with more than one, ask the person which.",
       "",
       "It takes no owner and no Bot. The routine belongs to the person you are talking to and runs as you;",
       "both are taken from the run itself, and there is no field for either.",
@@ -412,6 +414,8 @@ export async function callTool(
           "A routine needs a schedule: five cron fields, `minute hour day-of-month month day-of-week`.",
         );
       }
+      const sourceThreadId = currentApprovalContext()?.threadId;
+      const requestedChannelId = stringArg(args, "channelId");
       const routine = await tools.create({
         ownerUserId,
         agentId,
@@ -420,7 +424,11 @@ export async function callTool(
         // Absent means absent. The store owns the UTC default, so guessing a zone here would put a
         // zone nobody chose on a routine that then fires at the wrong hour for ever.
         timezone: stringArg(args, "timezone"),
-        channelId: stringArg(args, "channelId"),
+        channelId:
+          requestedChannelId?.toLowerCase() === "here"
+            ? (currentRunChannelId() ?? undefined)
+            : (requestedChannelId ?? currentRunChannelId() ?? undefined),
+        ...(sourceThreadId ? { sourceThreadId } : {}),
       });
       return await describeWritten(
         tools,
