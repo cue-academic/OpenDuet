@@ -206,6 +206,33 @@ test("study_memory reads what is due, the weakest and open mistakes", async () =
   expect(needsSubject.startsWith("Refused.")).toBe(true);
 });
 
+test("due review ignores placeholder subjects emitted by the task model", async () => {
+  const panel = (await (await as(owner, "/")).json()) as {
+    overview: StudyOverview;
+  };
+  expect(panel.overview.totals.due).toBe(3);
+  for (const subject of ["", "All classes", "Physics"]) {
+    const args = { view: "due", subject };
+    expect(tool(STUDY_MEMORY_TOOL).parameters.safeParse(args).success).toBe(
+      true,
+    );
+    const due = await call(STUDY_MEMORY_TOOL, args);
+    expect(due.dueCount).toBe(panel.overview.totals.due);
+    expect(due.due.map((topic: { topic: string }) => topic.topic)).toEqual(
+      panel.overview.due.map((topic) => topic.topic),
+    );
+  }
+  for (const subject of [undefined, ""]) {
+    const refusal = String(
+      await tool(STUDY_MEMORY_TOOL).execute({
+        view: "subject",
+        subject,
+      } as never),
+    );
+    expect(refusal).toBe("Refused. The subject view needs a subject.");
+  }
+});
+
 test("getting it right with fixed: true closes the mistake", async () => {
   await call(RECORD_STUDY_TOOL, {
     entries: [

@@ -546,10 +546,11 @@ const readParameters = z
     subject: z
       .string()
       .trim()
-      .min(1)
       .max(60)
       .optional()
-      .describe("Only this class. Needed for the subject view."),
+      .describe(
+        "Class name for the subject view only. Ignored for other views.",
+      ),
   })
   .strict();
 
@@ -624,17 +625,20 @@ export function studyTools(options: {
           return `Refused. The subject view needs a subject.`;
         const memory = await options.store.overview(options.actorId);
         const all = memory.topics;
-        const topics = subject
-          ? all.filter((topic) => keyOf(topic.subject) === keyOf(subject))
+        const subjectFilter = view === "subject" ? subject : undefined;
+        const topics = subjectFilter
+          ? all.filter((topic) => keyOf(topic.subject) === keyOf(subjectFilter))
           : all;
         if (topics.length === 0)
           return JSON.stringify({
             topics: [],
-            note: subject
-              ? `Nothing recorded for ${subject} yet. Say so in a few words and offer a quick quiz to start.`
+            note: subjectFilter
+              ? `Nothing recorded for ${subjectFilter} yet. Say so in a few words and offer a quick quiz to start.`
               : "Their study memory is empty: nothing has been practiced yet. Say so in a few words and offer a quick quiz on their nearest test to start it.",
           });
-        const overview = subject ? overviewOf(topics, new Date()) : memory;
+        const overview = subjectFilter
+          ? overviewOf(topics, new Date())
+          : memory;
         if (view === "overview")
           return JSON.stringify({
             totals: overview.totals,
