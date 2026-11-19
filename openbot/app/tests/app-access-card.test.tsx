@@ -144,6 +144,15 @@ test.each([
     may: "Explain, quiz, and give feedback.",
   }),
   JSON.stringify({ error: "Name the class." }),
+  JSON.stringify(
+    JSON.stringify({
+      className: "Earth Science",
+      level: "hints",
+      label: "Hints only",
+      source: "default",
+      may: "Explain the concept and practice from the notes. Do not solve work they will turn in.",
+    }),
+  ),
 ])("class_help has a visible fallback for %s", async (result) => {
   serving(null);
   const view = mount(
@@ -227,31 +236,33 @@ test.each([1, 2])(
   },
 );
 
-test.each([undefined, "", '{"error":"No notes"}'])(
-  "a notes quiz never leaves an empty card for %s",
-  async (result) => {
-    serving(null);
-    const view = mount(
-      <CopilotKitProvider runtimeUrl="/api/copilotkit">
-        <PracticeCardTool />
-        <TranscriptToolCall
-          delay={0}
-          toolCallId="quiz"
-          name="make_notes_quiz"
-          args="{}"
-          result={result}
-        />
-      </CopilotKitProvider>,
-    );
-    expect(
-      await view.findByText(
-        result === undefined
-          ? "Making your quiz"
-          : "Couldn't make your quiz, didn't work",
-      ),
-    ).toBeTruthy();
-  },
-);
+test.each([
+  undefined,
+  "",
+  '{"error":"No notes"}',
+  JSON.stringify("Refused. No class notes are loaded. Call make_quiz instead."),
+])("a notes quiz never leaves an empty card for %s", async (result) => {
+  serving(null);
+  const view = mount(
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <PracticeCardTool />
+      <TranscriptToolCall
+        delay={0}
+        toolCallId="quiz"
+        name="make_notes_quiz"
+        args="{}"
+        result={result}
+      />
+    </CopilotKitProvider>,
+  );
+  expect(
+    await view.findByText(
+      result === undefined
+        ? "Making your quiz"
+        : "Couldn't make your quiz, didn't work",
+    ),
+  ).toBeTruthy();
+});
 
 test("asks about the app on the Bot that refused, not on another", async () => {
   const asked = serving(appAccess({ state: "not_connected" }));
