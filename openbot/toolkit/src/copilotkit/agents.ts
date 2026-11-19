@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from "node:async_hooks";
 import {
   AbstractAgent,
   type BaseEvent,
@@ -20,7 +19,10 @@ import {
   takeUntil,
 } from "rxjs";
 import { sanitizeSeededHistory } from "../history-sanitize";
-import { nativeApprovalRun } from "../native-approval";
+import {
+  bindNativeApprovalContext,
+  nativeApprovalRun,
+} from "../native-approval";
 import { historyOrEmpty } from "../thread-history";
 
 /**
@@ -194,7 +196,7 @@ export class BuiltInAgentWithSaneHistory extends BuiltInAgent {
             tools: configuration.tools?.map((tool) => ({
               ...tool,
               ...(tool.execute
-                ? { execute: AsyncLocalStorage.bind(tool.execute) }
+                ? { execute: bindNativeApprovalContext(tool.execute) }
                 : {}),
             })),
           }

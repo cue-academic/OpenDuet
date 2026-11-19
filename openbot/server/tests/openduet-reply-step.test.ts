@@ -592,6 +592,22 @@ describe("the first day", () => {
     expect(refused).toStartWith("Refused.");
     expect(refused).toContain("first day");
   });
+
+  test("a native tool bound before the watched turn still sees the first-day guard", async () => {
+    const { calls } = await turn(
+      [{ calls: [chips()] }, { text: ANSWER }],
+      [
+        {
+          id: "u1",
+          role: "user",
+          content: frameFirstDay("Look at my mail and calendar and tell me who I am."),
+        },
+      ],
+    );
+    const [refused] = replyAnswers(calls);
+    expect(refused).toStartWith("Refused.");
+    expect(refused).toContain("first day");
+  });
 });
 
 describe("the morning brief", () => {
