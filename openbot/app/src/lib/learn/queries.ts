@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { z } from "zod";
 import { client } from "@/lib/client";
+import { studyKeys as progressKeys } from "@/lib/study/keys";
 
 /*
  * The student's study memory, as the Learn tab reads it: every topic practiced, how well it is
@@ -67,6 +68,14 @@ const overview = z.object({
 export type StudyOverview = z.infer<typeof overview>;
 
 export const studyKeys = { all: ["openduet", "study"] as const };
+
+export const invalidateStudyCompletion = (queryClient: QueryClient) =>
+  Promise.all([
+    queryClient.invalidateQueries({ queryKey: studyKeys.all }),
+    queryClient.invalidateQueries({
+      queryKey: [...progressKeys.all, "progress"],
+    }),
+  ]);
 
 export const studyOverviewQueryOptions = () =>
   queryOptions({

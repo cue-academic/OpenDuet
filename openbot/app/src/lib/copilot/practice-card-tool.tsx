@@ -4,6 +4,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { DuetCard } from "@/components/duet/kit";
 import { PracticeSession } from "@/components/learn/practice-session";
+import { invalidateStudyCompletion } from "@/lib/learn/queries";
 import {
   gradePractice,
   loadPractice,
@@ -65,7 +66,7 @@ function Loaded({ id }: { id: string }) {
             const graded = await gradePractice(id, answers);
             const next: PracticePaper = { ...paper.data, result: graded };
             queryClient.setQueryData(["practice", id], next);
-            void queryClient.invalidateQueries({ queryKey: ["study"] });
+            void invalidateStudyCompletion(queryClient);
             return graded;
           } finally {
             setBusy(false);
