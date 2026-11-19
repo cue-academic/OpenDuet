@@ -7,6 +7,7 @@ import {
   eq,
   inArray,
   isNull,
+  ne,
   or,
   type SQL,
 } from "drizzle-orm";
@@ -42,6 +43,7 @@ import {
 import type { BrokerApp } from "../broker";
 import { CATALOGUE, type CatalogueEntry, catalogueEntry } from "../catalogue";
 import type { StoreContext } from "./context";
+import { PACKAGE_GRANT_REVOKED } from "./grant-origin";
 import { iso } from "./model";
 
 /**
@@ -411,7 +413,11 @@ export function appAccessMethods(context: StoreContext) {
       .select({ ref: pluginGrants.ref })
       .from(pluginGrants)
       .where(
-        and(eq(pluginGrants.kind, "mcp"), eq(pluginGrants.agentId, agentId)),
+        and(
+          eq(pluginGrants.kind, "mcp"),
+          eq(pluginGrants.agentId, agentId),
+          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+        ),
       );
     return new Set(
       grants.map((grant) => grant.ref.split("/")[0] ?? "").filter(Boolean),

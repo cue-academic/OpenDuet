@@ -19,6 +19,7 @@ import {
 } from "./db/schema";
 import { catalogueEntry } from "./plugins/catalogue";
 import type { ListedTool } from "./plugins/mcp";
+import { PACKAGE_GRANT } from "./plugins/plugin-store/grant-origin";
 import { transportFor } from "./plugins/transport";
 
 const approvedThemeVariables = new Set([
@@ -175,7 +176,6 @@ export type TenantSkill = {
  * Every other value there is the id of the person who pressed the button, so this cannot collide
  * with one, and it is what lets a redeploy take back only what the package gave.
  */
-const PACKAGE_GRANT = "tenant-package";
 
 type TenantAgent = {
   id: string;

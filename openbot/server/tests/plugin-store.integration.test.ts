@@ -11,8 +11,8 @@ import { randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { MCPMock, type MCPToolDefinition } from "@copilotkit/aimock/mcp";
-import { readConnectPrompt } from "@openbot/shared/connect-prompt";
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
+import { readConnectPrompt } from "@openbot/shared/connect-prompt";
 import { and, asc, eq, gte, inArray, sql } from "drizzle-orm";
 import { createAuditStore } from "../src/audit";
 import type { ActionPolicy } from "../src/computer/policy";
@@ -869,6 +869,51 @@ describe("a boundary written about the browser does not refuse tool calls", () =
 });
 
 describe("removing an MCP server", () => {
+  test("does not restore a package grant after removing its server", async () => {
+    const removalServerId = `removal-package-${suite}`;
+    const ref = `${removalServerId}/search`;
+    removalServerIds.add(removalServerId);
+    await database.insert(mcpServers).values({
+      id: removalServerId,
+      title: "package removal target",
+      vendor: "test",
+      url: "https://example.invalid/mcp",
+      provenance: "custom",
+      addedBy: "tenant-package",
+    });
+    await database.insert(pluginGrants).values({
+      kind: "mcp",
+      ref,
+      agentId: holderId,
+      grantedBy: "tenant-package",
+    });
+
+    await store.removeServer(removalServerId, "admin@openbot.local");
+    await database.insert(mcpServers).values({
+      id: removalServerId,
+      title: "package removal target",
+      vendor: "test",
+      url: "https://example.invalid/mcp",
+      provenance: "custom",
+      addedBy: "tenant-package",
+    });
+    await database
+      .insert(pluginGrants)
+      .values({
+        kind: "mcp",
+        ref,
+        agentId: holderId,
+        grantedBy: "tenant-package",
+      })
+      .onConflictDoNothing();
+
+    expect(
+      (await store.listForAgent(holderId)).tools.map((tool) => tool.ref),
+    ).not.toContain(ref);
+    expect((await store.decide("mcp", ref, holderId)).allowed).toBe(false);
+    await database.delete(pluginGrants).where(eq(pluginGrants.ref, ref));
+  });
+
   test("revokes the credential the server was configured with", async () => {
     // Without this, the credential row stays live after the server row is
     // gone, and re-adding the same server would unique-violate on

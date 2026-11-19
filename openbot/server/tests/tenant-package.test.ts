@@ -6,8 +6,6 @@ import { createAgentProfileStore } from "../src/agents/profile-store";
 import { createRuntimeAgentLoader } from "../src/agents/runtime-agents";
 import { createAuditStore } from "../src/audit";
 import { createCredentialStore } from "../src/credentials";
-import { createPluginStore } from "../src/plugins/store";
-import { grantedTools } from "../src/plugins/tools";
 import { createDatabase } from "../src/db/client";
 import {
   agentProfiles,
@@ -21,6 +19,8 @@ import {
   skillTools,
   users,
 } from "../src/db/schema";
+import { createPluginStore } from "../src/plugins/store";
+import { grantedTools } from "../src/plugins/tools";
 import {
   createApplicationConfiguration,
   expandEnvironment,
@@ -111,6 +111,30 @@ test("OpenDuet's coach holds recurring routine tools after package sync, without
     [...coach.builtinTools!].sort(),
   );
   expect((await store.listForAgent(other.id)).tools).toEqual([]);
+  await store.revoke(
+    "mcp",
+    "routines/create_routine",
+    agent.id,
+    "administrator",
+  );
+  await synchronizeTenantPackage(database, loaded);
+  expect((await tools()).map((tool) => tool.ref).sort()).toEqual(
+    coach
+      .builtinTools!.filter((ref) => ref !== "routines/create_routine")
+      .sort(),
+  );
+  expect(
+    (await store.decide("mcp", "routines/create_routine", agent.id)).allowed,
+  ).toBe(false);
+  await store.grant("mcp", "routines/update_routine", agent.id, "administrator");
+  await store.revoke("mcp", "routines/update_routine", agent.id, "administrator");
+  await synchronizeTenantPackage(database, loaded);
+  expect((await tools()).map((tool) => tool.ref)).not.toContain(
+    "routines/update_routine",
+  );
+  expect(
+    (await store.decide("mcp", "routines/update_routine", agent.id)).allowed,
+  ).toBe(false);
   await store.grant("mcp", "routines/list_routines", agent.id, "administrator");
   agent.builtinTools = [];
   await synchronizeTenantPackage(database, loaded);

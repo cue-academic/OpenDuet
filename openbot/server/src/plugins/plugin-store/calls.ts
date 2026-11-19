@@ -21,6 +21,7 @@ import { shareTargetOf } from "../share-target";
 import type { AccountMode } from "../shared-accounts";
 import { transportFor } from "../transport";
 import type { StoreContext } from "./context";
+import { isPackageGrantRevoked } from "./grant-origin";
 import {
   effectiveUrl,
   type PluginDecision,
@@ -67,7 +68,7 @@ export function callMethods(context: StoreContext) {
         )
         .limit(1);
 
-      if (!row) {
+      if (!row || isPackageGrantRevoked(row.grantedBy)) {
         return {
           allowed: false,
           reason:
