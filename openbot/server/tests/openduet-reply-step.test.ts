@@ -666,7 +666,9 @@ describe("the first day", () => {
         {
           id: "u1",
           role: "user",
-          content: frameFirstDay("Look at my mail and calendar and tell me who I am."),
+          content: frameFirstDay(
+            "Look at my mail and calendar and tell me who I am.",
+          ),
         },
       ],
     );

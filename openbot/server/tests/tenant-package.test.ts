@@ -126,8 +126,18 @@ test("OpenDuet's coach holds recurring routine tools after package sync, without
   expect(
     (await store.decide("mcp", "routines/create_routine", agent.id)).allowed,
   ).toBe(false);
-  await store.grant("mcp", "routines/update_routine", agent.id, "administrator");
-  await store.revoke("mcp", "routines/update_routine", agent.id, "administrator");
+  await store.grant(
+    "mcp",
+    "routines/update_routine",
+    agent.id,
+    "administrator",
+  );
+  await store.revoke(
+    "mcp",
+    "routines/update_routine",
+    agent.id,
+    "administrator",
+  );
   await synchronizeTenantPackage(database, loaded);
   expect((await tools()).map((tool) => tool.ref)).not.toContain(
     "routines/update_routine",
