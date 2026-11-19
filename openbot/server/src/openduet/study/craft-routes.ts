@@ -26,7 +26,7 @@ import {
 } from "./craft";
 import { notesForGuide } from "./guide-write";
 import { buildGuideInput } from "./notes-input";
-import { planData, planSpan } from "./plans";
+import { appliedPlans, busyFrom, planData, planSpan } from "./plans";
 import { type PracticeAnswer, storedPracticeSchema } from "./practice";
 import { gradePractice, writePractice } from "./practice-model";
 import {
@@ -38,6 +38,7 @@ import {
   quizData,
   quizFromRecord,
 } from "./quizzes";
+import { zonedInstant, zonedParts } from "./time";
 import { answerTutor, openTutor } from "./tutor-session";
 
 /**
@@ -473,7 +474,6 @@ export function craftRoutes(deps: StudyRouteDeps) {
     const body = (await context.req.json().catch(() => null)) as {
       skip?: unknown;
       save?: unknown;
-      planId?: unknown;
       minutes?: unknown;
     } | null;
     const skip = Array.isArray(body?.skip)
@@ -481,33 +481,28 @@ export function craftRoutes(deps: StudyRouteDeps) {
       : [];
     const minutes =
       typeof body?.minutes === "number" ? body.minutes : undefined;
-    const plan = planTonight(pack, now(), { skip, minutes });
+    const at = now();
+    const owner = context.var.actor.id;
+    const today = zonedParts(at, pack.timeZone).date;
+    // One row per student's local evening, replaced in a single atomic store write.
+    const id = `tonight:${encodeURIComponent(owner)}:${today}`;
+    const applied = await appliedPlans(
+      deps.store,
+      owner,
+      zonedInstant(today, "00:00", pack.timeZone),
+    );
+    const plan = planTonight(pack, at, {
+      skip,
+      minutes,
+      busy: busyFrom(
+        [],
+        applied.filter((earlier) => earlier.id !== id),
+      ),
+    });
     const save = body?.save === true;
     let planId: string | null = null;
     if (save) {
-      const owner = context.var.actor.id;
-      const id =
-        typeof body?.planId === "string" && body.planId.trim()
-          ? body.planId.trim()
-          : randomUUID();
-      const stamp = now().toISOString();
-      const earlier = await deps.store.list(owner, "plan", {
-        status: "applied",
-      });
-      for (const row of earlier) {
-        if (row.id === id) continue;
-        await deps.store.update(owner, "plan", row.id, (stored) => {
-          if (stored.status !== "applied") return {};
-          return {
-            status: "discarded",
-            data: {
-              ...stored.data,
-              status: "discarded",
-              removedAt: stamp,
-            },
-          };
-        });
-      }
+      const stamp = at.toISOString();
       const stored = {
         id,
         status: "applied" as const,

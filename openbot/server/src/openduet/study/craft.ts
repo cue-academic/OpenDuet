@@ -8,7 +8,7 @@ import {
   teacherRuleOnFile,
 } from "../private-pack";
 import { writeGuideFromNotes } from "./guide-write";
-import { makePlan, type PlanDraft } from "./scheduler";
+import { type BusyEvent, makePlan, type PlanDraft } from "./scheduler";
 import { addDays, weekdayOf, zonedInstant, zonedParts } from "./time";
 
 /**
@@ -363,6 +363,7 @@ export type TonightOptions = {
   skip?: readonly string[];
   /** Study minutes the student actually has. 120 when they have not said. */
   minutes?: number;
+  busy?: readonly BusyEvent[];
 };
 
 /**
@@ -412,13 +413,16 @@ export function planTonight(
       today,
       nowMinute: parts.minute,
       tasks,
-      busy: slice.events.map((event) => ({
-        id: event.id,
-        date: event.date,
-        start: event.start,
-        end: event.end,
-        kind: "commitment" as const,
-      })),
+      busy: [
+        ...slice.events.map((event) => ({
+          id: event.id,
+          date: event.date,
+          start: event.start,
+          end: event.end,
+          kind: "commitment" as const,
+        })),
+        ...(options.busy ?? []),
+      ],
       availability: () => ({
         enabled: true,
         start: "16:00",
@@ -1034,7 +1038,7 @@ function tonightOptions(
   value: readonly string[] | TonightOptions,
 ): TonightOptions {
   if (isSkipList(value)) return { skip: [...value] };
-  return { skip: value.skip, minutes: value.minutes };
+  return { skip: value.skip, minutes: value.minutes, busy: value.busy };
 }
 
 function askedMinutes(value: number | undefined): number {
