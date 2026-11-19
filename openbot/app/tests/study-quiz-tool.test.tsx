@@ -27,6 +27,7 @@ import {
 } from "@testing-library/react";
 import type { ComposerDraft } from "@/components/channels/composer/draft";
 import { ConversationView } from "@/components/channels/conversation-view";
+import { PracticeSession } from "@/components/learn/practice-session";
 import {
   explainWords,
   QuizCardTool,
@@ -362,6 +363,58 @@ describe("the words Explain what I missed sends", () => {
 });
 
 describe("the quiz card", () => {
+  test.each(["same paper twice", "different papers with matching question IDs"])(
+    "keeps radio selections independent in two sessions (%s)",
+    (caseName) => {
+      window.localStorage.removeItem("academic-os.practice-progress");
+      const firstPaper = {
+        id: "water-cycle",
+        title: "Water cycle",
+        className: "Earth Science",
+        mode: "quiz" as const,
+        suggestedMinutes: 5,
+        result: null,
+        items: [
+          {
+            id: "question-1",
+            kind: "mcq" as const,
+            prompt: "What drives evaporation?",
+            choices: ["The Sun", "The Moon"],
+            points: 1,
+            topic: "Water cycle",
+          },
+        ],
+      };
+      const secondPaper =
+        caseName === "same paper twice"
+          ? firstPaper
+          : { ...firstPaper, id: "cloud-cycle", title: "Cloud cycle" };
+      const notGraded = async () => {
+        throw new Error("Unexpected grading");
+      };
+      const view = render(
+        <>
+          <PracticeSession
+            paper={firstPaper}
+            onGrade={notGraded}
+            busy={false}
+          />
+          <PracticeSession
+            paper={secondPaper}
+            onGrade={notGraded}
+            busy={false}
+          />
+        </>,
+      );
+      const radios = view.getAllByRole("radio") as HTMLInputElement[];
+      expect(radios[0]!.name).not.toBe(radios[3]!.name);
+      fireEvent.click(radios[0]!);
+      fireEvent.click(radios[3]!);
+      expect(radios[0]!.checked).toBe(true);
+      expect(radios[3]!.checked).toBe(true);
+    },
+  );
+
   test("while the tool runs, a line says so, and nothing is drawn from the model's draft", async () => {
     const queries = fresh();
     const view = render(<Chat busy messages={asked()} queries={queries} />);
