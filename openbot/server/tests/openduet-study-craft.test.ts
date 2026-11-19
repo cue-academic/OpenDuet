@@ -274,10 +274,10 @@ test("without a key the tutor is not sent to a model", async () => {
   let called = false;
   const step = craftTutor(input, "Civil War");
   if ("refused" in step) throw new Error(step.refused);
-  const polished = await polishTutor(step, NOTES, {}, async () => {
+  const polished = await polishTutor(step, NOTES, {}, (async () => {
     called = true;
     return new Response("no");
-  });
+  }) as unknown as typeof fetch);
   expect(called).toBe(false);
   expect(polished.explanation).toBe(step.explanation);
 });
@@ -523,13 +523,13 @@ test("with a key, the model guide replaces the draft", async () => {
     guide,
     NOTES,
     { OPENAI_API_KEY: "test-key" },
-    async () => {
+    (async () => {
       called = true;
       return new Response(
         JSON.stringify({ choices: [{ message: { content: body } }] }),
         { status: 200 },
       );
-    },
+    }) as unknown as typeof fetch,
     input,
   );
   expect(called).toBe(true);
@@ -551,10 +551,10 @@ test("a no-help guide is not sent to a model", async () => {
     guide,
     NOTES,
     { OPENAI_API_KEY: "test-key" },
-    async () => {
+    (async () => {
       called = true;
       return new Response("no");
-    },
+    }) as unknown as typeof fetch,
     { ...input, help: "none" },
   );
   expect(called).toBe(false);
@@ -691,10 +691,10 @@ test("chat's one-day plan is the same evening planner, and two hours means 120",
 test("without a key the guide is not sent to a model", async () => {
   let called = false;
   const guide = craftGuide(input);
-  const polished = await polishGuide(guide, NOTES, {}, async () => {
+  const polished = await polishGuide(guide, NOTES, {}, (async () => {
     called = true;
     return new Response("no");
-  });
+  }) as unknown as typeof fetch);
   expect(called).toBe(false);
   expect(polished).toBe(guide);
 });
