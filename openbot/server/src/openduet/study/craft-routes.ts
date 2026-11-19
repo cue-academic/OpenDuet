@@ -473,7 +473,6 @@ export function craftRoutes(deps: StudyRouteDeps) {
     const body = (await context.req.json().catch(() => null)) as {
       skip?: unknown;
       save?: unknown;
-      planId?: unknown;
       minutes?: unknown;
     } | null;
     const skip = Array.isArray(body?.skip)
@@ -486,28 +485,9 @@ export function craftRoutes(deps: StudyRouteDeps) {
     let planId: string | null = null;
     if (save) {
       const owner = context.var.actor.id;
-      const id =
-        typeof body?.planId === "string" && body.planId.trim()
-          ? body.planId.trim()
-          : randomUUID();
+      // One row per student's local evening, replaced in a single atomic store write.
+      const id = `tonight:${encodeURIComponent(owner)}:${plan.startDate}`;
       const stamp = now().toISOString();
-      const earlier = await deps.store.list(owner, "plan", {
-        status: "applied",
-      });
-      for (const row of earlier) {
-        if (row.id === id) continue;
-        await deps.store.update(owner, "plan", row.id, (stored) => {
-          if (stored.status !== "applied") return {};
-          return {
-            status: "discarded",
-            data: {
-              ...stored.data,
-              status: "discarded",
-              removedAt: stamp,
-            },
-          };
-        });
-      }
       const stored = {
         id,
         status: "applied" as const,
