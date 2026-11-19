@@ -416,7 +416,10 @@ export function appAccessMethods(context: StoreContext) {
         and(
           eq(pluginGrants.kind, "mcp"),
           eq(pluginGrants.agentId, agentId),
-          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          or(
+            isNull(pluginGrants.grantedBy),
+            ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          ),
         ),
       );
     return new Set(

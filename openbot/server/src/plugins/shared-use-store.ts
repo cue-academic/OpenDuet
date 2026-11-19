@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { AuditInitiator } from "../audit";
 import { type AuditStore, recordAuditEvent } from "../audit";
 import { createRoleRepository } from "../auth/guards";
@@ -415,7 +415,10 @@ export function createSharedUseStore(
         and(
           eq(pluginGrants.kind, "mcp"),
           eq(pluginGrants.agentId, botId),
-          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          or(
+            isNull(pluginGrants.grantedBy),
+            ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          ),
         ),
       );
     const serverIds = [
@@ -502,7 +505,10 @@ export function createSharedUseStore(
         and(
           eq(pluginGrants.kind, "mcp"),
           inArray(sql<string>`split_part(${pluginGrants.ref}, '/', 1)`, allIds),
-          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          or(
+            isNull(pluginGrants.grantedBy),
+            ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          ),
         ),
       );
     return rows.map((row) => row.agentId);
