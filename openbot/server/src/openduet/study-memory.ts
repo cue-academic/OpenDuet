@@ -622,7 +622,8 @@ export function studyTools(options: {
         const { view, subject } = parsed.data;
         if (view === "subject" && !subject)
           return `Refused. The subject view needs a subject.`;
-        const all = await options.store.list(options.actorId, options.botId);
+        const memory = await options.store.overview(options.actorId);
+        const all = memory.topics;
         const topics = subject
           ? all.filter((topic) => keyOf(topic.subject) === keyOf(subject))
           : all;
@@ -633,7 +634,7 @@ export function studyTools(options: {
               ? `Nothing recorded for ${subject} yet. Say so in a few words and offer a quick quiz to start.`
               : "Their study memory is empty: nothing has been practiced yet. Say so in a few words and offer a quick quiz on their nearest test to start it.",
           });
-        const overview = overviewOf(topics, new Date());
+        const overview = subject ? overviewOf(topics, new Date()) : memory;
         if (view === "overview")
           return JSON.stringify({
             totals: overview.totals,
