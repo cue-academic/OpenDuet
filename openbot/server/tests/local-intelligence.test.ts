@@ -155,6 +155,116 @@ test("a local thread accepts a run and plays it to the browser socket", async ()
   }
 });
 
+test("a finished run frees the thread for the next message", async () => {
+  const service = startLocalIntelligence({ apiKey: key, port: 0 });
+  const headers = {
+    authorization: `Bearer ${key}`,
+    "content-type": "application/json",
+  };
+  const lock = (runId: string) =>
+    fetch(`${service.apiUrl}/api/threads/thread-1/lock`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ runId, ttlSeconds: 120 }),
+    });
+  try {
+    await fetch(`${service.apiUrl}/api/threads`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        threadId: "thread-1",
+        userId: "viren",
+        agentId: "openduet",
+      }),
+    });
+    const first = await lock("run-1");
+    expect(first.status).toBe(200);
+    const { joinToken } = (await first.json()) as { joinToken: string };
+    expect((await lock("run-2")).status).toBe(409);
+
+    const frames: unknown[][] = [];
+    const runner = new WebSocket(
+      socketUrl(service.wsUrl, "/runner/websocket", { vsn: "2.0.0" }),
+      ["phoenix", `base64url.bearer.phx.${btoa(key).replace(/=/g, "")}`],
+    );
+    await new Promise<void>((resolve, reject) => {
+      runner.onopen = () => resolve();
+      runner.onerror = () => reject(new Error("runner socket failed"));
+    });
+    runner.onmessage = (event) => {
+      frames.push(JSON.parse(String(event.data)) as unknown[]);
+    };
+    const push = async (ref: string, type: string, runId: string) => {
+      runner.send(
+        JSON.stringify([
+          "1",
+          ref,
+          `ingestion:${runId}`,
+          "events",
+          {
+            events: [
+              {
+                type,
+                threadId: "thread-1",
+                runId,
+                metadata: { cpki_event_id: `evt-${ref}`, cpki_event_seq: 1 },
+              },
+            ],
+          },
+        ]),
+      );
+      await waitFor(() =>
+        frames.some((frame) => frame[1] === ref && frame[3] === "phx_reply"),
+      );
+    };
+    await push("2", "RUN_STARTED", "run-1");
+    expect((await lock("run-2")).status).toBe(409);
+
+    // A browser holding the join token cannot end the run in the runner's place.
+    const browserFrames: unknown[][] = [];
+    const browser = new WebSocket(
+      socketUrl(service.wsUrl, "/client/websocket", {
+        join_token: joinToken,
+        vsn: "2.0.0",
+      }),
+    );
+    await new Promise<void>((resolve, reject) => {
+      browser.onopen = () => resolve();
+      browser.onerror = () => reject(new Error("browser socket failed"));
+    });
+    browser.onmessage = (event) => {
+      browserFrames.push(JSON.parse(String(event.data)) as unknown[]);
+    };
+    browser.send(
+      JSON.stringify([
+        "1",
+        "9",
+        "ingestion:run-1",
+        "events",
+        {
+          events: [
+            { type: "RUN_FINISHED", threadId: "thread-1", runId: "run-1" },
+          ],
+        },
+      ]),
+    );
+    await waitFor(() => browserFrames.some((frame) => frame[1] === "9"));
+    expect((await lock("run-2")).status).toBe(409);
+    browser.close();
+    await push("3", "RUN_FINISHED", "run-1");
+    expect((await lock("run-2")).status).toBe(200);
+
+    await push("4", "RUN_ERROR", "run-2");
+    expect((await lock("run-3")).status).toBe(200);
+    // A late terminal event from an older run leaves the current lock alone.
+    await push("5", "RUN_FINISHED", "run-1");
+    expect((await lock("run-4")).status).toBe(409);
+    runner.close();
+  } finally {
+    service.stop();
+  }
+});
+
 test("a local thread is still there after the service stops", async () => {
   const path = join(mkdtempSync(join(tmpdir(), "threads-")), "threads.json");
   const headers = {
