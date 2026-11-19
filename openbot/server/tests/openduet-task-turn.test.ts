@@ -67,6 +67,78 @@ function turnWith(
 }
 
 describe("a task's turn", () => {
+  test.each([
+    "",
+    "Refused. Invalid slides.",
+    '"Refused. Invalid blocks."',
+    "Error: Invalid arguments",
+    '{"error":"database unavailable"}',
+  ])(
+    "fails instead of becoming ready after an unsuccessful Make result: %s",
+    async (content) => {
+      const turn = turnWith(
+        async (input) => {
+          input.onToolResult?.("make_page", content);
+          return { replyText: "The document save is blocked by a tool error." };
+        },
+        { final: true },
+      );
+      await expect(turn.start()).rejects.toThrow(
+        "The Make artifact could not be saved.",
+      );
+      expect(turn.said.at(-1)?.text).toBe(
+        "I couldn't finish this: the Make item couldn't be saved.",
+      );
+      expect(turn.busy).toEqual([true, false]);
+    },
+  );
+
+  test("a successful Make save prevents replay even when a later save fails", async () => {
+    const turn = turnWith(async (input) => {
+      input.onToolResult?.(
+        "make_page",
+        JSON.stringify({ id: "saved", kind: "doc" }),
+      );
+      input.onToolResult?.("make_page", "Refused. Invalid slides.");
+      return { replyText: "Saved your guide, but couldn't save the deck." };
+    });
+    await turn.start();
+    expect(turn.said.at(-1)?.id).toBe("task-1:reply");
+    expect(turn.busy).toEqual([true, false]);
+  });
+
+  test.each([
+    { replyText: "Which class should I use?" },
+    { replyText: "Choose a class below.", replyChips: true },
+  ])(
+    "a failed Make save preserves a turn waiting for input: %j",
+    async (result) => {
+      const turn = turnWith(async (input) => {
+        input.onToolResult?.("make_page", "Refused. Missing class.");
+        return result;
+      });
+      await turn.start();
+      expect(turn.said.at(-1)).toMatchObject({
+        id: "task-1:reply",
+        needsInput: true,
+      });
+      expect(turn.busy).toEqual([true, false]);
+    },
+  );
+
+  test("a successful Make retry clears its earlier refusal, and other tool results are ignored", async () => {
+    const turn = turnWith(async (input) => {
+      input.onToolResult?.("make_page", "Refused. Invalid blocks.");
+      input.onToolResult?.(
+        "make_page",
+        JSON.stringify(JSON.stringify({ id: "saved", kind: "doc" })),
+      );
+      input.onToolResult?.("read_page", "Error: not found");
+      return { replyText: "Saved your guide." };
+    });
+    await turn.start();
+    expect(turn.said.at(-1)?.text).toBe("Saved your guide.");
+  });
   test("is the person's ask in the task's conversation, with the dot lit while it runs", async () => {
     const asked: Parameters<TurnRunner>[0][] = [];
     const turn = turnWith(async (input) => {

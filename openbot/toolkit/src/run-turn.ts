@@ -95,6 +95,7 @@ export type TurnRunner = (input: {
   depth?: number;
   /** The reply so far, each time more of it arrives, for a surface that shows a turn in progress. */
   onText?: (text: string) => void;
+  onToolResult?: (name: string, content: string) => void;
 }) => Promise<{
   replyText: string;
   components?: DrawnComponent[];
@@ -674,6 +675,7 @@ export function createTurnRunner(options: {
     runId: suppliedRunId,
     depth,
     onText,
+    onToolResult,
   }) => {
     if (signal?.aborted) throw new Error("The headless turn was cancelled.");
     // A paused Bot or a refused capability throws here; a pause mid-turn aborts the returned signal.
@@ -984,12 +986,30 @@ export function createTurnRunner(options: {
     }
 
     // Decided and reported only now, after the lock is released, on every path.
+    const added = agent.messages.filter((message) => !before.has(message.id));
+    if (onToolResult) {
+      const names = new Map(
+        added.flatMap((message) =>
+          message.role === "assistant"
+            ? (message.toolCalls ?? []).map(
+                (call) => [call.id, call.function.name] as const,
+              )
+            : [],
+        ),
+      );
+      for (const message of added) {
+        if (message.role !== "tool" || typeof message.content !== "string")
+          continue;
+        const name = names.get(message.toolCallId);
+        if (name) onToolResult(name, message.content);
+      }
+    }
     const outcome = settle({
       ...(failed ? { failed } : {}),
       heartbeatError,
       stopped,
       ...(waiting ? { waiting } : {}),
-      added: agent.messages.filter((message) => !before.has(message.id)),
+      added,
       chunks,
       pendingInterrupts: agent.pendingInterrupts,
       componentNames: components?.names ?? new Set(),
