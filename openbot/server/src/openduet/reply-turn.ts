@@ -7,6 +7,7 @@ import { nativeRunWaiting } from "@openbot/toolkit/native-approval";
 import { Observable } from "rxjs";
 import type { PlanLanguageModel } from "../agents/plan-model";
 import { REFUSAL_MARKER } from "../plugins/tools";
+import { PAGE_TOOL } from "./pages";
 import {
   REPLIES_AFTER_APPROVAL,
   REPLIES_ALREADY_HELD,
@@ -482,12 +483,26 @@ export function endingTurns(model: string | Model, apiKey?: string): Model {
     get supportedUrls() {
       return resolved().supportedUrls;
     },
-    doGenerate: (options) => resolved().doGenerate(options),
+    doGenerate: (options) => resolved().doGenerate(makeToolOptions(options)),
     doStream: (options) =>
       turns.getStore()?.ended
         ? Promise.resolve(endedStep())
-        : resolved().doStream(options),
+        : resolved().doStream(makeToolOptions(options)),
   } as Model;
+}
+
+function makeToolOptions<T extends Parameters<Model["doStream"]>[0]>(
+  options: T,
+): T {
+  return {
+    ...options,
+    // Responses otherwise makes optional revision and alternate-content fields required.
+    tools: options.tools?.map((tool) =>
+      tool.type === "function" && tool.name === PAGE_TOOL
+        ? { ...tool, strict: false }
+        : tool,
+    ),
+  };
 }
 
 function endedStep(): StreamResult {

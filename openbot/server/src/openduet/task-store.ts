@@ -170,6 +170,7 @@ export function plainFailure(error: string | null | undefined): string {
     return `the run took longer than ${minutes} minute${minutes === 1 ? "" : "s"}`;
   }
   const rules: [RegExp, string][] = [
+    [/Make artifact could not be saved/i, "the Make item couldn't be saved"],
     [/finished without saying anything/i, "the run ended without a reply"],
     [/stopped to ask a question/i, "the run stopped to ask a question"],
     [/no longer available/i, "this conversation is gone"],
