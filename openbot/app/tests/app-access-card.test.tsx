@@ -150,6 +150,16 @@ test.each([
       level: "hints",
       label: "Hints only",
       source: "default",
+      attribution: "That's the app's default.",
+      may: "Explain the concept and practice from the notes. Do not solve work they will turn in.",
+    }),
+  ),
+  JSON.stringify(
+    JSON.stringify({
+      className: "Earth Science",
+      level: "hints",
+      label: "Hints only",
+      source: "default",
       may: "Explain the concept and practice from the notes. Do not solve work they will turn in.",
     }),
   ),
