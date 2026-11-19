@@ -1,6 +1,6 @@
 channels:
   - id: openduet
-    name: Academic OS
+    name: Cue
     description: What to work on now, what's due, and studying.
     permitted_agents: [openduet]
     allowed_groups: [all]

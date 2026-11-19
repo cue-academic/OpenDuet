@@ -131,9 +131,9 @@ Then start it:
 bash scripts/start.sh
 ```
 
-## Academic OS demo
+## Cue demo
 
-This fork is Academic OS, the school coach. The full app (chat, Tasks, Calendar, Today's plan, Learn, and Made for you) is on the `desktop-web` line: pull requests #1, #2, and #3 are already combined there.
+This fork is Cue, your personal AI study agent, supervised by your school. The full app (chat, Tasks, Calendar, Today's plan, Learn, and Made for you) is on the `desktop-web` line: pull requests #1, #2, and #3 are already combined there.
 
 One command from a fresh checkout, after `bun install` (or `bash scripts/cloud-install.sh`):
 

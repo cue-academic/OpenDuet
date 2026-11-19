@@ -244,7 +244,7 @@ function DeckBody({
           // The answer side lifts onto the card's own white, so the two sides read as two faces.
           round.flipped
             ? "bg-duet-pop-b-soft shadow-[inset_0_0_0_2px_var(--duet-pop-b)]"
-            : "bg-[image:var(--duet-face-gradient)] text-white",
+            : "bg-duet-accent text-duet-on-accent",
         )}
         data-side={round.flipped ? "answer" : "prompt"}
         onAnimationEnd={() => setFlipping(false)}
@@ -257,7 +257,7 @@ function DeckBody({
           <span
             className={cn(
               "type-caption font-medium",
-              round.flipped ? "text-duet-pop-b" : "text-white/80",
+              round.flipped ? "text-duet-pop-b" : "text-duet-on-accent",
             )}
           >
             {side}
@@ -305,7 +305,7 @@ function DeckBody({
           aria-hidden
           className={cn(
             "type-caption text-right",
-            round.flipped ? "text-duet-ink-3" : "text-white/70",
+            round.flipped ? "text-duet-ink-3" : "text-duet-on-accent",
           )}
         >
           Tap to flip

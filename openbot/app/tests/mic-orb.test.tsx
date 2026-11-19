@@ -17,7 +17,6 @@ import {
   type OrbPose,
   oklch,
   palette,
-  RAYS,
   track,
 } from "@/components/duet/mic-orb-draw";
 
@@ -54,6 +53,9 @@ function fakeContext() {
   const ctx = {
     shadowBlur: 0,
     litStrokes: 0,
+    gradients: 0,
+    fills: [] as string[],
+    fillStyle: "",
     strokes: 0,
     draws: 0,
     save() {
@@ -69,8 +71,17 @@ function fakeContext() {
     clearRect() {
       this.draws++;
     },
-    createLinearGradient: () => gradient,
-    createRadialGradient: () => gradient,
+    fill() {
+      this.fills.push(this.fillStyle);
+    },
+    createLinearGradient() {
+      this.gradients++;
+      return gradient;
+    },
+    createRadialGradient() {
+      this.gradients++;
+      return gradient;
+    },
   };
   return new Proxy(ctx, {
     get: (target, key) =>
@@ -89,14 +100,6 @@ const strokesOf = (pose: OrbPose) => {
     dark: false,
   });
   return ctx.strokes;
-};
-
-const litSlots = (pose: OrbPose) => {
-  const ctx = fakeContext();
-  drawMicOrb(ctx as unknown as CanvasRenderingContext2D, 60, pose, {
-    dark: false,
-  });
-  return ctx.litStrokes;
 };
 
 describe("the orb's motion", () => {
@@ -147,23 +150,27 @@ describe("Ocean", () => {
   });
 });
 
-describe("the grilles", () => {
-  test("stay dark at rest", () => {
-    expect(litSlots(REST)).toBe(0);
-  });
-
-  test("light from the bottom with each keystroke while it listens", () => {
-    const listening = { ...REST, listen: 1 };
-    const soft = litSlots(listening);
-    const typed = litSlots({ ...listening, key: 1 });
-    expect(typed).toBeGreaterThan(soft);
-    // Five slots a side, all lit on a full keystroke.
-    expect(typed).toBe(10);
-  });
-
-  test("carry a scanning light while it works, and flash when it lands", () => {
-    expect(litSlots({ ...REST, think: 1 })).toBeGreaterThan(0);
-    expect(litSlots({ ...REST, done: 1, doneAge: 0.35 })).toBe(10);
+describe("Cue's dot", () => {
+  test("keeps its flat blue face and two white eyes through every activity", () => {
+    for (const activity of [
+      {},
+      { listen: 1, key: 1 },
+      { think: 1 },
+      { done: 1 },
+      { finishAge: 0.4 },
+    ]) {
+      const ctx = fakeContext();
+      drawMicOrb(
+        ctx as unknown as CanvasRenderingContext2D,
+        60,
+        { ...REST, ...activity },
+        { dark: false },
+      );
+      expect(ctx.fills).toEqual(["#2f5dff", "#ffffff", "#ffffff"]);
+      expect(ctx.gradients).toBe(0);
+      expect(ctx.shadowBlur).toBe(0);
+      expect(ctx.strokes).toBe(0);
+    }
   });
 });
 
@@ -194,11 +201,11 @@ describe("a finish", () => {
     expect(early).toBeLessThan(finishPhase(0.24).check);
   });
 
-  test("draws its rays and its check over the orb, and nothing once it is over", () => {
-    const rest = strokesOf(REST);
-    expect(strokesOf({ ...REST, finishAge: 0.4 })).toBe(rest + RAYS + 1);
-    expect(strokesOf({ ...REST, finishAge: FINISH_HELD })).toBe(rest + 1);
-    expect(strokesOf({ ...REST, finishAge: FINISH_S })).toBe(rest);
+  test("keeps the face simple when work finishes, without rays or check marks", () => {
+    expect(strokesOf(REST)).toBe(0);
+    expect(strokesOf({ ...REST, finishAge: 0.4 })).toBe(0);
+    expect(strokesOf({ ...REST, finishAge: FINISH_HELD })).toBe(0);
+    expect(strokesOf({ ...REST, finishAge: FINISH_S })).toBe(0);
   });
 });
 
@@ -243,7 +250,7 @@ describe("<MicOrb>", () => {
     }
   });
 
-  test("still, finished is the check without the burst", () => {
+  test("still, finished keeps the same flat face without a check or burst", () => {
     const strokes = (state?: "finished") => {
       const ctx = fakeContext();
       const getContext = HTMLCanvasElement.prototype.getContext;
@@ -257,7 +264,8 @@ describe("<MicOrb>", () => {
         HTMLCanvasElement.prototype.getContext = getContext;
       }
     };
-    expect(strokes("finished")).toBe(strokes() + 1);
+    expect(strokes()).toBe(0);
+    expect(strokes("finished")).toBe(0);
   });
 
   test("follows a change of state", () => {

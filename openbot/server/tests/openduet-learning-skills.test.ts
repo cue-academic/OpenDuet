@@ -31,7 +31,7 @@ const skill = (slug: string) => {
 
 test("the package loads with every learning skill on Academic OS's own Bot", () => {
   const bot = tenant.agents.find((agent) => agent.id === tenant.tenantId);
-  expect(bot?.name).toBe("Academic OS");
+  expect(bot?.name).toBe("Cue");
   for (const slug of LEARNING_SKILLS) {
     expect(bot?.skills).toContain(slug);
     expect(skill(slug).title.length).toBeGreaterThan(0);

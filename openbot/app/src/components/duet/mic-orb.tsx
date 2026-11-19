@@ -18,9 +18,9 @@ import {
 } from "./mic-orb-draw";
 
 /**
- * What the orb is doing: resting, listening to you type, working, or landing a finished thing.
+ * What Cue is doing: resting, listening to you type, working, or landing a finished thing.
  * `finished` is a moment rather than a state: something the person allowed is done, and the orb
- * plays a check with a burst of rays once, over whatever it was doing, which carries on under it.
+ * gives a small nod once, over whatever it was doing, which carries on under it.
  * Hold it for `FINISH_MS`, then pass the state it was in before.
  */
 export type MicOrbState =
@@ -30,7 +30,7 @@ export type MicOrbState =
   | "done"
   | "finished";
 
-/** How long a finish plays: the check, its rays, and the eyes coming back. */
+/** How long a finish's small nod plays. */
 export const FINISH_MS = FINISH_S * 1000;
 
 type Look = readonly [number, number];
@@ -176,7 +176,7 @@ function poseAt(m: Motion, t: number, seed: number, reduced: boolean): OrbPose {
     key: Math.min(1, key),
     doneAge: m.doneAt < 0 ? -1 : t - m.doneAt,
     noticeAge: m.noticedAt < 0 ? -1 : t - m.noticedAt,
-    // Still, a finish is its check without the burst.
+    // A reduced-motion finish keeps the dot still.
     finishAge: m.finishedAt < 0 ? -1 : reduced ? FINISH_HELD : t - m.finishedAt,
     breath: Math.sin((Math.PI * 2 * t) / 5.5),
   };

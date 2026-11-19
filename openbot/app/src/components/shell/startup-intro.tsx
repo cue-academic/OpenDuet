@@ -365,8 +365,6 @@ export function StartupIntro({ tab }: { tab: ShellTab | null }) {
       <div className="startup-intro-lockup relative flex h-full flex-col items-center justify-center gap-5 lg:gap-6">
         <div className="startup-intro-flight" ref={orb}>
           <div className="startup-intro-orb relative grid">
-            <span className="startup-intro-bloom" />
-            <span className="startup-intro-ripple" />
             {reduced ? (
               <MicOrb colour={colour} size={INTRO_ORB_PX} still />
             ) : (

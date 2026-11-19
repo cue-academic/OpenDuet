@@ -187,7 +187,7 @@ function QuizQuestions({
           className="mt-2 h-1.5 overflow-hidden rounded-full bg-duet-tile"
         >
           <div
-            className="h-full rounded-full bg-[image:var(--duet-face-gradient)] transition-transform duration-[var(--duet-dur-swap)] motion-reduce:transition-none"
+            className="h-full rounded-full bg-duet-accent transition-transform duration-[var(--duet-dur-swap)] motion-reduce:transition-none"
             data-quiz-progress={(index + 1) / questions.length}
             style={{
               transform: `translateX(${((index + 1) / questions.length - 1) * 100}%)`,
@@ -310,7 +310,7 @@ function QuizResults({
         {perfect ? <ConfettiBurst /> : null}
         <p
           className={cn(
-            "type-display w-fit bg-[image:var(--duet-face-gradient)] bg-clip-text font-bold text-transparent tabular-nums outline-none",
+            "type-display w-fit font-bold text-duet-accent tabular-nums outline-none",
             perfect && "study-bounce",
           )}
           ref={score}
