@@ -1,0 +1,8 @@
+:8080 {
+	handle_path /intelligence/* {
+		reverse_proxy intelligence:7091
+	}
+	handle {
+		reverse_proxy app:3001
+	}
+}
