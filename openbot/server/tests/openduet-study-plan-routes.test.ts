@@ -4,6 +4,7 @@ import type {
   SchoolAssignment,
   SchoolSnapshot,
   StudyPlan,
+  TonightSample,
 } from "@openbot/shared/study";
 import { Hono, type MiddlewareHandler } from "hono";
 import type { AppVariables } from "../src/auth/guards";
@@ -423,6 +424,103 @@ function setUp() {
     clock,
   };
 }
+
+describe("Tonight on the sample week without a private pack", () => {
+  function sampleTonight() {
+    const { deps, store } = setUp();
+    const app = new Hono().route(
+      PATH,
+      createStudyRoutes(deps, signedIn("jordan")),
+    );
+    const sample: TonightSample = {
+      timeZone: "America/Los_Angeles",
+      assignments: [
+        {
+          id: "report",
+          title: "Chemistry lab report",
+          classId: "chem",
+          dueAt: "2026-11-06T07:59:00.000Z",
+          minutes: 45,
+        },
+        {
+          id: "quiz",
+          title: "Study for the trig quiz",
+          classId: "precalc",
+          dueAt: "2026-11-05T18:45:00.000Z",
+          minutes: 25,
+        },
+        {
+          id: "late",
+          title: "Overdue homework",
+          classId: "precalc",
+          dueAt: "2026-11-04T07:00:00.000Z",
+          minutes: 45,
+        },
+      ],
+    };
+    const post = (body: Record<string, unknown>) =>
+      app.request(`${PATH}/workshop/tonight`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    return { sample, post, store };
+  }
+
+  test("previews upcoming work, respects skips, and saves in the sample's time zone", async () => {
+    const { sample, post, store } = sampleTonight();
+    const preview = await post({ sample, minutes: 25 });
+    expect(preview.status).toBe(200);
+    expect(await preview.json()).toMatchObject({
+      planId: null,
+      plan: {
+        totalMinutes: 25,
+        blocks: [
+          {
+            assignmentId: "quiz",
+            title: "Study for the trig quiz",
+            date: TODAY,
+            start: "16:00",
+          },
+        ],
+        remaining: [{ assignmentId: "report", minutes: 45 }],
+      },
+    });
+    expect(await store.list("jordan", "plan")).toEqual([]);
+
+    const saved = await post({
+      sample,
+      skip: ["quiz"],
+      minutes: 30,
+      save: true,
+    });
+    expect(saved.status).toBe(200);
+    const { planId, plan } = (await saved.json()) as {
+      planId: string;
+      plan: StudyPlan;
+    };
+    expect(plan.blocks.map((block) => block.assignmentId)).toEqual(["report"]);
+    expect(await store.get("jordan", "plan", planId)).toMatchObject({
+      status: "applied",
+      data: { timeZone: sample.timeZone, blocks: plan.blocks },
+    });
+  });
+
+  test("accepts an empty sample and rejects a bad sample or a missing pack", async () => {
+    const { sample, post } = sampleTonight();
+    const empty = await post({ sample: { ...sample, assignments: [] } });
+    expect(empty.status).toBe(200);
+    expect(await empty.json()).toMatchObject({
+      planId: null,
+      plan: { blocks: [], totalMinutes: 0 },
+    });
+
+    expect(
+      (await post({ sample: { ...sample, timeZone: "Mars" } })).status,
+    ).toBe(400);
+    expect((await post({})).status).toBe(400);
+  });
+});
 
 describe("a study plan", () => {
   test("is read back by its id, and only by its owner", async () => {

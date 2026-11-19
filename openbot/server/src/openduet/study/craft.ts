@@ -1,4 +1,4 @@
-import type { SchoolSnapshot } from "@openbot/shared/study";
+import type { SchoolSnapshot, TonightSample } from "@openbot/shared/study";
 import { studyModels } from "../model-env";
 import type { PageBlock } from "../page-content";
 import {
@@ -8,8 +8,19 @@ import {
   teacherRuleOnFile,
 } from "../private-pack";
 import { writeGuideFromNotes } from "./guide-write";
-import { makePlan, type PlanDraft } from "./scheduler";
-import { addDays, weekdayOf, zonedInstant, zonedParts } from "./time";
+import {
+  type BusyEvent,
+  makePlan,
+  type PlanDraft,
+  type PlanTask,
+} from "./scheduler";
+import {
+  addDays,
+  weekdayOf,
+  type ZonedParts,
+  zonedInstant,
+  zonedParts,
+} from "./time";
 
 /**
  * Study guides, practice, tutoring and tonight's plan, built from the
@@ -384,7 +395,6 @@ export function planTonight(
   const today = parts.date;
   const soon = addDays(today, 2);
   const done = new Set(options.skip ?? []);
-  const minutes = askedMinutes(options.minutes);
   const names = new Map(pack.classes.map((row) => [row.id, row]));
   const open = pack.assignments.filter((item) => {
     if (done.has(item.id) || item.completed) return false;
@@ -393,7 +403,8 @@ export function planTonight(
   });
   const ordered = [...open].sort(
     (a, b) =>
-      eveningTier(a, today) - eveningTier(b, today) ||
+      eveningTier(a.due, a.kind !== "assignment" || inClassEssay(a), today) -
+        eveningTier(b.due, b.kind !== "assignment" || inClassEssay(b), today) ||
       a.due.localeCompare(b.due) ||
       a.dueTime.localeCompare(b.dueTime) ||
       a.title.localeCompare(b.title),
@@ -407,18 +418,62 @@ export function planTonight(
     minutes: sittingMinutes(item),
   }));
   const slice = packCalendarSlice(pack, today, addDays(today, 1), now);
+  const busy = slice.events.map((event) => ({
+    id: event.id,
+    date: event.date,
+    start: event.start,
+    end: event.end,
+    kind: "commitment" as const,
+  }));
+  return scheduleTonight(parts, tasks, busy, options.minutes);
+}
+
+export function planSampleTonight(
+  sample: TonightSample,
+  now: Date,
+  options: TonightOptions,
+): PlanDraft {
+  const parts = zonedParts(now, sample.timeZone);
+  const soon = addDays(parts.date, 2);
+  const skipped = new Set(options.skip);
+  const tasks = sample.assignments
+    .flatMap(({ dueAt, ...assignment }) => {
+      if (skipped.has(assignment.id) || assignment.minutes <= 0) return [];
+      const instant = new Date(dueAt);
+      if (instant <= now) return [];
+      const due = zonedParts(instant, sample.timeZone);
+      if (due.date > soon) return [];
+      return [
+        {
+          ...assignment,
+          due: due.date,
+          dueTime: due.time,
+          tier: eveningTier(due.date, due.minute < 12 * 60, parts.date),
+        },
+      ];
+    })
+    .sort(
+      (a, b) =>
+        a.tier - b.tier ||
+        a.due.localeCompare(b.due) ||
+        a.dueTime.localeCompare(b.dueTime),
+    );
+  return scheduleTonight(parts, tasks, [], options.minutes);
+}
+
+function scheduleTonight(
+  parts: ZonedParts,
+  tasks: PlanTask[],
+  busy: BusyEvent[],
+  asked: number | undefined,
+): PlanDraft {
+  const minutes = askedMinutes(asked);
   return makePlan(
     {
-      today,
+      today: parts.date,
       nowMinute: parts.minute,
       tasks,
-      busy: slice.events.map((event) => ({
-        id: event.id,
-        date: event.date,
-        start: event.start,
-        end: event.end,
-        kind: "commitment" as const,
-      })),
+      busy,
       availability: () => ({
         enabled: true,
         start: "16:00",
@@ -1058,14 +1113,13 @@ export function inClassEssay(
   );
 }
 
-function eveningTier(item: PrivateAssignment, today: string): number {
+function eveningTier(due: string, morning: boolean, today: string): number {
   const tomorrow = addDays(today, 1);
-  const morning = item.kind !== "assignment" || inClassEssay(item);
-  if (morning && item.due === tomorrow) return 0;
-  if (morning && item.due === today) return 1;
-  if (item.due === today) return 2;
-  if (morning && item.due === addDays(today, 2)) return 3;
-  if (item.due === tomorrow) return 4;
+  if (morning && due === tomorrow) return 0;
+  if (morning && due === today) return 1;
+  if (due === today) return 2;
+  if (morning && due === addDays(today, 2)) return 3;
+  if (due === tomorrow) return 4;
   return 5;
 }
 

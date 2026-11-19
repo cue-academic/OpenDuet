@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { stricterLevel } from "@openbot/shared/study";
 import { Hono } from "hono";
+import { z } from "zod";
 import type { AppVariables } from "../../auth/guards";
 import type { PageBlock } from "../page-content";
 import { loadEnabledPack, type PrivatePack } from "../private-pack";
@@ -20,6 +21,7 @@ import {
   eveningSummary,
   type GuideInput,
   gradeWritten,
+  planSampleTonight,
   planTonight,
   polishGuide,
   schoolSnapshotFromPack,
@@ -44,6 +46,35 @@ import { answerTutor, openTutor } from "./tutor-session";
  * Notes-first study tools: a guide, a quiz, a tutor check, and tonight's plan.
  * Mounted with the other study routes, so sign-in and errors are already handled.
  */
+
+const tonightSampleSchema = z.object({
+  timeZone: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .transform((value, context) => {
+      try {
+        return new Intl.DateTimeFormat("en-US", {
+          timeZone: value,
+        }).resolvedOptions().timeZone;
+      } catch {
+        context.addIssue({ code: "custom", message: "Invalid time zone" });
+        return z.NEVER;
+      }
+    }),
+  assignments: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(200),
+        classId: z.string().min(1).max(200),
+        title: z.string().trim().min(1).max(500),
+        dueAt: z.iso.datetime(),
+        minutes: z.number().min(0),
+      }),
+    )
+    .max(100),
+});
 
 export function craftRoutes(deps: StudyRouteDeps) {
   const routes = new Hono<{ Variables: AppVariables }>();
@@ -469,19 +500,35 @@ export function craftRoutes(deps: StudyRouteDeps) {
   });
 
   routes.post("/workshop/tonight", async (context) => {
-    const pack = requirePack();
     const body = (await context.req.json().catch(() => null)) as {
       skip?: unknown;
       save?: unknown;
       planId?: unknown;
       minutes?: unknown;
+      sample?: unknown;
     } | null;
     const skip = Array.isArray(body?.skip)
       ? body.skip.filter((id): id is string => typeof id === "string")
       : [];
     const minutes =
       typeof body?.minutes === "number" ? body.minutes : undefined;
-    const plan = planTonight(pack, now(), { skip, minutes });
+    const at = now();
+    const options = { skip, minutes };
+    let timeZone: string;
+    let plan: ReturnType<typeof planTonight>;
+    if (body?.sample === undefined) {
+      const pack = requirePack();
+      timeZone = pack.timeZone;
+      plan = planTonight(pack, at, options);
+    } else {
+      const sample = tonightSampleSchema.safeParse(body.sample);
+      if (!sample.success)
+        throw new StudyInputError(
+          "Couldn't read your sample week. Reload the page and try again.",
+        );
+      timeZone = sample.data.timeZone;
+      plan = planSampleTonight(sample.data, at, options);
+    }
     const save = body?.save === true;
     let planId: string | null = null;
     if (save) {
@@ -512,7 +559,7 @@ export function craftRoutes(deps: StudyRouteDeps) {
         id,
         status: "applied" as const,
         reason: eveningSummary(plan),
-        timeZone: pack.timeZone,
+        timeZone,
         startDate: plan.startDate,
         days: plan.days,
         blocks: plan.blocks,
@@ -522,7 +569,7 @@ export function craftRoutes(deps: StudyRouteDeps) {
         createdAt: stamp,
         appliedAt: stamp,
       };
-      const span = planSpan(stored.blocks, pack.timeZone);
+      const span = planSpan(stored.blocks, timeZone);
       await deps.store.put(owner, {
         id,
         kind: "plan",

@@ -385,6 +385,18 @@ export const PROGRESS_NOTE =
  * Study plans and the calendar
  * ---------------------------------------------------------------------------------------------- */
 
+/** The open work shown in Coach's sample week, which lives in the browser. */
+export type TonightSample = {
+  timeZone: string;
+  assignments: {
+    id: string;
+    classId: string;
+    title: string;
+    dueAt: string;
+    minutes: number;
+  }[];
+};
+
 export type StudyBlock = {
   id: string;
   /** The assignment it works on, or null for general study. */
