@@ -195,7 +195,7 @@ export function CoachScreen() {
         </div>
       ) : null}
 
-      <TonightPlan key={state.source ?? "sample"} state={state} />
+      <TonightPlan state={state} />
       <TodayHero now={now} pace={pace} state={state} />
       <CheckInCard now={now} onEarned={onEarned} pace={pace} state={state} />
       <DoNextCard

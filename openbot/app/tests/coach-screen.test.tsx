@@ -203,6 +203,23 @@ test("Plan tonight on a private week still uses the server school pack", async (
   expect(posted[0]?.body).toEqual({ skip: [], minutes: 120 });
 });
 
+test("starting empty clears the sample Tonight plan", async () => {
+  const user = userEvent.setup({ document });
+  const view = draw();
+  const tonight = within(await view.findByLabelText("Tonight"));
+  await user.click(tonight.getByRole("button", { name: "Plan tonight" }));
+  await tonight.findByRole("button", { name: "Replan" });
+
+  await user.click(view.getByRole("button", { name: "Coach settings" }));
+  await user.click(await view.findByRole("button", { name: "Start empty" }));
+  expect(getCoachState().demo).toBe(false);
+  const fresh = within(view.getByLabelText("Tonight"));
+  expect(
+    fresh.queryByText("Study for Unit 4 quiz: trig identities"),
+  ).toBeNull();
+  expect(fresh.getByRole("button", { name: "Plan tonight" })).toBeTruthy();
+});
+
 test("a sample week saved in the old colours takes the calendar's", async () => {
   updateCoach((s) => ({
     ...s,

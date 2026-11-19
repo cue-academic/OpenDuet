@@ -112,8 +112,23 @@ function sampleWeek(state: CoachState): TonightSample {
  * off asks for a new plan without that work, and replaces the calendar copy.
  */
 export function TonightPlan({ state }: { state: CoachState }) {
+  const storageKey =
+    state.source === "private"
+      ? STORE
+      : `${STORE}.${state.demo ? "sample" : "personal"}`;
+  return (
+    <TonightPlanCard key={storageKey} state={state} storageKey={storageKey} />
+  );
+}
+
+function TonightPlanCard({
+  state,
+  storageKey,
+}: {
+  state: CoachState;
+  storageKey: string;
+}) {
   const canSave = state.source === "private";
-  const storageKey = canSave ? STORE : `${STORE}.sample`;
   const planner = useMutation(planTonightMutationOptions(useQueryClient()));
   const [rows, setRows] = useState<Row[]>([]);
   const [summary, setSummary] = useState("");
@@ -183,11 +198,8 @@ export function TonightPlan({ state }: { state: CoachState }) {
       const body = await planner.mutateAsync({
         skip: nextSkip,
         minutes: nextMinutes,
-        ...(canSave
-          ? save || planId
-            ? { save: true, planId }
-            : {}
-          : { sample: sampleWeek(state) }),
+        ...(canSave && (save || planId) ? { save: true, planId } : {}),
+        ...(!canSave ? { sample: sampleWeek(state) } : {}),
       });
       setRows(rowsOf(body.plan.blocks));
       setSummary(body.plan.summary);
