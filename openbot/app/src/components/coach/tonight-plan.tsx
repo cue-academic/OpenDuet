@@ -112,7 +112,8 @@ function sampleWeek(state: CoachState): TonightSample {
  * off asks for a new plan without that work, and replaces the calendar copy.
  */
 export function TonightPlan({ state }: { state: CoachState }) {
-  const storageKey = state.source === "private" ? STORE : `${STORE}.sample`;
+  const canSave = state.source === "private";
+  const storageKey = canSave ? STORE : `${STORE}.sample`;
   const planner = useMutation(planTonightMutationOptions(useQueryClient()));
   const [rows, setRows] = useState<Row[]>([]);
   const [summary, setSummary] = useState("");
@@ -182,8 +183,11 @@ export function TonightPlan({ state }: { state: CoachState }) {
       const body = await planner.mutateAsync({
         skip: nextSkip,
         minutes: nextMinutes,
-        ...(save || planId ? { save: true, planId } : {}),
-        ...(state.source !== "private" ? { sample: sampleWeek(state) } : {}),
+        ...(canSave
+          ? save || planId
+            ? { save: true, planId }
+            : {}
+          : { sample: sampleWeek(state) }),
       });
       setRows(rowsOf(body.plan.blocks));
       setSummary(body.plan.summary);
@@ -362,20 +366,22 @@ export function TonightPlan({ state }: { state: CoachState }) {
       ) : null}
       {rows.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-full bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
-            disabled={busy !== ""}
-            onClick={() => void load(skip, true)}
-            type="button"
-          >
-            <DuetIcon name="calendar" size={16} />
-            {busy === "save"
-              ? "Saving…"
-              : planId
-                ? "Update calendar"
-                : "Put on my calendar"}
-          </button>
-          {planId ? (
+          {canSave ? (
+            <button
+              className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-full bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
+              disabled={busy !== ""}
+              onClick={() => void load(skip, true)}
+              type="button"
+            >
+              <DuetIcon name="calendar" size={16} />
+              {busy === "save"
+                ? "Saving…"
+                : planId
+                  ? "Update calendar"
+                  : "Put on my calendar"}
+            </button>
+          ) : null}
+          {canSave && planId ? (
             <a
               className="type-caption inline-flex min-h-11 items-center rounded-full px-3 font-semibold text-duet-ink"
               href="/calendar"

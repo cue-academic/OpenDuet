@@ -514,21 +514,20 @@ export function craftRoutes(deps: StudyRouteDeps) {
       typeof body?.minutes === "number" ? body.minutes : undefined;
     const at = now();
     const options = { skip, minutes };
-    let timeZone: string;
-    let plan: ReturnType<typeof planTonight>;
-    if (body?.sample === undefined) {
-      const pack = requirePack();
-      timeZone = pack.timeZone;
-      plan = planTonight(pack, at, options);
-    } else {
+    if (body?.sample !== undefined) {
+      if (body.save === true)
+        throw new StudyInputError("Sample plans don't go on your calendar.");
       const sample = tonightSampleSchema.safeParse(body.sample);
       if (!sample.success)
         throw new StudyInputError(
           "Couldn't read your sample week. Reload the page and try again.",
         );
-      timeZone = sample.data.timeZone;
-      plan = planSampleTonight(sample.data, at, options);
+      return context.json(
+        tonightResponse(planSampleTonight(sample.data, at, options), null),
+      );
     }
+    const pack = requirePack();
+    const plan = planTonight(pack, at, options);
     const save = body?.save === true;
     let planId: string | null = null;
     if (save) {
@@ -559,7 +558,7 @@ export function craftRoutes(deps: StudyRouteDeps) {
         id,
         status: "applied" as const,
         reason: eveningSummary(plan),
-        timeZone,
+        timeZone: pack.timeZone,
         startDate: plan.startDate,
         days: plan.days,
         blocks: plan.blocks,
@@ -569,7 +568,7 @@ export function craftRoutes(deps: StudyRouteDeps) {
         createdAt: stamp,
         appliedAt: stamp,
       };
-      const span = planSpan(stored.blocks, timeZone);
+      const span = planSpan(stored.blocks, pack.timeZone);
       await deps.store.put(owner, {
         id,
         kind: "plan",
@@ -581,19 +580,26 @@ export function craftRoutes(deps: StudyRouteDeps) {
       });
       planId = id;
     }
-    return context.json({
-      planId,
-      plan: {
-        totalMinutes: plan.totalMinutes,
-        warnings: plan.warnings,
-        remaining: plan.remaining,
-        blocks: plan.blocks,
-        summary: eveningSummary(plan),
-      },
-    });
+    return context.json(tonightResponse(plan, planId));
   });
 
   return routes;
+}
+
+function tonightResponse(
+  plan: ReturnType<typeof planTonight>,
+  planId: string | null,
+) {
+  return {
+    planId,
+    plan: {
+      totalMinutes: plan.totalMinutes,
+      warnings: plan.warnings,
+      remaining: plan.remaining,
+      blocks: plan.blocks,
+      summary: eveningSummary(plan),
+    },
+  };
 }
 
 async function ruledInput(

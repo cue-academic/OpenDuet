@@ -165,6 +165,9 @@ test("Plan tonight sends the sample's unfinished work and shows the returned pla
   expect(
     await tonight.findByText("Study for Unit 4 quiz: trig identities"),
   ).toBeTruthy();
+  expect(
+    tonight.queryByRole("button", { name: "Put on my calendar" }),
+  ).toBeNull();
   expect(posted).toEqual([
     {
       url: "/api/openduet/study/workshop/tonight",
@@ -194,7 +197,9 @@ test("Plan tonight on a private week still uses the server school pack", async (
   const view = draw();
   const tonight = within(await view.findByLabelText("Tonight"));
   await user.click(tonight.getByRole("button", { name: "Plan tonight" }));
-  await tonight.findByRole("button", { name: "Replan" });
+  expect(
+    await tonight.findByRole("button", { name: "Put on my calendar" }),
+  ).toBeTruthy();
   expect(posted[0]?.body).toEqual({ skip: [], minutes: 120 });
 });
 

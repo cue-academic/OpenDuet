@@ -467,7 +467,7 @@ describe("Tonight on the sample week without a private pack", () => {
     return { sample, post, store };
   }
 
-  test("previews upcoming work, respects skips, and saves in the sample's time zone", async () => {
+  test("previews upcoming work in the sample's time zone and respects skips", async () => {
     const { sample, post, store } = sampleTonight();
     const preview = await post({ sample, minutes: 25 });
     expect(preview.status).toBe(200);
@@ -486,24 +486,15 @@ describe("Tonight on the sample week without a private pack", () => {
         remaining: [{ assignmentId: "report", minutes: 45 }],
       },
     });
-    expect(await store.list("jordan", "plan")).toEqual([]);
+    const replanned = await post({ sample, skip: ["quiz"], minutes: 25 });
+    expect(replanned.status).toBe(200);
+    expect(await replanned.json()).toMatchObject({
+      planId: null,
+      plan: { blocks: [{ assignmentId: "report" }] },
+    });
 
-    const saved = await post({
-      sample,
-      skip: ["quiz"],
-      minutes: 30,
-      save: true,
-    });
-    expect(saved.status).toBe(200);
-    const { planId, plan } = (await saved.json()) as {
-      planId: string;
-      plan: StudyPlan;
-    };
-    expect(plan.blocks.map((block) => block.assignmentId)).toEqual(["report"]);
-    expect(await store.get("jordan", "plan", planId)).toMatchObject({
-      status: "applied",
-      data: { timeZone: sample.timeZone, blocks: plan.blocks },
-    });
+    expect((await post({ sample, save: true })).status).toBe(400);
+    expect(await store.list("jordan", "plan")).toEqual([]);
   });
 
   test("accepts an empty sample and rejects a bad sample or a missing pack", async () => {
