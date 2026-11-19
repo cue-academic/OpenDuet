@@ -335,6 +335,81 @@ describe("how many a person may have switched on", () => {
  * ambiguous branches are refusals a model has to be able to recover from in language.
  */
 describe("resolving the channel to post into", () => {
+  test("defaults to the current home conversation among multiple shared channels", async () => {
+    const { owner, agentId, channel } = await setUp();
+    await createChannel(owner, [agentId]);
+    const routine = await store.create({
+      ownerUserId: owner.id,
+      agentId,
+      sourceThreadId: channel.threadId,
+      instruction: "Review my notes here.",
+      cron: DAILY,
+    });
+    expect(routine.channelId).toBe(channel.id);
+  });
+
+  test("accepts an unambiguous shared channel name, including on update", async () => {
+    const { owner, agentId, channel } = await setUp();
+    await database
+      .update(channels)
+      .set({ name: "Study Room" })
+      .where(eq(channels.id, channel.id));
+    const routine = await store.create({
+      ownerUserId: owner.id,
+      agentId,
+      channelId: "study room",
+      instruction: "Review my notes.",
+      cron: DAILY,
+    });
+    expect(routine.channelId).toBe(channel.id);
+    expect(
+      (await store.update(owner.id, routine.id, { channelId: "Study Room" }))
+        .channelId,
+    ).toBe(channel.id);
+  });
+
+  test("refuses duplicate names and never uses another person's current thread", async () => {
+    const { owner, agentId, channel } = await setUp();
+    const second = await createChannel(owner, [agentId]);
+    await database
+      .update(channels)
+      .set({ name: "Study" })
+      .where(eq(channels.id, channel.id));
+    await database
+      .update(channels)
+      .set({ name: "Study" })
+      .where(eq(channels.id, second.id));
+    await expect(
+      store.create({
+        ownerUserId: owner.id,
+        agentId,
+        channelId: "Study",
+        instruction: "Review notes.",
+        cron: DAILY,
+      }),
+    ).rejects.toThrow(/More than one/);
+    await expect(
+      store.create({
+        ownerUserId: owner.id,
+        agentId,
+        sourceThreadId: "not-my-thread",
+        instruction: "Review notes.",
+        cron: DAILY,
+      }),
+    ).rejects.toThrow(/more than one channel/);
+    expect(
+      (
+        await store.create({
+          ownerUserId: owner.id,
+          agentId,
+          channelId: channel.id,
+          instruction: "Review notes.",
+          cron: DAILY,
+        })
+      ).channelId,
+    ).toBe(channel.id);
+  });
+
   test("accepts a channel the owner and the agent share", async () => {
     const { owner, agentId, channel } = await setUp();
 
