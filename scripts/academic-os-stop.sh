@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop the Academic OS demo: the app, the API, and local intelligence.
+# Stop the Cue demo: the app, the API, and local intelligence.
 # On a Mac, also stop Postgres when this demo started it.
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit
@@ -35,4 +35,4 @@ if [ "$(uname -s)" = "Darwin" ] && [ -f openbot/.logs/postgres.owner ]; then
   rm -f openbot/.logs/postgres.owner
 fi
 
-echo "Academic OS has stopped."
+echo "Cue has stopped."

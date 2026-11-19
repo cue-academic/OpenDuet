@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { CueWordmark } from "@/components/duet/cue-wordmark";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { appConfig } from "@/lib/generated/application-config";
 import { ChatOrb, ChatStep, initialOf } from "./header";
@@ -20,12 +21,21 @@ export function DesktopBar() {
         className="flex min-w-0 shrink-0 items-center gap-2.5 rounded-full pr-2 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
         to="/"
       >
-        <ChatOrb size={40} />
-        <span
-          className={`${INTRO_NAME_TARGET} study-display type-nav font-semibold`}
-        >
-          {appConfig.brand.productName}
-        </span>
+        {appConfig.brand.productName === "Cue" ? (
+          <CueWordmark
+            face={<ChatOrb size={22} />}
+            nameClassName={INTRO_NAME_TARGET}
+          />
+        ) : (
+          <>
+            <ChatOrb size={40} />
+            <span
+              className={`${INTRO_NAME_TARGET} study-display type-nav font-semibold`}
+            >
+              {appConfig.brand.productName}
+            </span>
+          </>
+        )}
       </Link>
       <div className="min-w-0 flex-1">
         <div className="w-fit max-w-full">

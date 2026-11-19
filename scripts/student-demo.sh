@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Academic OS demo: starts the fake Google with Jordan's school inbox and calendar on port 4900,
+# Cue demo: starts the fake Google with Jordan's school inbox and calendar on port 4900,
 # and points the app at it. Run it before scripts/start.sh. Development only: the app ignores the
 # fake when NODE_ENV=production.
 set -euo pipefail
@@ -23,7 +23,7 @@ Once the app is running (bash scripts/start.sh), connect the demo inbox once:
   1. /admin/plugins/google-workspace: turn it on, type anything as the client ID and secret,
      and press Refresh tools.
   2. /connections/google-workspace: press Connect.
-  3. /admin/plugins/google-workspace/bots/openduet: give Academic OS gmail_search_messages,
+  3. /admin/plugins/google-workspace/bots/openduet: give Cue gmail_search_messages,
      gmail_read_message and calendar_list_events.
 
 The demo's due dates are worked out from today each time the fake starts.

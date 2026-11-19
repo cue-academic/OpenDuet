@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command for the Academic OS demo: Postgres, API, and the app.
+# One command for the Cue demo: Postgres, API, and the app.
 # A school pack in data/private/ is used when it is there. Otherwise Jordan's sample week is.
 set -euo pipefail
 cd "$(dirname "$0")/.." || exit
@@ -310,7 +310,7 @@ if [ ! -f openbot/.logs/demo-seeded ]; then
   touch openbot/.logs/demo-seeded
 fi
 
-echo "Academic OS is at http://127.0.0.1:$APP_PORT"
+echo "Cue is at http://127.0.0.1:$APP_PORT"
 if [ "$(uname -s)" = "Darwin" ]; then
   open "http://127.0.0.1:$APP_PORT" >/dev/null 2>&1 || true
 fi
