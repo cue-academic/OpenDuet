@@ -9,6 +9,7 @@ import { z } from "zod";
 import { currentApprovalContext } from "../src/approvals/types";
 import { buildAgents } from "../src/copilot";
 import { REPLIES_TOOL, replyTools } from "../src/openduet/replies";
+import { pageTools, type PageRecord } from "../src/openduet/pages";
 
 /*
  * Reply chips as a real built-in run makes them: the CopilotKit agent, the AI SDK's own step loop,
@@ -35,6 +36,71 @@ afterAll(async () => {
 });
 
 const READ = "gmail_read_message";
+
+test("Make preserves optional fields at the provider boundary for guides and decks", async () => {
+  const base = process.env.OPENAI_BASE_URL;
+  const requests: { tools: { name: string; strict?: boolean }[] }[] = [];
+  const proxy = Bun.serve({
+    port: 0,
+    async fetch(request) {
+      const body = await request.text();
+      requests.push(JSON.parse(body));
+      return fetch(`${base}${new URL(request.url).pathname}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+      });
+    },
+  });
+  process.env.OPENAI_BASE_URL = proxy.url.toString().replace(/\/$/, "");
+  try {
+    for (const content of [
+      {
+        kind: "doc",
+        title: "Photosynthesis study guide",
+        blocks: [{ type: "text", text: "Plants use light to make glucose." }],
+      },
+      {
+        kind: "slides",
+        title: "Photosynthesis",
+        slides: ["Light", "Water", "Glucose"].map((title) => ({
+          title,
+          blocks: [{ type: "text", text: title }],
+        })),
+      },
+    ]) {
+      const saved: unknown[] = [];
+      const tools = pageTools({
+        initiator: { kind: "person" },
+        save: async (value) => {
+          saved.push(value);
+          return {
+            ...value,
+            id: "saved",
+            slideCount: value.slides?.length ?? 0,
+          } as PageRecord;
+        },
+      });
+      await turn(
+        [{ calls: [{ name: "make_page", args: content }] }, { text: "Saved." }],
+        undefined,
+        { tools },
+      );
+      expect(saved).toHaveLength(1);
+      expect(saved[0]).toMatchObject(content);
+      expect(
+        requests.at(-1)?.tools.find((tool) => tool.name === "make_page")
+          ?.strict,
+      ).toBe(false);
+      expect(
+        requests.at(-1)?.tools.find((tool) => tool.name === READ)?.strict,
+      ).toBeUndefined();
+    }
+  } finally {
+    process.env.OPENAI_BASE_URL = base;
+    proxy.stop(true);
+  }
+});
 const ANSWER =
   "Ana wants 200 mugs instead of 120 for the same Friday. The kiln is down until Monday, so 200 by Friday isn't possible.\n\nShould I draft a yes for Tuesday?";
 

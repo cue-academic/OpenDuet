@@ -299,7 +299,11 @@ export function startLocalIntelligence(options: {
       reply(ws, joinRef, ref, topic, {});
       return;
     }
-    if (event === "phx_join" && topic.startsWith("ingestion:")) {
+    if (
+      ws.data.kind === "runner" &&
+      event === "phx_join" &&
+      topic.startsWith("ingestion:")
+    ) {
       const threadId = typeof body.thread_id === "string" ? body.thread_id : "";
       if (threadId) ensure(threadId, "local", "openduet");
       reply(ws, joinRef, ref, topic, { capabilities: [BATCH] });
@@ -314,6 +318,7 @@ export function startLocalIntelligence(options: {
       return;
     }
     if (
+      ws.data.kind === "runner" &&
       (event === "events" || event === "event") &&
       topic.startsWith("ingestion:")
     ) {
@@ -330,6 +335,13 @@ export function startLocalIntelligence(options: {
         if (!item.runId) item.runId = runId;
         rememberEvent(thread, item);
         broadcast(thread, item);
+        // The platform frees a web run's lock when the run ends: the runtime only cleans it up on
+        // failure, so holding it to its TTL here refuses the next message with 409.
+        if (
+          (item.type === "RUN_FINISHED" || item.type === "RUN_ERROR") &&
+          thread.lock?.runId === item.runId
+        )
+          thread.lock = null;
       }
       reply(ws, joinRef, ref, topic, {});
       return;

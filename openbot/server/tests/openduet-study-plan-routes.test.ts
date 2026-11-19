@@ -1,14 +1,19 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type {
   CalendarView,
   SchoolAssignment,
   SchoolSnapshot,
+  StudyBlock,
   StudyPlan,
   TonightSample,
 } from "@openbot/shared/study";
 import { Hono, type MiddlewareHandler } from "hono";
 import type { AppVariables } from "../src/auth/guards";
 import { CALENDAR_LIST, type CallTool } from "../src/openduet/brief";
+import { loadPrivatePack } from "../src/openduet/private-pack";
 import type {
   SchoolRead,
   SchoolService,
@@ -1069,5 +1074,244 @@ describe("the calendar", () => {
       ((await response.json()) as { calendar: CalendarView }).calendar.today,
     ).toBe(TODAY);
     expect((await app.request(`${PATH}/plans`)).status).toBe(404);
+  });
+});
+
+describe("Tonight plan saves", () => {
+  let root: string;
+  let previousFlag: string | undefined;
+  let previousDir: string | undefined;
+
+  beforeAll(() => {
+    previousFlag = process.env.ACADEMIC_OS_PRIVATE_DEMO;
+    previousDir = process.env.ACADEMIC_OS_DATA_DIR;
+    root = mkdtempSync(join(tmpdir(), "tonight-routes-"));
+    writeFileSync(
+      join(root, "classes.json"),
+      JSON.stringify({
+        timezone: TZ,
+        classes: [
+          {
+            id: "history",
+            name: "History",
+            status: "Current",
+            teachers: [],
+            materials: [],
+          },
+        ],
+      }),
+    );
+    writeFileSync(
+      join(root, "assignments_and_tests.json"),
+      JSON.stringify({
+        current_term_2026_2027: [
+          {
+            name: "Essay",
+            class_id: "history",
+            type: "homework",
+            due: "2026-11-05",
+          },
+        ],
+      }),
+    );
+    process.env.ACADEMIC_OS_PRIVATE_DEMO = "1";
+    process.env.ACADEMIC_OS_DATA_DIR = root;
+  });
+
+  afterAll(() => {
+    if (previousFlag === undefined) delete process.env.ACADEMIC_OS_PRIVATE_DEMO;
+    else process.env.ACADEMIC_OS_PRIVATE_DEMO = previousFlag;
+    if (previousDir === undefined) delete process.env.ACADEMIC_OS_DATA_DIR;
+    else process.env.ACADEMIC_OS_DATA_DIR = previousDir;
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  function tonightSetup() {
+    const setup = setUp();
+    const appFor = (owner: string) =>
+      new Hono().route(PATH, createStudyRoutes(setup.deps, signedIn(owner)));
+    async function save(body: Record<string, unknown>, owner = "jordan") {
+      const response = await appFor(owner).request(`${PATH}/workshop/tonight`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return {
+        status: response.status,
+        body: (await response.json()) as {
+          planId: string | null;
+          plan: { totalMinutes: number; blocks: StudyBlock[] };
+        },
+      };
+    }
+    return { ...setup, save };
+  }
+
+  test("leaves unrelated applied plans untouched, even when sent their id", async () => {
+    const { store, save } = tonightSetup();
+    const future = await store.put("jordan", {
+      id: "next-week",
+      kind: "plan",
+      status: "applied",
+      startsAt: zonedInstant("2026-11-10", "18:00", TZ),
+      endsAt: zonedInstant("2026-11-10", "19:00", TZ),
+      data: { status: "applied", blocks: [] },
+    });
+    const result = await save({ save: true, planId: future.id });
+    expect(result.status).toBe(200);
+    expect(result.body.plan.blocks.length).toBeGreaterThan(0);
+    expect(result.body.planId).not.toBe(future.id);
+    expect(await store.get("jordan", "plan", future.id)).toEqual(future);
+    expect(
+      await store.list("jordan", "plan", { status: "applied" }),
+    ).toHaveLength(2);
+  });
+
+  test("preview and save avoid another applied plan tonight, but not their own row", async () => {
+    const { store, save } = tonightSetup();
+    const first = await save({ save: true, minutes: 30 });
+    expect(first.status).toBe(200);
+    const tonightId = first.body.planId ?? "";
+    const tonight = await store.get("jordan", "plan", tonightId);
+    if (!tonight) throw new Error("missing Tonight plan");
+    const block = first.body.plan.blocks[0];
+    if (!block) throw new Error("missing Tonight block");
+    const other = await store.put("jordan", {
+      id: "other-applied-plan",
+      kind: "plan",
+      status: "applied",
+      startsAt: zonedInstant(block.date, block.start, TZ),
+      endsAt: zonedInstant(block.date, block.end, TZ),
+      data: {
+        ...tonight.data,
+        id: "other-applied-plan",
+        blocks: [{ ...block, id: "other-block", assignmentId: null }],
+      },
+    });
+    for (const saving of [false, true, true]) {
+      const result = await save({ save: saving, minutes: 60 });
+      expect(result.status).toBe(200);
+      expect(result.body.plan.blocks.length).toBeGreaterThan(0);
+      expect(
+        result.body.plan.blocks.every(
+          (planned) =>
+            planned.date !== block.date ||
+            planned.end <= block.start ||
+            planned.start >= block.end,
+        ),
+      ).toBe(true);
+      expect(result.body.plan.totalMinutes).toBe(first.body.plan.totalMinutes);
+      if (saving) expect(result.body.planId).toBe(tonightId);
+      else
+        expect(await store.get("jordan", "plan", tonightId)).toEqual(tonight);
+    }
+    expect(await store.get("jordan", "plan", other.id)).toEqual(other);
+  });
+
+  test("replaces only its own daily plan on repeated or concurrent saves", async () => {
+    const { store, save } = tonightSetup();
+    const first = await save({ save: true, minutes: 15 });
+    const second = await save({ save: true, minutes: 30 });
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(second.body.planId).toBe(first.body.planId);
+    expect(second.body.plan.totalMinutes).toBeGreaterThan(
+      first.body.plan.totalMinutes,
+    );
+    const concurrent = await Promise.all([
+      save({ save: true, minutes: 15 }),
+      save({ save: true, minutes: 30 }),
+    ]);
+    expect(concurrent.every((result) => result.status === 200)).toBe(true);
+    expect(concurrent.map((result) => result.body.planId)).toEqual([
+      first.body.planId,
+      first.body.planId,
+    ]);
+    const plans = await store.list("jordan", "plan", { status: "applied" });
+    expect(plans).toHaveLength(1);
+    expect(concurrent.map((result) => result.body.plan.totalMinutes)).toContain(
+      plans[0]?.data.totalMinutes,
+    );
+  });
+
+  test("does not reuse another student's or another evening's plan", async () => {
+    const { store, save, advance } = tonightSetup();
+    const first = await save({ save: true });
+    const saved = await store.get("jordan", "plan", first.body.planId ?? "");
+    const other = await save(
+      { save: true, planId: first.body.planId },
+      "blair",
+    );
+    expect(other.status).toBe(200);
+    expect(other.body.planId).not.toBe(first.body.planId);
+    advance(24 * 60);
+    const tomorrow = await save({ save: true, planId: first.body.planId });
+    expect(tomorrow.status).toBe(200);
+    expect(tomorrow.body.planId).not.toBe(first.body.planId);
+    expect(await store.get("jordan", "plan", first.body.planId ?? "")).toEqual(
+      saved,
+    );
+    expect(
+      await store.list("jordan", "plan", { status: "applied" }),
+    ).toHaveLength(2);
+  });
+
+  test("a failed replacement leaves the previous plan and unrelated plans intact", async () => {
+    const { store, save } = tonightSetup();
+    const first = await save({ save: true, minutes: 15 });
+    await store.put("jordan", {
+      id: "next-week",
+      kind: "plan",
+      status: "applied",
+      data: { status: "applied", blocks: [] },
+    });
+    const before = await store.list("jordan", "plan");
+    const put = store.put;
+    store.put = async () => {
+      throw new Error("injected replacement failure");
+    };
+    const failed = await save({
+      save: true,
+      planId: first.body.planId,
+      minutes: 30,
+    });
+    expect(failed.status).toBe(503);
+    expect(await store.list("jordan", "plan")).toEqual(before);
+    store.put = put;
+    const retry = await save({
+      save: true,
+      planId: first.body.planId,
+      minutes: 30,
+    });
+    expect(retry.status).toBe(200);
+    expect(retry.body.planId).toBe(first.body.planId);
+    expect(retry.body.plan.totalMinutes).toBeGreaterThan(
+      first.body.plan.totalMinutes,
+    );
+    expect((await store.get("jordan", "plan", "next-week"))?.status).toBe(
+      "applied",
+    );
+  });
+
+  test("preview writes nothing and saving an empty evening only replaces Tonight", async () => {
+    const { store, save } = tonightSetup();
+    const preview = await save({ minutes: 30 });
+    expect(preview.status).toBe(200);
+    expect(preview.body.planId).toBeNull();
+    expect(await store.list("jordan", "plan")).toEqual([]);
+    const first = await save({ save: true });
+    const empty = await save({
+      save: true,
+      skip: loadPrivatePack(root).assignments.map(
+        (assignment) => assignment.id,
+      ),
+    });
+    expect(empty.status).toBe(200);
+    expect(empty.body.planId).toBe(first.body.planId);
+    expect(empty.body.plan.blocks).toEqual([]);
+    const plans = await store.list("jordan", "plan");
+    expect(plans).toHaveLength(1);
+    expect(plans[0]?.startsAt).toBeNull();
+    expect(plans[0]?.endsAt).toBeNull();
   });
 });

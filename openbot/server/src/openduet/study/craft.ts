@@ -109,7 +109,12 @@ export function craftGuide(
     if (!keepSentence(sentence, source)) dropped += 1;
   }
   const questions = recallQuestions(terms, input);
-  const title = clip(`${input.className} study guide`, 80);
+  const title = clip(
+    input.focus === input.className
+      ? `${input.className} study guide`
+      : `${input.className}: ${input.focus} study guide`,
+    80,
+  );
   const summary = clip(
     input.due ? `${input.focus} · due ${input.due}` : input.focus,
     140,
@@ -374,6 +379,7 @@ export type TonightOptions = {
   skip?: readonly string[];
   /** Study minutes the student actually has. 120 when they have not said. */
   minutes?: number;
+  busy?: readonly BusyEvent[];
 };
 
 /**
@@ -425,7 +431,12 @@ export function planTonight(
     end: event.end,
     kind: "commitment" as const,
   }));
-  return scheduleTonight(parts, tasks, busy, options.minutes);
+  return scheduleTonight(
+    parts,
+    tasks,
+    [...busy, ...(options.busy ?? [])],
+    options.minutes,
+  );
 }
 
 export function planSampleTonight(
@@ -1089,7 +1100,7 @@ function tonightOptions(
   value: readonly string[] | TonightOptions,
 ): TonightOptions {
   if (isSkipList(value)) return { skip: [...value] };
-  return { skip: value.skip, minutes: value.minutes };
+  return { skip: value.skip, minutes: value.minutes, busy: value.busy };
 }
 
 function askedMinutes(value: number | undefined): number {
