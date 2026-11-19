@@ -1,0 +1,3 @@
+{$CUE_DOMAIN} {
+	reverse_proxy app:3001
+}

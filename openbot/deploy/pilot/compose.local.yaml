@@ -1,0 +1,46 @@
+# TEST ONLY. Never combine this override with a public deployment.
+services:
+  intelligence:
+    image: ${CUE_APP_IMAGE:-cue-pilot:local}
+    working_dir: /app/server
+    entrypoint: [bun, -e]
+    command:
+      - |
+        import { startLocalIntelligence } from './src/openduet/local-intelligence.ts';
+        const service = startLocalIntelligence({
+          apiKey: process.env.INTELLIGENCE_API_KEY,
+          hostname: '0.0.0.0',
+          port: 7091,
+        });
+        process.on('SIGTERM', () => { service.stop(); process.exit(0); });
+    environment:
+      INTELLIGENCE_API_KEY: ${INTELLIGENCE_API_KEY:?Set a synthetic local test key}
+    healthcheck:
+      disable: true
+    networks: [web]
+
+  app:
+    environment: &local-environment
+      NODE_ENV: development
+      OPENBOT_SINGLE_USER: "true"
+      BETTER_AUTH_SECRET: ""
+      BETTER_AUTH_URL: ""
+      GOOGLE_OAUTH_CLIENT_ID: ""
+      GOOGLE_OAUTH_CLIENT_SECRET: ""
+      OPENBOT_PUBLIC_URL: http://localhost:8080
+      OPENBOT_APP_URL: http://localhost:8080
+      TRUSTED_ORIGINS: http://localhost:8080
+      INTELLIGENCE_API_URL: http://intelligence:7091
+      INTELLIGENCE_GATEWAY_WS_URL: ws://intelligence:7091
+    depends_on:
+      intelligence:
+        condition: service_started
+
+  routines:
+    environment: *local-environment
+
+  caddy:
+    ports: !override
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro

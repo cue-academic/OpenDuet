@@ -1,0 +1,180 @@
+name: cue-pilot
+
+x-app-image: &app-image
+  image: ${CUE_APP_IMAGE:-cue-pilot:local}
+  build:
+    context: ../..
+    dockerfile: Dockerfile
+
+x-app-environment: &app-environment
+  NODE_ENV: production
+  PORT: "3001"
+  SERVER_PORT: "3001"
+  OPENBOT_HOST: 0.0.0.0
+  DATABASE_URL: postgres://cue:${POSTGRES_PASSWORD:?Generate POSTGRES_PASSWORD}@postgres:5432/cue
+  KEY_ENCRYPTION_KEY: ${KEY_ENCRYPTION_KEY:?Generate KEY_ENCRYPTION_KEY}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Generate BETTER_AUTH_SECRET}
+  BETTER_AUTH_URL: https://${CUE_DOMAIN:?Set CUE_DOMAIN}
+  OPENBOT_PUBLIC_URL: https://${CUE_DOMAIN}
+  OPENBOT_APP_URL: https://${CUE_DOMAIN}
+  TRUSTED_ORIGINS: https://${CUE_DOMAIN}
+  INITIAL_ADMIN_EMAILS: ${INITIAL_ADMIN_EMAILS:?Set INITIAL_ADMIN_EMAILS}
+  SIGNIN_ALLOWED_EMAIL_DOMAINS: ${SIGNIN_ALLOWED_EMAIL_DOMAINS:?Set the school domain}
+  GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:?Set GOOGLE_OAUTH_CLIENT_ID}
+  GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:?Set GOOGLE_OAUTH_CLIENT_SECRET}
+  INTELLIGENCE_API_URL: ${INTELLIGENCE_API_URL:?Set INTELLIGENCE_API_URL}
+  INTELLIGENCE_GATEWAY_WS_URL: ${INTELLIGENCE_GATEWAY_WS_URL:?Set INTELLIGENCE_GATEWAY_WS_URL}
+  INTELLIGENCE_API_KEY: ${INTELLIGENCE_API_KEY:?Set INTELLIGENCE_API_KEY}
+  COPILOTKIT_LICENSE_TOKEN: ${COPILOTKIT_LICENSE_TOKEN:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in the environment or .env}
+  ACADEMIC_OS_MODEL: ${ACADEMIC_OS_MODEL:-gpt-5.6-terra}
+  ACADEMIC_OS_GUIDE_MODEL: ${ACADEMIC_OS_GUIDE_MODEL:-gpt-5.5}
+  ACADEMIC_OS_FAST_MODEL: ${ACADEMIC_OS_FAST_MODEL:-gpt-4o-mini}
+  TENANT_PACKAGE_DIR: ../examples/openduet
+  DEPLOYMENT_ID: ${DEPLOYMENT_ID:-cue-pilot}
+  OPENBOT_SINGLE_USER: "false"
+  ACADEMIC_OS_PRIVATE_DEMO: "0"
+  EMBEDDED_POSTGRES: "off"
+  EMBEDDED_COMPUTER: "off"
+  AGENT_COMPUTER_URL: ""
+  COMPUTER_SUPERVISOR_URL: ""
+  COMPUTER_SANDBOX_NAMESPACE: ""
+  WORKER_SHARED_SECRET: ${WORKER_SHARED_SECRET:?Generate WORKER_SHARED_SECRET}
+  SERVER_INTERNAL_URL: http://app:3001
+  DO_NOT_TRACK: "1"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cue
+      POSTGRES_USER: cue
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Generate POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U cue -d cue"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  migrate:
+    <<: *app-image
+    user: "1002:1002"
+    working_dir: /app/server
+    entrypoint: [bun]
+    command: [scripts/migrate.ts]
+    environment:
+      DATABASE_URL: postgres://cue:${POSTGRES_PASSWORD:?Generate POSTGRES_PASSWORD}@postgres:5432/cue
+    networks: [data]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    healthcheck:
+      disable: true
+    logging: *logging
+
+  app:
+    <<: *app-image
+    restart: unless-stopped
+    environment: *app-environment
+    volumes:
+      - workspace:/workspace
+      - profiles:/profiles
+    networks: [data, web]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, bun, -e, "const r = await fetch('http://127.0.0.1:3001/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 12
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      CUE_DOMAIN: ${CUE_DOMAIN:?Set CUE_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [web]
+    depends_on:
+      app:
+        condition: service_healthy
+    logging: *logging
+
+  attachment-cleanup:
+    <<: *app-image
+    user: "1002:1002"
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    working_dir: /app/server
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        while true; do
+          if ! timeout 300 bun scripts/cull-staged-attachments.ts 24; then
+            echo 'Staged-attachment cleanup failed; retrying in one hour.' >&2
+          fi
+          sleep 3600 & wait $$!
+        done
+    environment:
+      DATABASE_URL: postgres://cue:${POSTGRES_PASSWORD:?Generate POSTGRES_PASSWORD}@postgres:5432/cue
+    networks: [data]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    logging: *logging
+
+  routines:
+    <<: *app-image
+    user: "1002:1002"
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    working_dir: /app/server
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        while true; do
+          if ! timeout 240 bun scripts/fire-routines.ts; then
+            echo 'Routine sweep failed; retrying in five minutes.' >&2
+          fi
+          sleep 300 & wait $$!
+        done
+    environment: *app-environment
+    networks: [data, web]
+    depends_on:
+      app:
+        condition: service_healthy
+    logging: *logging
+
+networks:
+  data:
+    internal: true
+  web:
+
+volumes:
+  postgres-data:
+  workspace:
+  profiles:
+  caddy-data:
+  caddy-config:
