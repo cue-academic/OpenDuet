@@ -26,7 +26,7 @@ import {
 } from "./craft";
 import { notesForGuide } from "./guide-write";
 import { buildGuideInput } from "./notes-input";
-import { planData, planSpan } from "./plans";
+import { appliedPlans, busyFrom, planData, planSpan } from "./plans";
 import { type PracticeAnswer, storedPracticeSchema } from "./practice";
 import { gradePractice, writePractice } from "./practice-model";
 import {
@@ -38,6 +38,7 @@ import {
   quizData,
   quizFromRecord,
 } from "./quizzes";
+import { zonedInstant, zonedParts } from "./time";
 import { answerTutor, openTutor } from "./tutor-session";
 
 /**
@@ -480,14 +481,28 @@ export function craftRoutes(deps: StudyRouteDeps) {
       : [];
     const minutes =
       typeof body?.minutes === "number" ? body.minutes : undefined;
-    const plan = planTonight(pack, now(), { skip, minutes });
+    const at = now();
+    const owner = context.var.actor.id;
+    const today = zonedParts(at, pack.timeZone).date;
+    // One row per student's local evening, replaced in a single atomic store write.
+    const id = `tonight:${encodeURIComponent(owner)}:${today}`;
+    const applied = await appliedPlans(
+      deps.store,
+      owner,
+      zonedInstant(today, "00:00", pack.timeZone),
+    );
+    const plan = planTonight(pack, at, {
+      skip,
+      minutes,
+      busy: busyFrom(
+        [],
+        applied.filter((earlier) => earlier.id !== id),
+      ),
+    });
     const save = body?.save === true;
     let planId: string | null = null;
     if (save) {
-      const owner = context.var.actor.id;
-      // One row per student's local evening, replaced in a single atomic store write.
-      const id = `tonight:${encodeURIComponent(owner)}:${plan.startDate}`;
-      const stamp = now().toISOString();
+      const stamp = at.toISOString();
       const stored = {
         id,
         status: "applied" as const,

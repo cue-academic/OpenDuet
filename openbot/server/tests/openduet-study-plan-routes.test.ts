@@ -6,6 +6,7 @@ import type {
   CalendarView,
   SchoolAssignment,
   SchoolSnapshot,
+  StudyBlock,
   StudyPlan,
 } from "@openbot/shared/study";
 import { Hono, type MiddlewareHandler } from "hono";
@@ -1050,7 +1051,7 @@ describe("Tonight plan saves", () => {
         status: response.status,
         body: (await response.json()) as {
           planId: string | null;
-          plan: { totalMinutes: number; blocks: unknown[] };
+          plan: { totalMinutes: number; blocks: StudyBlock[] };
         },
       };
     }
@@ -1075,6 +1076,47 @@ describe("Tonight plan saves", () => {
     expect(
       await store.list("jordan", "plan", { status: "applied" }),
     ).toHaveLength(2);
+  });
+
+  test("preview and save avoid another applied plan tonight, but not their own row", async () => {
+    const { store, save } = tonightSetup();
+    const first = await save({ save: true, minutes: 30 });
+    expect(first.status).toBe(200);
+    const tonightId = first.body.planId ?? "";
+    const tonight = await store.get("jordan", "plan", tonightId);
+    if (!tonight) throw new Error("missing Tonight plan");
+    const block = first.body.plan.blocks[0];
+    if (!block) throw new Error("missing Tonight block");
+    const other = await store.put("jordan", {
+      id: "other-applied-plan",
+      kind: "plan",
+      status: "applied",
+      startsAt: zonedInstant(block.date, block.start, TZ),
+      endsAt: zonedInstant(block.date, block.end, TZ),
+      data: {
+        ...tonight.data,
+        id: "other-applied-plan",
+        blocks: [{ ...block, id: "other-block", assignmentId: null }],
+      },
+    });
+    for (const saving of [false, true, true]) {
+      const result = await save({ save: saving, minutes: 60 });
+      expect(result.status).toBe(200);
+      expect(result.body.plan.blocks.length).toBeGreaterThan(0);
+      expect(
+        result.body.plan.blocks.every(
+          (planned) =>
+            planned.date !== block.date ||
+            planned.end <= block.start ||
+            planned.start >= block.end,
+        ),
+      ).toBe(true);
+      expect(result.body.plan.totalMinutes).toBe(first.body.plan.totalMinutes);
+      if (saving) expect(result.body.planId).toBe(tonightId);
+      else
+        expect(await store.get("jordan", "plan", tonightId)).toEqual(tonight);
+    }
+    expect(await store.get("jordan", "plan", other.id)).toEqual(other);
   });
 
   test("replaces only its own daily plan on repeated or concurrent saves", async () => {
