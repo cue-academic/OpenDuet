@@ -206,6 +206,33 @@ test("study_memory reads what is due, the weakest and open mistakes", async () =
   expect(needsSubject.startsWith("Refused.")).toBe(true);
 });
 
+test("due review ignores placeholder subjects emitted by the task model", async () => {
+  const panel = (await (await as(owner, "/")).json()) as {
+    overview: StudyOverview;
+  };
+  expect(panel.overview.totals.due).toBe(3);
+  for (const subject of ["", "All classes", "Physics"]) {
+    const args = { view: "due", subject };
+    expect(tool(STUDY_MEMORY_TOOL).parameters.safeParse(args).success).toBe(
+      true,
+    );
+    const due = await call(STUDY_MEMORY_TOOL, args);
+    expect(due.dueCount).toBe(panel.overview.totals.due);
+    expect(due.due.map((topic: { topic: string }) => topic.topic)).toEqual(
+      panel.overview.due.map((topic) => topic.topic),
+    );
+  }
+  for (const subject of [undefined, ""]) {
+    const refusal = String(
+      await tool(STUDY_MEMORY_TOOL).execute({
+        view: "subject",
+        subject,
+      } as never),
+    );
+    expect(refusal).toBe("Refused. The subject view needs a subject.");
+  }
+});
+
 test("getting it right with fixed: true closes the mistake", async () => {
   await call(RECORD_STUDY_TOOL, {
     entries: [
@@ -311,4 +338,41 @@ test("the demo seed replays two weeks of practice into a believable memory", asy
   );
   // Box 4 after three right answers, and practiced 8 days ago, so it is back for review today.
   expect(identities).toMatchObject({ box: 4, level: "strong", due: true });
+});
+
+test("review from another Bot reads the same owner-wide due topics as Learn", async () => {
+  const secondBot = `${prefix}-review-bot`;
+  await database.insert(agents).values({
+    id: secondBot,
+    name: "Review coach",
+    type: "built_in",
+    configuration: {},
+  });
+  try {
+    const review = studyTools({
+      actorId: other,
+      botId: secondBot,
+      initiator,
+      store,
+    }).find((candidate) => candidate.name === STUDY_MEMORY_TOOL);
+    if (!review) throw new Error("missing study_memory");
+    const panel = (await (await as(other, "/")).json()) as {
+      overview: StudyOverview;
+    };
+    expect(panel.overview.totals.due).toBeGreaterThan(0);
+    expect(await store.list(other, secondBot)).toEqual([]);
+    const result = JSON.parse(
+      String(await review.execute({ view: "due" } as never)),
+    );
+    expect(result.dueCount).toBe(panel.overview.totals.due);
+    expect(result.due.map((topic: { topic: string }) => topic.topic)).toEqual(
+      panel.overview.due.map((topic) => topic.topic),
+    );
+    const overview = JSON.parse(
+      String(await review.execute({ view: "overview" } as never)),
+    );
+    expect(overview.totals).toEqual(panel.overview.totals);
+  } finally {
+    await database.delete(agents).where(eq(agents.id, secondBot));
+  }
 });
