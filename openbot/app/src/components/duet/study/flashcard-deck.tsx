@@ -244,7 +244,7 @@ function DeckBody({
           // The answer side lifts onto the card's own white, so the two sides read as two faces.
           round.flipped
             ? "bg-duet-pop-b-soft shadow-[inset_0_0_0_2px_var(--duet-pop-b)]"
-            : "bg-[image:var(--duet-face-gradient)] text-white",
+            : "bg-duet-accent text-duet-on-accent",
         )}
         data-side={round.flipped ? "answer" : "prompt"}
         onAnimationEnd={() => setFlipping(false)}
