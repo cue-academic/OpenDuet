@@ -9,7 +9,13 @@ import { needsInputCount } from "@/lib/tasks/groups";
 import { taskListQueryOptions } from "@/lib/tasks/queries";
 import { cn } from "@/lib/utils";
 
-export type ShellTab = "chat" | "tasks" | "calendar" | "coach" | "learn" | "make";
+export type ShellTab =
+  | "chat"
+  | "tasks"
+  | "calendar"
+  | "coach"
+  | "learn"
+  | "make";
 
 const TABS: {
   id: ShellTab;

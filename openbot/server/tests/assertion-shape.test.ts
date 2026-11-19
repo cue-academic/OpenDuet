@@ -785,13 +785,6 @@ const ALLOW: Allowed[] = [
     why: 'expect((await snapshots.load("bot-1"))?.session).toBeUndefined();',
   },
   {
-    file: "server/tests/tenant-package.test.ts",
-    line: 358,
-    shape: "b",
-    finding: "NEW (round 2 did not find this)",
-    why: "expect(tenantPackage.agents[1]?.avatarSeed).toBeUndefined();",
-  },
-  {
     file: "server/tests/tool-selection.integration.test.ts",
     line: 834,
     shape: "b",

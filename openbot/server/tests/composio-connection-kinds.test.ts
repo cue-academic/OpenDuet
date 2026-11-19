@@ -1922,19 +1922,22 @@ describe.each(SCHEME_KINDS)("a %s scheme", (kind) => {
   }
 });
 
-describe.each(BROKERED_PROBE_OUTCOMES)("a probe that %s", (outcome) => {
-  for (const consumer of PROBE_CONSUMERS) {
-    const cell = consumer.cells[outcome];
-    if ("claimedBy" in cell) {
-      test(`${consumer.name} — DECLARED, not asserted: ${cell.decides}`, () => {
-        expect(cell.claimedBy).not.toBe("");
-        expect(DECLARED_CELLS).toContain(`${consumer.name} × ${outcome}`);
-      });
-      continue;
+describe.each(BROKERED_PROBE_OUTCOMES)(
+  "a probe that %s",
+  (outcome: BrokeredProbe["outcome"]) => {
+    for (const consumer of PROBE_CONSUMERS) {
+      const cell = consumer.cells[outcome];
+      if ("claimedBy" in cell) {
+        test(`${consumer.name} — DECLARED, not asserted: ${cell.decides}`, () => {
+          expect(cell.claimedBy).not.toBe("");
+          expect(DECLARED_CELLS).toContain(`${consumer.name} × ${outcome}`);
+        });
+        continue;
+      }
+      test(`${consumer.name} ${cell.decides}`, cell.assert);
     }
-    test(`${consumer.name} ${cell.decides}`, cell.assert);
-  }
-});
+  },
+);
 
 /**
  * THE COMPLETENESS HALF, WHICH IS WHAT MAKES THE TABLE A LEVER RATHER THAN A LIST.

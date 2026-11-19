@@ -8,7 +8,10 @@ import {
 } from "../src/openduet/model-env";
 
 test("an OpenAI key is left alone", () => {
-  const env = { OPENAI_API_KEY: "sk-openai", OPENROUTER_API_KEY: "sk-or" };
+  const env: Record<string, string | undefined> = {
+    OPENAI_API_KEY: "sk-openai",
+    OPENROUTER_API_KEY: "sk-or",
+  };
   applyChatModelEnv(env);
   expect(env.OPENAI_API_KEY).toBe("sk-openai");
   expect(env.OPENAI_BASE_URL).toBeUndefined();

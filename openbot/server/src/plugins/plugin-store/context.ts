@@ -1,5 +1,5 @@
 import { connectAppRefusal } from "@openbot/shared/connect-prompt";
-import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { recordAuditEvent } from "../../audit";
 import {
   type CredentialExecutor,
@@ -119,7 +119,10 @@ export function createStoreContext(options: PluginStoreOptions) {
         and(
           eq(pluginGrants.kind, kind),
           inArray(pluginGrants.ref, refs),
-          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          or(
+            isNull(pluginGrants.grantedBy),
+            ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          ),
         ),
       );
     const byRef = new Map<string, string[]>();
@@ -149,7 +152,10 @@ export function createStoreContext(options: PluginStoreOptions) {
         and(
           eq(pluginGrants.kind, "mcp"),
           inArray(sql`split_part(${pluginGrants.ref}, '/', 1)`, serverIds),
-          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          or(
+            isNull(pluginGrants.grantedBy),
+            ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+          ),
         ),
       );
     const byRef = new Map<string, string[]>();
