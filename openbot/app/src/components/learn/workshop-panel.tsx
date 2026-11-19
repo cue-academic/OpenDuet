@@ -4,6 +4,7 @@ import { DuetCard, SectionLabel } from "@/components/duet/kit";
 import { SmallPill } from "@/components/shell/suggestion-card";
 import { client } from "@/lib/client";
 import type { PrivateDemoPayload } from "@/lib/coach/seed";
+import { invalidateStudyCompletion } from "@/lib/learn/queries";
 import {
   createPractice,
   gradePractice,
@@ -207,7 +208,7 @@ export function WorkshopPanel({
               // Keep the scored paper on screen so the student sees what landed
               // and what missed. The saved copy is cleared because it is finished.
               remember({ ...paper, result });
-              void queryClient.invalidateQueries({ queryKey: ["study"] });
+              void invalidateStudyCompletion(queryClient);
               return result;
             } finally {
               setBusy("");
