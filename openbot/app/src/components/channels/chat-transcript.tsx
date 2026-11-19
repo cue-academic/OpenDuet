@@ -1637,7 +1637,7 @@ const TranscriptActivity = memo(function TranscriptActivity({
  * `useRenderToolCall` is called HERE rather than passed in as a prop: a function whose identity the
  * parent cannot guarantee is the classic way to make a memo boundary useless.
  */
-const TranscriptToolCall = memo(function TranscriptToolCall({
+export const TranscriptToolCall = memo(function TranscriptToolCall({
   delay,
   toolCallId,
   name,
@@ -1651,6 +1651,7 @@ const TranscriptToolCall = memo(function TranscriptToolCall({
   result?: string;
 }) {
   const renderToolCall = useRenderToolCall();
+  const isDrawn = useDrawnTool();
   // Held on its approval card: the same inbox the card under it reads.
   const inbox = useQuery(approvalInboxOptions());
   const waitingOnPerson = (inbox.data?.requests ?? []).some(
@@ -1666,19 +1667,21 @@ const TranscriptToolCall = memo(function TranscriptToolCall({
     [toolCallId, name, args],
   );
 
-  const drawn = renderToolCall({
-    toolCall,
-    ...(result === undefined
-      ? {}
-      : {
-          toolMessage: {
-            id: `${toolCallId}-result`,
-            role: "tool",
-            toolCallId,
-            content: result,
-          },
-        }),
-  });
+  const drawn = isDrawn(name)
+    ? renderToolCall({
+        toolCall,
+        ...(result === undefined
+          ? {}
+          : {
+              toolMessage: {
+                id: `${toolCallId}-result`,
+                role: "tool",
+                toolCallId,
+                content: result,
+              },
+            }),
+      })
+    : null;
 
   return (
     <Arriving delay={delay}>

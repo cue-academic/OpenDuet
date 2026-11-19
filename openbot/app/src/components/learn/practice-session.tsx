@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { PageText } from "@/components/duet/page-text";
 import { ConfettiBurst } from "@/components/duet/study/delight";
 import { SmallPill } from "@/components/shell/suggestion-card";
@@ -25,6 +25,7 @@ export function PracticeSession({
   ) => Promise<PracticeResult>;
   busy: boolean;
 }) {
+  const radioGroupId = useId();
   const saved = readProgress(paper.id);
   const [timed, setTimed] = useState(saved?.timed ?? paper.mode === "test");
   const [started, setStarted] = useState(
@@ -116,6 +117,7 @@ export function PracticeSession({
             <Question
               index={index}
               item={item}
+              radioGroupId={radioGroupId}
               key={item.id}
               pick={picks[item.id] ?? -1}
               text={texts[item.id] ?? ""}
@@ -146,6 +148,7 @@ export function PracticeSession({
 function Question({
   item,
   index,
+  radioGroupId,
   pick,
   text,
   onPick,
@@ -153,6 +156,7 @@ function Question({
 }: {
   item: PracticeItem;
   index: number;
+  radioGroupId: string;
   pick: number;
   text: string;
   onPick: (choice: number) => void;
@@ -194,7 +198,7 @@ function Question({
               <input
                 className="mt-1 size-4 shrink-0"
                 type="radio"
-                name={item.id}
+                name={`${radioGroupId}-${item.id}`}
                 checked={pick === choiceIndex}
                 onChange={() => onPick(choiceIndex)}
               />
