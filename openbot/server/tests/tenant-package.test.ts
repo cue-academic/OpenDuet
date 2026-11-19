@@ -456,7 +456,9 @@ describe("tenant YAML validation", () => {
     });
 
     expect(tenantPackage.agents[0]?.avatarSeed).toBe("knowledge");
-    expect(tenantPackage.agents[1]?.avatarSeed).toBeUndefined();
+    const remoteAgent = tenantPackage.agents[1];
+    expect(remoteAgent).toBeDefined();
+    expect(remoteAgent!.avatarSeed).toBeUndefined();
   });
 
   test("rejects an empty optional avatar seed", () => {

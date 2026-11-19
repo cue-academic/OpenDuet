@@ -92,9 +92,11 @@ test("Make preserves optional fields at the provider boundary for guides and dec
         requests.at(-1)?.tools.find((tool) => tool.name === "make_page")
           ?.strict,
       ).toBe(false);
-      expect(
-        requests.at(-1)?.tools.find((tool) => tool.name === READ)?.strict,
-      ).toBeUndefined();
+      const readTool = requests
+        .at(-1)
+        ?.tools.find((tool) => tool.name === READ);
+      expect(readTool).toBeDefined();
+      expect(readTool!.strict).toBeUndefined();
     }
   } finally {
     process.env.OPENAI_BASE_URL = base;
