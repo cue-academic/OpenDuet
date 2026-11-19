@@ -177,7 +177,9 @@ test("a finished run frees the thread for the next message", async () => {
         agentId: "openduet",
       }),
     });
-    expect((await lock("run-1")).status).toBe(200);
+    const first = await lock("run-1");
+    expect(first.status).toBe(200);
+    const { joinToken } = (await first.json()) as { joinToken: string };
     expect((await lock("run-2")).status).toBe(409);
 
     const frames: unknown[][] = [];
@@ -217,6 +219,38 @@ test("a finished run frees the thread for the next message", async () => {
     };
     await push("2", "RUN_STARTED", "run-1");
     expect((await lock("run-2")).status).toBe(409);
+
+    // A browser holding the join token cannot end the run in the runner's place.
+    const browserFrames: unknown[][] = [];
+    const browser = new WebSocket(
+      socketUrl(service.wsUrl, "/client/websocket", {
+        join_token: joinToken,
+        vsn: "2.0.0",
+      }),
+    );
+    await new Promise<void>((resolve, reject) => {
+      browser.onopen = () => resolve();
+      browser.onerror = () => reject(new Error("browser socket failed"));
+    });
+    browser.onmessage = (event) => {
+      browserFrames.push(JSON.parse(String(event.data)) as unknown[]);
+    };
+    browser.send(
+      JSON.stringify([
+        "1",
+        "9",
+        "ingestion:run-1",
+        "events",
+        {
+          events: [
+            { type: "RUN_FINISHED", threadId: "thread-1", runId: "run-1" },
+          ],
+        },
+      ]),
+    );
+    await waitFor(() => browserFrames.some((frame) => frame[1] === "9"));
+    expect((await lock("run-2")).status).toBe(409);
+    browser.close();
     await push("3", "RUN_FINISHED", "run-1");
     expect((await lock("run-2")).status).toBe(200);
 
