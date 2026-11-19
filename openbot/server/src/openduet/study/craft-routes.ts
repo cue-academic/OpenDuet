@@ -273,6 +273,11 @@ export function craftRoutes(deps: StudyRouteDeps) {
     }
     const answers = body?.answers ?? [];
     if (answers.length === 0) throw new StudyInputError("Answer a question.");
+    const pack = requirePack();
+    const input = buildGuideInput(pack, {
+      classId: parsed.data.classId,
+      focus: parsed.data.focus,
+    });
     let won = false;
     const claimed = await deps.store.update(
       owner,
@@ -297,11 +302,6 @@ export function craftRoutes(deps: StudyRouteDeps) {
       });
     }
     if (!won) throw new StudyInputError("That quiz is already being checked.");
-    const pack = requirePack();
-    const input = buildGuideInput(pack, {
-      classId: held.data.classId,
-      focus: held.data.focus,
-    });
     let result: Awaited<ReturnType<typeof gradePractice>>;
     try {
       result = await gradePractice(
