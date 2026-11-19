@@ -250,7 +250,7 @@ describe("<MicOrb>", () => {
     }
   });
 
-  test("still, finished is the check without the burst", () => {
+  test("still, finished keeps the same flat face without a check or burst", () => {
     const strokes = (state?: "finished") => {
       const ctx = fakeContext();
       const getContext = HTMLCanvasElement.prototype.getContext;
@@ -264,7 +264,8 @@ describe("<MicOrb>", () => {
         HTMLCanvasElement.prototype.getContext = getContext;
       }
     };
-    expect(strokes("finished")).toBe(strokes() + 1);
+    expect(strokes()).toBe(0);
+    expect(strokes("finished")).toBe(0);
   });
 
   test("follows a change of state", () => {

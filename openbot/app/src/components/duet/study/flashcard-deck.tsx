@@ -257,7 +257,7 @@ function DeckBody({
           <span
             className={cn(
               "type-caption font-medium",
-              round.flipped ? "text-duet-pop-b" : "text-white/80",
+              round.flipped ? "text-duet-pop-b" : "text-duet-on-accent",
             )}
           >
             {side}
@@ -305,7 +305,7 @@ function DeckBody({
           aria-hidden
           className={cn(
             "type-caption text-right",
-            round.flipped ? "text-duet-ink-3" : "text-white/70",
+            round.flipped ? "text-duet-ink-3" : "text-duet-on-accent",
           )}
         >
           Tap to flip
