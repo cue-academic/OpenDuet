@@ -1,5 +1,5 @@
 import { connectAppRefusal } from "@openbot/shared/connect-prompt";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { recordAuditEvent } from "../../audit";
 import {
   type CredentialExecutor,
@@ -35,6 +35,7 @@ import {
   accountFor,
   personAccount,
 } from "../shared-accounts";
+import { PACKAGE_GRANT_REVOKED } from "./grant-origin";
 import {
   type BrokeredDisconnectReason,
   CatalogueEntryUnknownError,
@@ -114,7 +115,13 @@ export function createStoreContext(options: PluginStoreOptions) {
     const rows = await database
       .select()
       .from(pluginGrants)
-      .where(and(eq(pluginGrants.kind, kind), inArray(pluginGrants.ref, refs)));
+      .where(
+        and(
+          eq(pluginGrants.kind, kind),
+          inArray(pluginGrants.ref, refs),
+          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
+        ),
+      );
     const byRef = new Map<string, string[]>();
     for (const row of rows) {
       byRef.set(row.ref, [...(byRef.get(row.ref) ?? []), row.agentId]);
@@ -142,6 +149,7 @@ export function createStoreContext(options: PluginStoreOptions) {
         and(
           eq(pluginGrants.kind, "mcp"),
           inArray(sql`split_part(${pluginGrants.ref}, '/', 1)`, serverIds),
+          ne(pluginGrants.grantedBy, PACKAGE_GRANT_REVOKED),
         ),
       );
     const byRef = new Map<string, string[]>();

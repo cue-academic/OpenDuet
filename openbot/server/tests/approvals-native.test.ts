@@ -1,8 +1,76 @@
 import { expect, spyOn, test } from "bun:test";
+import { LLMock } from "@copilotkit/aimock";
+import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
 import { z } from "zod";
 import { currentApprovalContext } from "../src/approvals/types";
 import { buildAgents } from "../src/copilot";
-import { HeadlessToolSuspension } from "@openbot/toolkit/headless-tools";
+
+test("an OpenAI native routine call carries its home chat approval continuation", async () => {
+  const recorder = new LLMock();
+  const originalBase = process.env.OPENAI_BASE_URL;
+  const captured: unknown[] = [];
+  try {
+    process.env.OPENAI_BASE_URL = await recorder.start();
+    recorder.onMessage(/.*/, {
+      toolCalls: [
+        {
+          name: "mcp__routines__create_routine",
+          arguments: "{}",
+          id: "routine-call",
+        },
+      ],
+    });
+    const agents = await buildAgents(
+      [
+        {
+          id: "coach",
+          name: "Coach",
+          type: "built_in",
+          systemPrompt: "Create the reminder.",
+        },
+      ],
+      { provider: "openai", defaultModel: "gpt-4o" },
+      "synthetic-model-key",
+      undefined,
+      async () => [
+        {
+          name: "mcp__routines__create_routine",
+          ref: "routines/create_routine",
+          description: "Create routine",
+          parameters: z.object({}),
+          execute: async () => {
+            await new Promise((resolve) => setTimeout(resolve, 1));
+            captured.push(currentApprovalContext());
+            throw new HeadlessToolSuspension("Waiting for approval", {
+              kind: "approval",
+              requestId: "approval",
+              continuation: currentApprovalContext(),
+            });
+          },
+        },
+      ],
+    );
+    const agent = agents.coach;
+    if (!agent) throw new Error("missing coach");
+    agent.threadId = "home-thread";
+    agent.addMessage({
+      id: "request",
+      role: "user",
+      content: "Create a routine",
+    });
+    await agent.runAgent({ runId: "home-run" });
+    expect(captured).toHaveLength(1);
+    expect(captured[0]).toMatchObject({
+      threadId: "home-thread",
+      runId: "home-run",
+      toolName: "mcp__routines__create_routine",
+    });
+  } finally {
+    if (originalBase === undefined) delete process.env.OPENAI_BASE_URL;
+    else process.env.OPENAI_BASE_URL = originalBase;
+    await recorder.stop();
+  }
+});
 
 test("a real built-in native tool carries provider call identity and suspends AG-UI without a fake tool result", async () => {
   const transport = spyOn(globalThis, "fetch").mockImplementation(

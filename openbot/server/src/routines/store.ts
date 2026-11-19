@@ -20,6 +20,8 @@
  * `locked_until` — is exactly the duplicated firing mechanism #235 exists to prevent: two half-right
  * implementations of the same hard thing, one of which nobody tests.
  */
+
+import type { HeadlessWaiting } from "@openbot/toolkit/headless-tools";
 import {
   and,
   asc,
@@ -31,6 +33,7 @@ import {
   isNull,
   lte,
   ne,
+  or,
   sql,
 } from "drizzle-orm";
 import type { Database } from "../db/client";
@@ -38,11 +41,11 @@ import {
   channelAgents,
   channelMemberships,
   channels,
+  intelligenceChannelMappings,
   routineRuns,
   routineSweeps,
   routines,
 } from "../db/schema";
-import type { HeadlessWaiting } from "@openbot/toolkit/headless-tools";
 import { describeCron, nextOccurrence, ScheduleRefusedError } from "./schedule";
 
 const SWEEP_ID = "routines";
@@ -137,6 +140,8 @@ export type RoutineInput = {
   ownerUserId: string;
   agentId: string;
   channelId?: string;
+  /** Trusted conversation identity, supplied by the tool's run rather than its arguments. */
+  sourceThreadId?: string;
   instruction: string;
   cron: string;
   timezone?: string;
@@ -361,7 +366,38 @@ export function createRoutineStore(database: Database): RoutineStore {
     ownerUserId: string,
     agentId: string,
     channelId?: string,
+    sourceThreadId?: string,
   ): Promise<string> {
+    if (!channelId && sourceThreadId) {
+      const [current] = await database
+        .select({ id: channels.id })
+        .from(channels)
+        .innerJoin(
+          channelMemberships,
+          and(
+            eq(channelMemberships.channelId, channels.id),
+            eq(channelMemberships.userId, ownerUserId),
+          ),
+        )
+        .innerJoin(
+          intelligenceChannelMappings,
+          and(
+            eq(intelligenceChannelMappings.channelId, channels.id),
+            eq(intelligenceChannelMappings.threadId, sourceThreadId),
+            eq(intelligenceChannelMappings.userId, ownerUserId),
+          ),
+        )
+        .innerJoin(
+          channelAgents,
+          and(
+            eq(channelAgents.channelId, channels.id),
+            eq(channelAgents.agentId, agentId),
+          ),
+        )
+        .where(and(isNull(channels.deletedAt)))
+        .limit(1);
+      if (current) return current.id;
+    }
     if (channelId !== undefined) {
       // One query for all four conditions: the channel exists, it is not deleted, the owner is a
       // member, and this agent is in it. Any miss is the same refusal, because telling them apart
@@ -383,9 +419,23 @@ export function createRoutineStore(database: Database): RoutineStore {
             eq(channelAgents.agentId, agentId),
           ),
         )
-        .where(and(eq(channels.id, channelId), isNull(channels.deletedAt)))
-        .limit(1);
-      const found = rows[0];
+        .where(
+          and(
+            or(
+              eq(channels.id, channelId),
+              sql`lower(${channels.name}) = lower(${channelId})`,
+            ),
+            isNull(channels.deletedAt),
+          ),
+        )
+        .orderBy(desc(eq(channels.id, channelId)))
+        .limit(2);
+      const exact = rows.find((row) => row.id === channelId);
+      if (!exact && rows.length > 1)
+        throw new RoutineRefusedError(
+          "More than one shared channel has that name. Say which channel id to use.",
+        );
+      const found = exact ?? rows[0];
       if (!found) throw new RoutineRefusedError(NO_SHARED_CHANNEL);
       return found.id;
     }
@@ -556,6 +606,7 @@ export function createRoutineStore(database: Database): RoutineStore {
         input.ownerUserId,
         input.agentId,
         input.channelId,
+        input.sourceThreadId,
       );
       const nextRunAt = nextRunFor(input.cron, timezone, new Date());
 
