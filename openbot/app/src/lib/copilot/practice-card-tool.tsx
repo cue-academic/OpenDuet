@@ -4,6 +4,8 @@ import { useState } from "react";
 import { z } from "zod";
 import { DuetCard } from "@/components/duet/kit";
 import { PracticeSession } from "@/components/learn/practice-session";
+import { ToolLine } from "@/components/channels/tool-line";
+import { readToolResult } from "@/lib/study/schemas";
 import {
   gradePractice,
   loadPractice,
@@ -38,12 +40,18 @@ export function PracticeCardTool() {
 }
 
 function PracticeTool({ result }: { result: unknown }) {
-  const parsed =
-    typeof result === "string"
-      ? resultSchema.safeParse(safeJson(result))
-      : resultSchema.safeParse(result);
-  if (!parsed.success) return null;
-  return <Loaded id={parsed.data.id} />;
+  const parsed = readToolResult(result, resultSchema);
+  if (!parsed)
+    return (
+      <ToolLine
+        label={
+          result === undefined ? "Making your quiz" : "Couldn't make your quiz"
+        }
+        running={result === undefined}
+        failed={result !== undefined}
+      />
+    );
+  return <Loaded id={parsed.id} />;
 }
 
 function Loaded({ id }: { id: string }) {
@@ -53,7 +61,14 @@ function Loaded({ id }: { id: string }) {
     queryKey: ["practice", id],
     queryFn: () => loadPractice(id),
   });
-  if (!paper.data) return null;
+  if (!paper.data)
+    return (
+      <ToolLine
+        label={paper.isError ? "Couldn't load your quiz" : "Loading your quiz"}
+        running={!paper.isError}
+        failed={paper.isError}
+      />
+    );
   return (
     <DuetCard className="px-4 py-4">
       <PracticeSession
@@ -74,12 +89,4 @@ function Loaded({ id }: { id: string }) {
       />
     </DuetCard>
   );
-}
-
-function safeJson(text: string): unknown {
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return null;
-  }
 }
