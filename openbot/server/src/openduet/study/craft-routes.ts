@@ -595,7 +595,7 @@ function guideInput(
     classId: schoolClass.id,
     className: schoolClass.name,
     help: named?.help ?? schoolClass.help,
-    focus: named?.title ?? schoolClass.name,
+    focus: named?.title ?? (focus?.trim() || schoolClass.name),
     due: named?.due ?? null,
     notes: "",
     files,

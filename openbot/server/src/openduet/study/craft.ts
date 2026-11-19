@@ -98,7 +98,12 @@ export function craftGuide(
     if (!keepSentence(sentence, source)) dropped += 1;
   }
   const questions = recallQuestions(terms, input);
-  const title = clip(`${input.className} study guide`, 80);
+  const title = clip(
+    input.focus === input.className
+      ? `${input.className} study guide`
+      : `${input.className}: ${input.focus} study guide`,
+    80,
+  );
   const summary = clip(
     input.due ? `${input.focus} · due ${input.due}` : input.focus,
     140,
