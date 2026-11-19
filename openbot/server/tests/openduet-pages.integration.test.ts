@@ -143,6 +143,51 @@ test("the tool saves for the person running it, and a revision changes the same 
     .where(inArray(openduetPages.id, [made.id]));
 });
 
+test("Make guides and decks appear in the owner's Made list", async () => {
+  const make = pageTools({
+    initiator: { kind: "person" },
+    save: (value) => store.save(owner, bot, value),
+  })[0];
+  if (!make) throw new Error("make_page is not held");
+  const ids: string[] = [];
+  for (const value of [
+    {
+      kind: "doc",
+      title: "Photosynthesis study guide",
+      blocks: [{ type: "text", text: "Light powers glucose production." }],
+    },
+    {
+      kind: "slides",
+      title: "Photosynthesis deck",
+      slides: ["Light", "Water", "Glucose"].map((title) => ({
+        title,
+        blocks: [{ type: "text", text: title }],
+      })),
+    },
+  ]) {
+    const made = JSON.parse(await make.execute(value)) as PageSummary;
+    ids.push(made.id);
+    const listed = (await (await as(owner, "/")).json()) as {
+      pages: PageSummary[];
+    };
+    expect(listed.pages.find((page) => page.id === made.id)).toMatchObject({
+      kind: value.kind,
+      title: value.title,
+      slideCount: value.kind === "slides" ? 3 : 0,
+    });
+    expect((await store.get(owner, made.id)).content).toMatchObject(
+      value.kind === "slides"
+        ? { slides: value.slides }
+        : { blocks: value.blocks },
+    );
+    const otherList = (await (await as(other, "/")).json()) as {
+      pages: PageSummary[];
+    };
+    expect(otherList.pages.some((page) => page.id === made.id)).toBe(false);
+  }
+  await database.delete(openduetPages).where(inArray(openduetPages.id, ids));
+});
+
 test("a deck keeps its slides, and its summary previews the first one", async () => {
   tick();
   const deck = await store.save(

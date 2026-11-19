@@ -37,6 +37,11 @@ import {
 import { transportFor } from "../transport";
 import type { StoreContext } from "./context";
 import {
+  isPackageGrantRevoked,
+  PACKAGE_GRANT,
+  PACKAGE_GRANT_REVOKED,
+} from "./grant-origin";
+import {
   BROKERED_ID_PREFIXES,
   BROKERED_SCREEN_NAMES,
   CatalogueEntryUnknownError,
@@ -1360,15 +1365,47 @@ export function serverMethods(context: StoreContext) {
       }
 
       const released = await database.transaction(async (transaction) => {
-        const removed = await transaction
-          .delete(pluginGrants)
+        const [server] = await transaction
+          .select({ addedBy: mcpServers.addedBy })
+          .from(mcpServers)
+          .where(eq(mcpServers.id, serverId))
+          .for("update")
+          .limit(1);
+        const grants = await transaction
+          .select({
+            ref: pluginGrants.ref,
+            agentId: pluginGrants.agentId,
+            grantedBy: pluginGrants.grantedBy,
+          })
+          .from(pluginGrants)
           .where(
             and(
               eq(pluginGrants.kind, "mcp"),
               eq(sql`split_part(${pluginGrants.ref}, '/', 1)`, serverId),
             ),
           )
-          .returning({ ref: pluginGrants.ref, agentId: pluginGrants.agentId });
+          .for("update");
+        const removed = grants.filter(
+          (grant) => !isPackageGrantRevoked(grant.grantedBy),
+        );
+        for (const grant of removed) {
+          const where = and(
+            eq(pluginGrants.kind, "mcp"),
+            eq(pluginGrants.ref, grant.ref),
+            eq(pluginGrants.agentId, grant.agentId),
+          );
+          if (
+            grant.grantedBy === PACKAGE_GRANT ||
+            server?.addedBy === PACKAGE_GRANT
+          ) {
+            await transaction
+              .update(pluginGrants)
+              .set({ grantedBy: PACKAGE_GRANT_REVOKED, updatedAt: new Date() })
+              .where(where);
+          } else {
+            await transaction.delete(pluginGrants).where(where);
+          }
+        }
         await transaction.delete(mcpServers).where(eq(mcpServers.id, serverId));
         return removed.sort((left, right) => left.ref.localeCompare(right.ref));
       });

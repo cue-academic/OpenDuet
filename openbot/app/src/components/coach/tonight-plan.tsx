@@ -1,32 +1,20 @@
+import type {
+  StudyBlock,
+  StudyPlan,
+  TonightSample,
+} from "@openbot/shared/study";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { DuetIcon } from "@/components/duet/icons";
 import { ConfettiBurst, cheerFor } from "@/components/duet/study/delight";
+import { type CoachState, remainingMin } from "@/lib/coach/model";
+import { planTonightMutationOptions } from "@/lib/study/mutations";
 import { cn } from "@/lib/utils";
 
-type Block = {
-  id: string;
-  assignmentId: string | null;
-  title: string;
-  start: string;
-  end: string;
-};
-
-type Left = {
-  assignmentId: string;
-  title: string;
-  minutes: number;
-};
-
-type TonightBody = {
-  planId?: string | null;
-  plan?: {
-    summary?: string;
-    warnings?: string[];
-    blocks?: Block[];
-    remaining?: Left[];
-  };
-  error?: string;
-};
+type Left = Pick<
+  StudyPlan["remaining"][number],
+  "assignmentId" | "title" | "minutes"
+>;
 
 const STORE = "academic-os.tonight";
 
@@ -49,9 +37,9 @@ type Row = {
   minutes: number;
 };
 
-function readSaved(): Saved | null {
+function readSaved(key: string): Saved | null {
   try {
-    const raw = window.localStorage.getItem(STORE);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<Saved>;
     if (!parsed || !Array.isArray(parsed.rows)) return null;
@@ -85,7 +73,7 @@ function clockSpan(start: string, end: string): number {
 }
 
 /** One row per assignment, from the first block to the last. */
-function rowsOf(blocks: Block[]): Row[] {
+function rowsOf(blocks: StudyBlock[]): Row[] {
   const rows: Row[] = [];
   for (const block of blocks) {
     const id = block.assignmentId ?? block.id;
@@ -107,11 +95,41 @@ function rowsOf(blocks: Block[]): Row[] {
   return rows;
 }
 
+function sampleWeek(state: CoachState): TonightSample {
+  return {
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    assignments: state.assignments.flatMap((assignment) => {
+      const minutes = remainingMin(assignment);
+      if (minutes <= 0) return [];
+      const { id, classId, title, dueAt } = assignment;
+      return [{ id, classId, title, dueAt, minutes }];
+    }),
+  };
+}
+
 /**
  * Tonight's plan from what's due. The same plan chat makes. Checking an item
  * off asks for a new plan without that work, and replaces the calendar copy.
  */
-export function TonightPlan() {
+export function TonightPlan({ state }: { state: CoachState }) {
+  const storageKey =
+    state.source === "private"
+      ? STORE
+      : `${STORE}.${state.demo ? "sample" : "personal"}`;
+  return (
+    <TonightPlanCard key={storageKey} state={state} storageKey={storageKey} />
+  );
+}
+
+function TonightPlanCard({
+  state,
+  storageKey,
+}: {
+  state: CoachState;
+  storageKey: string;
+}) {
+  const canSave = state.source === "private";
+  const planner = useMutation(planTonightMutationOptions(useQueryClient()));
   const [rows, setRows] = useState<Row[]>([]);
   const [summary, setSummary] = useState("");
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -128,7 +146,7 @@ export function TonightPlan() {
   const [burst, setBurst] = useState("");
 
   useEffect(() => {
-    const saved = readSaved();
+    const saved = readSaved(storageKey);
     if (saved) {
       setRows(saved.rows);
       setSummary(saved.summary);
@@ -141,7 +159,7 @@ export function TonightPlan() {
       setHidden(saved.hidden);
     }
     setReady(true);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!ready) return;
@@ -155,7 +173,7 @@ export function TonightPlan() {
       minutes,
       hidden,
     };
-    window.localStorage.setItem(STORE, JSON.stringify(next));
+    window.localStorage.setItem(storageKey, JSON.stringify(next));
   }, [
     ready,
     rows,
@@ -166,6 +184,7 @@ export function TonightPlan() {
     skip,
     minutes,
     hidden,
+    storageKey,
   ]);
 
   async function load(
@@ -176,25 +195,16 @@ export function TonightPlan() {
     setBusy(save ? "save" : "plan");
     setError("");
     try {
-      const response = await fetch("/api/openduet/study/workshop/tonight", {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          skip: nextSkip,
-          minutes: nextMinutes,
-          ...(save || planId ? { save: true, planId } : {}),
-        }),
+      const body = await planner.mutateAsync({
+        skip: nextSkip,
+        minutes: nextMinutes,
+        ...(canSave && (save || planId) ? { save: true, planId } : {}),
+        ...(!canSave ? { sample: sampleWeek(state) } : {}),
       });
-      const body = (await response.json()) as TonightBody;
-      if (!response.ok) throw new Error(body.error || "No plan yet.");
-      const blocks = body.plan?.blocks ?? [];
-      setRows(rowsOf(blocks));
-      setSummary(body.plan?.summary ?? "");
-      setWarnings(
-        (body.plan?.warnings ?? []).filter((warning) => warning.trim()),
-      );
-      setRemaining((body.plan?.remaining ?? []).slice(0, 4));
+      setRows(rowsOf(body.plan.blocks));
+      setSummary(body.plan.summary);
+      setWarnings(body.plan.warnings.filter((warning) => warning.trim()));
+      setRemaining(body.plan.remaining.slice(0, 4));
       setAsked(true);
       setHidden(false);
       if (body.planId) setPlanId(body.planId);
@@ -368,20 +378,22 @@ export function TonightPlan() {
       ) : null}
       {rows.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-full bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
-            disabled={busy !== ""}
-            onClick={() => void load(skip, true)}
-            type="button"
-          >
-            <DuetIcon name="calendar" size={16} />
-            {busy === "save"
-              ? "Saving…"
-              : planId
-                ? "Update calendar"
-                : "Put on my calendar"}
-          </button>
-          {planId ? (
+          {canSave ? (
+            <button
+              className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-full bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
+              disabled={busy !== ""}
+              onClick={() => void load(skip, true)}
+              type="button"
+            >
+              <DuetIcon name="calendar" size={16} />
+              {busy === "save"
+                ? "Saving…"
+                : planId
+                  ? "Update calendar"
+                  : "Put on my calendar"}
+            </button>
+          ) : null}
+          {canSave && planId ? (
             <a
               className="type-caption inline-flex min-h-11 items-center rounded-full px-3 font-semibold text-duet-ink"
               href="/calendar"

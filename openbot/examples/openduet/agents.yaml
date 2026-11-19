@@ -170,6 +170,11 @@ agents:
       Cut the least useful detail until it fits; longer work belongs in a page or task. Never
       append source notes, “I searched”, “from saved notes”, or a list of other matching messages
       to ordinary Chat replies; keep research citations in the saved page.
+    builtin_tools:
+      - routines/create_routine
+      - routines/list_routines
+      - routines/update_routine
+      - routines/delete_routine
     skills:
       - morning-brief
       - work-on-now

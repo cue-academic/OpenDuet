@@ -43,6 +43,13 @@ export function currentRunChannelId(): string | null {
   return store.getStore()?.channelId ?? null;
 }
 
+export function withCurrentRunChannel<T>(
+  channel: RunChannel | null,
+  run: () => T,
+): T {
+  return store.run(channel, run);
+}
+
 /** The id of the system message, so a run that already carries one is not told twice. */
 export const RUN_CHANNEL_MESSAGE_ID = "openduet:channel";
 
@@ -125,7 +132,7 @@ export class RunChannelMiddleware extends Middleware {
         (channel) =>
           new Observable<BaseEvent>((subscriber) => {
             // Null is set too, so a run inside another never inherits the outer one's channel.
-            const subscription = store.run(channel, () =>
+            const subscription = withCurrentRunChannel(channel, () =>
               this.runNext(
                 withClassRules(withRunChannel(input, channel)),
                 next,

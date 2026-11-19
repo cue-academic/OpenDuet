@@ -27,6 +27,16 @@ type NativeRun = {
 };
 const nativeRuns = new AsyncLocalStorage<NativeRun>();
 
+export function bindNativeApprovalContext<T extends (...args: never[]) => unknown>(
+  execute: T,
+): T {
+  const run = nativeRuns.getStore();
+  if (!run) return execute;
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
+    return nativeRuns.run(run, () => execute.apply(this, args));
+  } as T;
+}
+
 /**
  * Whether the run the caller is part of is waiting on a person: one of its tool calls was held for
  * an approval or a question, and the run has stopped to wait for the answer.

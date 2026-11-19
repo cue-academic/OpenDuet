@@ -97,6 +97,12 @@ in sync.
 
 ## Who a routine runs as
 
+Tenant packages can grant credential-free builtin tools explicitly with an agent's `builtin_tools`
+list, for example `routines/create_routine`, `routines/list_routines`, `routines/update_routine`
+and `routines/delete_routine`. OpenDuet grants these to its study coach. These are ordinary tool
+grants, not skill declarations; external connectors still require an administrator's grant.
+Redeploying retracts only grants owned by the package, preserving administrator-owned grants.
+
 A routine runs as the person who created it, not as the Bot and not as an administrator. Its turn is
 built with that person's own grants, so it can do in the middle of the night exactly what they could
 do by typing the same instruction in chat themselves, and nothing more — a routine cannot reach a

@@ -53,6 +53,27 @@ beforeEach(() => {
     const url = String(input);
     if (init?.method === "POST") {
       posted.push({ url, body: JSON.parse(String(init.body)) });
+      if (url.endsWith("/workshop/tonight")) {
+        return Response.json({
+          planId: null,
+          plan: {
+            summary: "25 min of quiz prep.",
+            warnings: [],
+            remaining: [],
+            blocks: [
+              {
+                id: "sample-block",
+                assignmentId: "precalc-quiz4",
+                classId: "precalc",
+                title: "Study for Unit 4 quiz: trig identities",
+                date: "2026-11-04",
+                start: "16:00",
+                end: "16:25",
+              },
+            ],
+          },
+        });
+      }
       return Response.json({ task: { id: "task-1", title: "x" } });
     }
     if (url === "/api/openduet/tasks") return Response.json({ tasks: [] });
@@ -126,6 +147,77 @@ test("the sample week greets the signed-in student by their first name", async (
   expect(await view.findByText(/Viren\./)).toBeTruthy();
   expect(view.queryByText(/Jordan/)).toBeNull();
   expect(getCoachState().profile.name).toBe("Viren");
+});
+
+test("Plan tonight sends the sample's unfinished work and shows the returned plan", async () => {
+  const user = userEvent.setup({ document });
+  updateCoach((state) => ({
+    ...state,
+    assignments: state.assignments.map((assignment) =>
+      assignment.id === "apush-dbq"
+        ? { ...assignment, status: "done" }
+        : assignment,
+    ),
+  }));
+  const view = draw();
+  const tonight = within(await view.findByLabelText("Tonight"));
+  await user.click(tonight.getByRole("button", { name: "Plan tonight" }));
+  expect(
+    await tonight.findByText("Study for Unit 4 quiz: trig identities"),
+  ).toBeTruthy();
+  expect(
+    tonight.queryByRole("button", { name: "Put on my calendar" }),
+  ).toBeNull();
+  expect(posted).toEqual([
+    {
+      url: "/api/openduet/study/workshop/tonight",
+      body: {
+        skip: [],
+        minutes: 120,
+        sample: {
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          assignments: getCoachState()
+            .assignments.filter((assignment) => assignment.status !== "done")
+            .map(({ id, classId, title, dueAt, estimateMin, spentMin }) => ({
+              id,
+              classId,
+              title,
+              dueAt,
+              minutes: estimateMin - spentMin,
+            })),
+        },
+      },
+    },
+  ]);
+});
+
+test("Plan tonight on a private week still uses the server school pack", async () => {
+  const user = userEvent.setup({ document });
+  updateCoach((state) => ({ ...state, source: "private" }));
+  const view = draw();
+  const tonight = within(await view.findByLabelText("Tonight"));
+  await user.click(tonight.getByRole("button", { name: "Plan tonight" }));
+  expect(
+    await tonight.findByRole("button", { name: "Put on my calendar" }),
+  ).toBeTruthy();
+  expect(posted[0]?.body).toEqual({ skip: [], minutes: 120 });
+});
+
+test("starting empty clears the sample Tonight plan", async () => {
+  const user = userEvent.setup({ document });
+  const view = draw();
+  const tonight = within(await view.findByLabelText("Tonight"));
+  await user.click(tonight.getByRole("button", { name: "Plan tonight" }));
+  await tonight.findByRole("button", { name: "Replan" });
+
+  await user.click(view.getByRole("button", { name: "Coach settings" }));
+  await user.click(await view.findByRole("button", { name: "Start empty" }));
+  expect(getCoachState().demo).toBe(false);
+  const fresh = within(view.getByLabelText("Tonight"));
+  expect(
+    fresh.queryByText("Study for Unit 4 quiz: trig identities"),
+  ).toBeNull();
+  expect(fresh.getByRole("button", { name: "Plan tonight" })).toBeTruthy();
 });
 
 test("a sample week saved in the old colours takes the calendar's", async () => {
