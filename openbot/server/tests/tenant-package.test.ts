@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 import { and, eq } from "drizzle-orm";
 import { createAgentProfileStore } from "../src/agents/profile-store";
 import { createRuntimeAgentLoader } from "../src/agents/runtime-agents";
+import { createAuditStore } from "../src/audit";
+import { createCredentialStore } from "../src/credentials";
+import { createPluginStore } from "../src/plugins/store";
+import { grantedTools } from "../src/plugins/tools";
 import { createDatabase } from "../src/db/client";
 import {
   agentProfiles,
@@ -75,6 +79,69 @@ function packageAgent(
     ...overrides,
   };
 }
+
+test("OpenDuet's coach holds recurring routine tools after package sync, without granting other Bots", async () => {
+  const source = await loadTenantPackage(
+    fileURLToPath(new URL("../../examples/openduet", import.meta.url)),
+  );
+  const coach = source.agents.find((agent) => agent.id === "openduet")!;
+  expect(coach.builtinTools).toEqual([
+    "routines/create_routine",
+    "routines/list_routines",
+    "routines/update_routine",
+    "routines/delete_routine",
+  ]);
+  const agent = packageAgent({ builtinTools: coach.builtinTools });
+  const other = packageAgent();
+  const loaded = loadedPackage(agent);
+  loaded.agents.push(other);
+  createdAgentIds.push(agent.id, other.id);
+  createdPackageIds.push((await synchronizeTenantPackage(database, loaded)).id);
+  const store = createPluginStore({
+    brokerProvider: "composio",
+    database,
+    auditStore: createAuditStore(database),
+    credentials: createCredentialStore(database),
+    encryptionKey: Buffer.alloc(32, 7).toString("base64"),
+    policy: () => ({ mode: "enforce", deny: [], allow: ["true"] }),
+  });
+  const tools = () =>
+    grantedTools({ store, botId: agent.id, actorId: "reader" });
+  expect((await tools()).map((tool) => tool.ref).sort()).toEqual(
+    [...coach.builtinTools!].sort(),
+  );
+  expect((await store.listForAgent(other.id)).tools).toEqual([]);
+  await store.grant("mcp", "routines/list_routines", agent.id, "administrator");
+  agent.builtinTools = [];
+  await synchronizeTenantPackage(database, loaded);
+  expect((await tools()).map((tool) => tool.ref)).toEqual([
+    "routines/list_routines",
+  ]);
+  agent.builtinTools = ["routines/not_a_tool"];
+  await expect(synchronizeTenantPackage(database, loaded)).rejects.toThrow(
+    "Unknown builtin tool",
+  );
+});
+
+test("tenant builtin grants refuse external connectors and duplicate refs", () => {
+  const withTools = (tools: string) =>
+    validateTenantPackage({
+      brand: "tenant: { id: test, product_name: Test }",
+      agents: `agents: [{ id: coach, name: Coach, title: Coach, role_description: Help., type: built-in, system_prompt: Help., builtin_tools: [${tools}] }]`,
+      channels: "channels: []",
+      knowledge: "sources: []",
+      themeCss: "",
+      model:
+        "model: { provider: openai, credential_secret_ref: key, default_model: gpt-5.6-terra }",
+    });
+  expect(() => withTools("google-workspace/send_email")).toThrow(
+    "builtin catalogue tools",
+  );
+  expect(() =>
+    withTools("routines/create_routine, routines/create_routine"),
+  ).toThrow("twice");
+  expect(withTools("").agents[0]?.builtinTools).toEqual([]);
+});
 
 function loadedPackage(
   agent: LoadedTenantPackage["agents"][number] = packageAgent(),

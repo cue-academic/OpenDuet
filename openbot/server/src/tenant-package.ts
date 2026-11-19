@@ -11,10 +11,15 @@ import {
   channelAgents,
   channels as channelTable,
   deploymentPackages,
+  mcpServers,
+  mcpTools,
   pluginGrants,
   skills as skillTable,
   skillTools,
 } from "./db/schema";
+import { catalogueEntry } from "./plugins/catalogue";
+import type { ListedTool } from "./plugins/mcp";
+import { transportFor } from "./plugins/transport";
 
 const approvedThemeVariables = new Set([
   "--background",
@@ -183,7 +188,7 @@ type TenantAgent = {
   /**
    * The package skills this coworker is given, by slug.
    *
-   * SAFE TO SEED, unlike an MCP grant, and for a reason worth stating rather than assuming. A skill
+   * SAFE TO SEED, unlike an external MCP grant. A skill
    * is an instruction and confers nothing: what a Bot may call is its grants, and the run-time offer
    * is always the intersection of the two, so a skill naming a tool its Bot does not hold loads
    * nothing. Seeding an MCP grant would be the opposite, since those reach a person's own account.
@@ -193,6 +198,8 @@ type TenantAgent = {
    * pairs them by hand. The pairing is the package's to state: it wrote both files.
    */
   skills: string[];
+  /** Explicit grants for credential-free, in-process catalogue tools only. */
+  builtinTools?: string[];
 };
 
 type TenantChannel = {
@@ -443,6 +450,14 @@ function parseAgents(
           agent.skills === undefined || agent.skills === null
             ? []
             : stringArray(agent.skills, "agent.skills"),
+        ...(agent.builtin_tools === undefined
+          ? {}
+          : {
+              builtinTools: stringArray(
+                agent.builtin_tools,
+                "agent.builtin_tools",
+              ),
+            }),
       },
     ];
   });
@@ -533,6 +548,21 @@ export function validateTenantPackage(files: PackageFiles): TenantPackage {
   const packageSkills = parseTenantSkills(skillsYaml.skills);
   const skillSlugs = new Set(packageSkills.map((skill) => skill.slug));
   for (const agent of agents) {
+    const refs = new Set<string>();
+    for (const ref of agent.builtinTools ?? []) {
+      const [server, tool, extra] = ref.split("/");
+      const entry = catalogueEntry(server ?? "");
+      if (!tool || extra !== undefined || entry?.auth.kind !== "builtin") {
+        throw new Error(
+          `agent "${agent.id}" builtin_tools must name builtin catalogue tools: ${ref}`,
+        );
+      }
+      if (refs.has(ref))
+        throw new Error(
+          `agent "${agent.id}" names builtin tool "${ref}" twice`,
+        );
+      refs.add(ref);
+    }
     // Sync writes one grant row per entry in a single INSERT ... ON CONFLICT, which Postgres refuses
     // when two of its rows collide, so a repeated slug stopped the server at boot with a SQL error.
     const named = new Set<string>();
@@ -796,6 +826,26 @@ export async function synchronizeTenantPackage(
   database: Database,
   tenantPackage: LoadedTenantPackage,
 ) {
+  const builtinDefinitions = new Map<string, ListedTool[]>();
+  for (const agent of tenantPackage.agents) {
+    for (const ref of agent.builtinTools ?? []) {
+      const [server, name] = ref.split("/");
+      const entry = catalogueEntry(server ?? "");
+      if (entry?.auth.kind !== "builtin" || !entry.host || !entry.transport)
+        throw new Error(`Not a builtin tool: ${ref}`);
+      if (!builtinDefinitions.has(entry.key)) {
+        builtinDefinitions.set(
+          entry.key,
+          await transportFor(entry.transport).listTools({ url: entry.host }),
+        );
+      }
+      if (
+        !builtinDefinitions.get(entry.key)?.some((tool) => tool.name === name)
+      ) {
+        throw new Error(`Unknown builtin tool: ${ref}`);
+      }
+    }
+  }
   return database.transaction(async (transaction) => {
     /*
      * A Bot already holding one of those names, from a package that declared it before this was
@@ -1104,6 +1154,65 @@ export async function synchronizeTenantPackage(
       }
     }
 
+    for (const [serverId, definitions] of builtinDefinitions) {
+      const entry = catalogueEntry(serverId);
+      if (!entry?.host) throw new Error(`Unknown builtin server: ${serverId}`);
+      await transaction
+        .insert(mcpServers)
+        .values({
+          id: serverId,
+          title: entry.title,
+          vendor: entry.vendor,
+          url: entry.host,
+          addedBy: PACKAGE_GRANT,
+        })
+        .onConflictDoNothing();
+      for (const tool of definitions) {
+        await transaction
+          .insert(mcpTools)
+          .values({
+            serverId,
+            name: tool.name,
+            description: tool.description ?? "",
+            inputSchema: tool.inputSchema,
+          })
+          .onConflictDoUpdate({
+            target: [mcpTools.serverId, mcpTools.name],
+            set: {
+              description: tool.description ?? "",
+              inputSchema: tool.inputSchema,
+            },
+          });
+      }
+    }
+    await transaction
+      .delete(pluginGrants)
+      .where(
+        and(
+          eq(pluginGrants.kind, "mcp"),
+          eq(pluginGrants.grantedBy, PACKAGE_GRANT),
+          inArray(
+            pluginGrants.agentId,
+            transaction
+              .select({ id: agentTable.id })
+              .from(agentTable)
+              .where(eq(agentTable.packageId, deploymentPackage.id)),
+          ),
+        ),
+      );
+    for (const agent of tenantPackage.agents) {
+      for (const ref of agent.builtinTools ?? []) {
+        await transaction
+          .insert(pluginGrants)
+          .values({
+            kind: "mcp",
+            ref,
+            agentId: agent.id,
+            grantedBy: PACKAGE_GRANT,
+          })
+          .onConflictDoNothing();
+      }
+    }
     return deploymentPackage;
   });
 }
