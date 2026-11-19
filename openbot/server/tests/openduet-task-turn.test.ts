@@ -93,6 +93,39 @@ describe("a task's turn", () => {
     },
   );
 
+  test("a successful Make save prevents replay even when a later save fails", async () => {
+    const turn = turnWith(async (input) => {
+      input.onToolResult?.(
+        "make_page",
+        JSON.stringify({ id: "saved", kind: "doc" }),
+      );
+      input.onToolResult?.("make_page", "Refused. Invalid slides.");
+      return { replyText: "Saved your guide, but couldn't save the deck." };
+    });
+    await turn.start();
+    expect(turn.said.at(-1)?.id).toBe("task-1:reply");
+    expect(turn.busy).toEqual([true, false]);
+  });
+
+  test.each([
+    { replyText: "Which class should I use?" },
+    { replyText: "Choose a class below.", replyChips: true },
+  ])(
+    "a failed Make save preserves a turn waiting for input: %j",
+    async (result) => {
+      const turn = turnWith(async (input) => {
+        input.onToolResult?.("make_page", "Refused. Missing class.");
+        return result;
+      });
+      await turn.start();
+      expect(turn.said.at(-1)).toMatchObject({
+        id: "task-1:reply",
+        needsInput: true,
+      });
+      expect(turn.busy).toEqual([true, false]);
+    },
+  );
+
   test("a successful Make retry clears its earlier refusal, and other tool results are ignored", async () => {
     const turn = turnWith(async (input) => {
       input.onToolResult?.("make_page", "Refused. Invalid blocks.");
