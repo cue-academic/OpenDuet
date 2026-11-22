@@ -6,6 +6,12 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
-  server: { port: 3020, strictPort: true },
+  // Cargo locks files under src-tauri/target while it builds; watching them makes `tauri dev`
+  // crash with EBUSY on Windows.
+  server: {
+    port: 3020,
+    strictPort: true,
+    watch: { ignored: ["**/src-tauri/**"] },
+  },
   build: { outDir: "dist", emptyOutDir: true },
 });
