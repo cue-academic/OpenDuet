@@ -14,14 +14,15 @@ import {
  * Calculus to hints. The pack is the source. A listed level is known.
  */
 
-export const CLASS_RULES_CONTEXT = "Academic OS class rules";
+export const CLASS_RULES_CONTEXT = "Cue class rules";
 export const CLASS_RULES_MESSAGE_ID = "openduet:class-rules";
 
 const MAY = {
   full: "Teach and give feedback. Do not hand over finished work to submit.",
   hints:
     "Explain concepts and practice from the notes. Do not solve work they will turn in.",
-  none: "Do not explain, quiz, tutor, or check work for this class.",
+  none: "Do not explain, quiz, tutor, or check work for this class. Planning their time is fine.",
+  test: "Cue is off for this class. Do nothing on it, not even planning; say when it is and that the teacher set it to Test.",
 } as const;
 
 export function classRulesText(pack: PrivatePack): string {
@@ -37,7 +38,7 @@ export function classRulesText(pack: PrivatePack): string {
     "CLASS RULES. These levels are already known.",
     "When a class is listed, its level is known. Never say the AI help level is unavailable, missing, or that you could not look it up.",
     "Only say a teacher set the level when that class's line says a teacher rule is on file. Otherwise say it is the app's default.",
-    "A no-help class gets no notes sent to a model, no quiz, and no worked answers. make_page must not save a guide or quiz for it.",
+    "An On your own or Test class gets no notes sent to a model, no quiz, and no worked answers. make_page must not save a guide or quiz for it.",
     "Do not search mail for a level that is listed here. Mail and calendar are optional.",
     ...lines,
   ].join("\n");

@@ -138,7 +138,7 @@ export function ScreenCard({
   const address = screenAddress(input);
   return (
     <Link
-      className="duet-face my-1 flex w-full max-w-[420px] items-center gap-3 rounded-[20px] bg-duet-card px-3.5 py-3 text-left text-duet-ink shadow-duet-card transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
+      className="duet-face my-1 flex w-full max-w-[420px] items-center gap-3 rounded-[var(--duet-radius-card)] bg-duet-card px-3.5 py-3 text-left text-duet-ink shadow-duet-card transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
       data-screen-card={input.screen}
       search={address.search}
       to={address.to}

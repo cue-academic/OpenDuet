@@ -76,7 +76,7 @@ export function TaskSheet({
           ref={popup}
         >
           <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col px-2.5 pt-[max(env(safe-area-inset-top),12px)] pb-[max(env(safe-area-inset-bottom),10px)]">
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-duet-card shadow-duet-raised transition-transform duration-[var(--duet-dur-sheet)] group-data-ending-style:duration-[var(--duet-dur-swap)] motion-reduce:transition-none motion-safe:group-data-ending-style:translate-y-3 motion-safe:group-data-starting-style:translate-y-6">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--duet-radius-field)] bg-duet-card shadow-duet-raised transition-transform duration-[var(--duet-dur-sheet)] group-data-ending-style:duration-[var(--duet-dur-swap)] motion-reduce:transition-none motion-safe:group-data-ending-style:translate-y-3 motion-safe:group-data-starting-style:translate-y-6">
               <header className="grid min-h-16 shrink-0 grid-cols-[44px_1fr_44px] items-center px-2 py-1">
                 <button
                   aria-label="Close"

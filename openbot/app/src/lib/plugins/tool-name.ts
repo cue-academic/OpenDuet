@@ -4,6 +4,7 @@ import {
   researchRoleOfTool,
 } from "@openbot/shared/research";
 import {
+  ASSIGNMENTS_TOOL,
   FLASHCARDS_TOOL,
   PLAN_TOOL,
   PROGRESS_TOOL,
@@ -177,6 +178,10 @@ const OWN_TOOLS: Record<string, { running: string; done: string }> = {
   [PROGRESS_TOOL]: {
     running: "Checking your practice",
     done: "Checked your practice",
+  },
+  [ASSIGNMENTS_TOOL]: {
+    running: "Checking your assignments",
+    done: "Checked your assignments",
   },
   [PLAN_TOOL]: {
     running: "Planning your study time",

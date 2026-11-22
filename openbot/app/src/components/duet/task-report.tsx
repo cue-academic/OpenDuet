@@ -138,7 +138,7 @@ export function TaskReportView({
             No emails or events read yet.
           </p>
         ) : (
-          <ul className="flex flex-col overflow-hidden rounded-[18px] bg-duet-tile">
+          <ul className="flex flex-col overflow-hidden rounded-[var(--duet-radius-card)] bg-duet-tile">
             {report.resources.map((resource, index) => (
               <li
                 className={cn(index > 0 && "border-duet-hair-2 border-t")}
@@ -152,7 +152,7 @@ export function TaskReportView({
       </section>
       <button
         aria-expanded={conversationShown}
-        className="type-row flex h-12 items-center justify-between gap-3 rounded-[16px] px-4 font-semibold text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40"
+        className="type-row flex h-12 items-center justify-between gap-3 rounded-[var(--duet-radius-card)] px-4 font-semibold text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40"
         onClick={onToggleConversation}
         type="button"
       >

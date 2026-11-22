@@ -37,7 +37,7 @@ import { isTimeZone, zonedInstant } from "./time";
  *
  * A sync only ever adds to what the student's teachers said. A message that was read once keeps its
  * notice (a sent email does not change), so a later sync that fails to read it does not lose the
- * teacher's "No help" with it. A notice whose email the search no longer lists (deleted, older than
+ * teacher's "On your own" with it. A notice whose email the search no longer lists (deleted, older than
  * thirty days, or pushed out by newer mail) stands while its work does (carriedNotices). And a sync
  * that reads nothing at all, or finds no Classroom email where classes were read before, leaves the
  * stored copy standing.

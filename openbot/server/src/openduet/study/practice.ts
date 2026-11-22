@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { z } from "zod";
 import type { GuideInput } from "./craft";
 import { notesForGuide } from "./guide-write";
@@ -141,7 +142,7 @@ export function draftPractice(
   input: GuideInput,
   mode: PracticeMode,
 ): PracticePaper | { refused: string } {
-  if (input.help === "none") {
+  if (noStudyHelp(input.help)) {
     return {
       refused: `${input.className} doesn't allow AI help, so no ${mode === "test" ? "practice test" : "quiz"} was made. Review your own notes.`,
     };

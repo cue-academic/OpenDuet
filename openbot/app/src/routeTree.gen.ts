@@ -21,6 +21,7 @@ import { Route as AuthedAppApprovalsRouteImport } from './routes/_authed/_app/ap
 import { Route as AuthedAppBotRouteImport } from './routes/_authed/_app/bot'
 import { Route as AuthedAppCalendarRouteImport } from './routes/_authed/_app/calendar'
 import { Route as AuthedAppCapabilitiesRouteImport } from './routes/_authed/_app/capabilities'
+import { Route as AuthedAppClassesRouteImport } from './routes/_authed/_app/classes'
 import { Route as AuthedAppCoachRouteImport } from './routes/_authed/_app/coach'
 import { Route as AuthedAppInboxRouteImport } from './routes/_authed/_app/inbox'
 import { Route as AuthedAppLearnRouteImport } from './routes/_authed/_app/learn'
@@ -148,6 +149,11 @@ const AuthedAppCalendarRoute = AuthedAppCalendarRouteImport.update({
 const AuthedAppCapabilitiesRoute = AuthedAppCapabilitiesRouteImport.update({
   id: '/capabilities',
   path: '/capabilities',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
+const AuthedAppClassesRoute = AuthedAppClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
   getParentRoute: () => AuthedAppRoute,
 } as any)
 const AuthedAppCoachRoute = AuthedAppCoachRouteImport.update({
@@ -542,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/bot': typeof AuthedAppBotRoute
   '/calendar': typeof AuthedAppCalendarRoute
   '/capabilities': typeof AuthedAppCapabilitiesRouteWithChildren
+  '/classes': typeof AuthedAppClassesRoute
   '/coach': typeof AuthedAppCoachRoute
   '/inbox': typeof AuthedAppInboxRoute
   '/learn': typeof AuthedAppLearnRoute
@@ -621,6 +628,7 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthedAppApprovalsRoute
   '/bot': typeof AuthedAppBotRoute
   '/calendar': typeof AuthedAppCalendarRoute
+  '/classes': typeof AuthedAppClassesRoute
   '/coach': typeof AuthedAppCoachRoute
   '/inbox': typeof AuthedAppInboxRoute
   '/learn': typeof AuthedAppLearnRoute
@@ -705,6 +713,7 @@ export interface FileRoutesById {
   '/_authed/_app/bot': typeof AuthedAppBotRoute
   '/_authed/_app/calendar': typeof AuthedAppCalendarRoute
   '/_authed/_app/capabilities': typeof AuthedAppCapabilitiesRouteWithChildren
+  '/_authed/_app/classes': typeof AuthedAppClassesRoute
   '/_authed/_app/coach': typeof AuthedAppCoachRoute
   '/_authed/_app/inbox': typeof AuthedAppInboxRoute
   '/_authed/_app/learn': typeof AuthedAppLearnRoute
@@ -790,6 +799,7 @@ export interface FileRouteTypes {
     | '/bot'
     | '/calendar'
     | '/capabilities'
+    | '/classes'
     | '/coach'
     | '/inbox'
     | '/learn'
@@ -869,6 +879,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/bot'
     | '/calendar'
+    | '/classes'
     | '/coach'
     | '/inbox'
     | '/learn'
@@ -952,6 +963,7 @@ export interface FileRouteTypes {
     | '/_authed/_app/bot'
     | '/_authed/_app/calendar'
     | '/_authed/_app/capabilities'
+    | '/_authed/_app/classes'
     | '/_authed/_app/coach'
     | '/_authed/_app/inbox'
     | '/_authed/_app/learn'
@@ -1114,6 +1126,13 @@ declare module '@tanstack/react-router' {
       path: '/capabilities'
       fullPath: '/capabilities'
       preLoaderRoute: typeof AuthedAppCapabilitiesRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
+    '/_authed/_app/classes': {
+      id: '/_authed/_app/classes'
+      path: '/classes'
+      fullPath: '/classes'
+      preLoaderRoute: typeof AuthedAppClassesRouteImport
       parentRoute: typeof AuthedAppRoute
     }
     '/_authed/_app/coach': {
@@ -1743,6 +1762,7 @@ interface AuthedAppRouteChildren {
   AuthedAppBotRoute: typeof AuthedAppBotRoute
   AuthedAppCalendarRoute: typeof AuthedAppCalendarRoute
   AuthedAppCapabilitiesRoute: typeof AuthedAppCapabilitiesRouteWithChildren
+  AuthedAppClassesRoute: typeof AuthedAppClassesRoute
   AuthedAppCoachRoute: typeof AuthedAppCoachRoute
   AuthedAppInboxRoute: typeof AuthedAppInboxRoute
   AuthedAppLearnRoute: typeof AuthedAppLearnRoute
@@ -1784,6 +1804,7 @@ const AuthedAppRouteChildren: AuthedAppRouteChildren = {
   AuthedAppBotRoute: AuthedAppBotRoute,
   AuthedAppCalendarRoute: AuthedAppCalendarRoute,
   AuthedAppCapabilitiesRoute: AuthedAppCapabilitiesRouteWithChildren,
+  AuthedAppClassesRoute: AuthedAppClassesRoute,
   AuthedAppCoachRoute: AuthedAppCoachRoute,
   AuthedAppInboxRoute: AuthedAppInboxRoute,
   AuthedAppLearnRoute: AuthedAppLearnRoute,

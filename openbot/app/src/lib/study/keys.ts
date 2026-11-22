@@ -1,5 +1,5 @@
 /*
- * The query keys for Academic OS's study features (/api/openduet/study), under one root so a change
+ * The query keys for Cue's study features (/api/openduet/study), under one root so a change
  * can refresh exactly what it touched. A calendar range is keyed under `calendarAll`, so applying a
  * plan invalidates that one prefix and every range on screen reloads with the new blocks.
  */
@@ -18,4 +18,6 @@ export const studyKeys = {
     ["openduet-study", "calendar", from, to] as const,
   rules: ["openduet-study", "rules"] as const,
   school: ["openduet-study", "school"] as const,
+  /** The Classes screen: the stored classes and work with the level in force. */
+  hub: ["openduet-study", "hub"] as const,
 } as const;

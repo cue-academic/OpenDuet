@@ -1,11 +1,12 @@
 import {
   type AssignmentKind,
   type AssignmentStatus,
-  CLASS_COLORS,
+  type BlockAnswer,
   type CalendarAllDay,
   type CalendarDeadline,
   type CalendarEvent,
   type CalendarView,
+  CLASS_COLORS,
   type ClassColor,
   type ClassRules,
   type DeckToolResult,
@@ -13,6 +14,9 @@ import {
   type FlashcardDeck,
   HELP_LEVELS,
   type HelpLevel,
+  type HubAssignment,
+  type HubClass,
+  type MissedBlock,
   type PlanStatus,
   type PlanToolResult,
   type ProgressSummary,
@@ -28,6 +32,7 @@ import {
   type RulesView,
   type SchoolAssignment,
   type SchoolClass,
+  type SchoolHub,
   type SchoolSnapshot,
   type StudyBlock,
   type StudyPlan,
@@ -114,6 +119,40 @@ export const schoolSnapshotSchema = z.object({
   assignments: z.array(schoolAssignmentSchema),
   couldNotRead: z.array(z.string()),
 }) satisfies z.ZodType<SchoolSnapshot>;
+
+/* The hub (the Classes screen) */
+
+export const hubAssignmentSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: assignmentKindSchema,
+  status: assignmentStatusSchema,
+  due: z.string().nullable(),
+  points: z.number().nullable(),
+  grade: z.string().nullable(),
+  minutes: z.number(),
+  link: z.string().nullable(),
+  level: helpLevelSchema,
+  source: ruleSourceSchema,
+}) satisfies z.ZodType<HubAssignment>;
+
+export const hubClassSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  teacher: z.string().nullable(),
+  period: z.string().nullable(),
+  color: classColorSchema,
+  level: helpLevelSchema,
+  source: ruleSourceSchema,
+  assignments: z.array(hubAssignmentSchema),
+}) satisfies z.ZodType<HubClass>;
+
+export const schoolHubSchema = z.object({
+  timeZone: z.string(),
+  syncedAt: z.string().nullable(),
+  classes: z.array(hubClassSchema),
+  couldNotRead: z.array(z.string()),
+}) satisfies z.ZodType<SchoolHub>;
 
 /* Teacher rules */
 
@@ -246,7 +285,16 @@ export const studyBlockSchema = z.object({
   start: z.string(),
   end: z.string(),
   late: z.boolean().optional(),
+  done: z.boolean().optional(),
+  movedFrom: z
+    .object({ date: z.string(), start: z.string(), end: z.string() })
+    .optional(),
 }) satisfies z.ZodType<StudyBlock>;
+
+export const missedBlockSchema = z.object({
+  planId: z.string(),
+  block: studyBlockSchema,
+}) satisfies z.ZodType<MissedBlock>;
 
 export const studyPlanSchema = z.object({
   id: z.string(),
@@ -271,6 +319,11 @@ export const studyPlanSchema = z.object({
   stale: z.boolean(),
   staleReason: z.enum(["changed", "started"]).nullable(),
 }) satisfies z.ZodType<StudyPlan>;
+
+export const blockAnswerSchema = z.object({
+  plan: studyPlanSchema,
+  block: studyBlockSchema,
+}) satisfies z.ZodType<BlockAnswer>;
 
 export const calendarEventSchema = z.object({
   id: z.string(),
@@ -308,6 +361,7 @@ export const calendarViewSchema = z.object({
   events: z.array(calendarEventSchema),
   allDay: z.array(calendarAllDaySchema),
   blocks: z.array(studyBlockSchema),
+  missed: z.array(missedBlockSchema),
   deadlines: z.array(calendarDeadlineSchema),
   couldNotRead: z.array(z.string()),
 }) satisfies z.ZodType<CalendarView>;
@@ -393,6 +447,7 @@ export type SchemasMirrorShared = [
   Holds<Mirrors<typeof schoolClassSchema, SchoolClass>>,
   Holds<Mirrors<typeof schoolAssignmentSchema, SchoolAssignment>>,
   Holds<Mirrors<typeof schoolSnapshotSchema, SchoolSnapshot>>,
+  Holds<Mirrors<typeof schoolHubSchema, SchoolHub>>,
   Holds<Mirrors<typeof classRulesSchema, ClassRules>>,
   Holds<Mirrors<typeof rulesViewSchema, RulesView>>,
   Holds<Mirrors<typeof rulesChangeSchema, RulesChange>>,

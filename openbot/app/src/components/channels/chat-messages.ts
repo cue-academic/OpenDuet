@@ -626,7 +626,7 @@ const OFFER_TASK = "offer_task";
 const START_TASK = "start_task";
 
 /**
- * Academic OS's study cards (server/src/openduet/study): a quiz, flashcards, practice so far and a
+ * Cue's study cards (server/src/openduet/study): a quiz, flashcards, practice so far and a
  * study plan, each drawn by its own renderer and placed the way a page is.
  */
 const STUDY_CARDS = new Set<string>([

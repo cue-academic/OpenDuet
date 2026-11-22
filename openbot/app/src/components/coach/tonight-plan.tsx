@@ -101,8 +101,8 @@ function sampleWeek(state: CoachState): TonightSample {
     assignments: state.assignments.flatMap((assignment) => {
       const minutes = remainingMin(assignment);
       if (minutes <= 0) return [];
-      const { id, classId, title, dueAt } = assignment;
-      return [{ id, classId, title, dueAt, minutes }];
+      const { id, classId, title, dueAt, helpLevel: help } = assignment;
+      return [{ id, classId, title, dueAt, minutes, help }];
     }),
   };
 }
@@ -241,7 +241,7 @@ function TonightPlanCard({
     return (
       <section
         aria-label="Tonight"
-        className="mb-3 rounded-[20px] bg-duet-card px-4 py-3 shadow-duet-card"
+        className="mb-3 rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-3 shadow-duet-card"
       >
         <button
           className="type-sub font-semibold text-duet-ink"
@@ -257,7 +257,7 @@ function TonightPlanCard({
   return (
     <section
       aria-label="Tonight"
-      className="study-rise relative mb-3 rounded-[20px] bg-duet-card px-4 py-4 shadow-duet-card"
+      className="study-rise relative mb-3 rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-4 shadow-duet-card"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -267,7 +267,7 @@ function TonightPlanCard({
           </p>
           {cheer ? (
             <p
-              className="study-bounce type-sub mt-2 inline-flex rounded-full bg-duet-status-done-soft px-3 py-1.5 font-semibold text-duet-status-done"
+              className="study-bounce type-sub mt-2 inline-flex rounded-[10px] bg-duet-status-done-soft px-3 py-1.5 font-semibold text-duet-status-done"
               role="status"
             >
               {cheer}
@@ -292,7 +292,7 @@ function TonightPlanCard({
             />
           </label>
           <button
-            className="type-caption min-h-11 rounded-full bg-duet-ink px-4 font-semibold text-duet-surface transition-transform active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100"
+            className="type-caption min-h-11 rounded-[10px] bg-duet-black px-4 font-semibold text-duet-on-black transition-transform active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100"
             disabled={busy !== ""}
             onClick={() => void load(skip, false)}
             type="button"
@@ -380,7 +380,7 @@ function TonightPlanCard({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {canSave ? (
             <button
-              className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-full bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
+              className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-[10px] bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
               disabled={busy !== ""}
               onClick={() => void load(skip, true)}
               type="button"
@@ -395,7 +395,7 @@ function TonightPlanCard({
           ) : null}
           {canSave && planId ? (
             <a
-              className="type-caption inline-flex min-h-11 items-center rounded-full px-3 font-semibold text-duet-ink"
+              className="type-caption inline-flex min-h-11 items-center rounded-[10px] px-3 font-semibold text-duet-ink"
               href="/calendar"
               onClick={(event) => {
                 if (
@@ -417,7 +417,7 @@ function TonightPlanCard({
           ) : null}
           {skip.length > 0 ? (
             <button
-              className="type-caption min-h-11 rounded-full px-3 font-semibold text-duet-ink-2"
+              className="type-caption min-h-11 rounded-[10px] px-3 font-semibold text-duet-ink-2"
               onClick={startOver}
               type="button"
             >
@@ -425,7 +425,7 @@ function TonightPlanCard({
             </button>
           ) : null}
           <button
-            className="type-caption min-h-11 rounded-full px-3 font-semibold text-duet-ink-2"
+            className="type-caption min-h-11 rounded-[10px] px-3 font-semibold text-duet-ink-2"
             onClick={() => setHidden(true)}
             type="button"
           >

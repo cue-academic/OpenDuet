@@ -406,7 +406,7 @@ function MistakeList({ mistakes }: { mistakes: StudyOverview["mistakes"] }) {
               </p>
             </div>
             <button
-              className="type-label min-h-9 shrink-0 rounded-full px-3 font-semibold text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 disabled:opacity-50"
+              className="type-label min-h-9 shrink-0 rounded-[10px] px-3 font-semibold text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 disabled:opacity-50"
               disabled={fix.isPending}
               onClick={() => fix.mutate(mistake.topicId)}
               type="button"

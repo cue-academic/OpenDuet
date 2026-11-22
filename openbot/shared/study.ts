@@ -1,5 +1,5 @@
 /**
- * Academic OS's study features, declared once and read from both sides: the names of the study
+ * Cue's study features, declared once and read from both sides: the names of the study
  * tools, the shapes their results and the /api/openduet/study routes carry, and the teacher-rule
  * refusal the server writes and the app draws.
  *
@@ -12,29 +12,44 @@ export const QUIZ_TOOL = "make_quiz";
 export const FLASHCARDS_TOOL = "make_flashcards";
 export const PROGRESS_TOOL = "show_progress";
 export const PLAN_TOOL = "propose_study_plan";
+/** Reads the stored classes and assignments. It makes nothing, so no card is drawn for it. */
+export const ASSIGNMENTS_TOOL = "list_assignments";
 
-/** The tools a teacher's "No help" pauses for that class. Planning and progress are never paused. */
+/** The tools a teacher's "On your own" or "Test" pauses for that class. Planning and progress are never paused. */
 export const RULED_STUDY_TOOLS = [QUIZ_TOOL, FLASHCARDS_TOOL] as const;
 
 /* ------------------------------------------------------------------------------------------------
  * Teacher AI-help levels
  * ---------------------------------------------------------------------------------------------- */
 
-/** How much AI help a teacher allows, from most to least. */
-export const HELP_LEVELS = ["full", "hints", "none"] as const;
+/**
+ * How much AI help a teacher allows, from most to least. The ids are the stored values and stay as
+ * they were; the words a person reads are in HELP_LEVEL_LABEL. "test" is the fourth and strictest:
+ * Cue is off for that item, planning included.
+ */
+export const HELP_LEVELS = ["full", "hints", "none", "test"] as const;
 export type HelpLevel = (typeof HELP_LEVELS)[number];
 
 /** The words a Classroom notice and the app use for each level. */
 export const HELP_LEVEL_LABEL: Record<HelpLevel, string> = {
-  full: "Full help",
-  hints: "Hints only",
-  none: "No help",
+  full: "Study",
+  hints: "Guided help",
+  none: "On your own",
+  test: "Test",
 };
 
-/** A class with no notice that says otherwise is treated as Hints only, as the Bot's prompt says. */
+/** What each level lets Cue do, in a few words, for anywhere the label needs explaining. */
+export const HELP_LEVEL_MEANS: Record<HelpLevel, string> = {
+  full: "Cue teaches and quizzes",
+  hints: "Hints only",
+  none: "Cue plans the time only",
+  test: "Cue is off",
+};
+
+/** A class with no notice that says otherwise is treated as Guided help, as the Bot's prompt says. */
 export const DEFAULT_HELP_LEVEL: HelpLevel = "hints";
 
-/** 0 for full, 1 for hints, 2 for none: a higher rank is stricter. */
+/** 0 for full, 1 for hints, 2 for none, 3 for test: a higher rank is stricter. */
 export function helpLevelRank(level: HelpLevel): number {
   return HELP_LEVELS.indexOf(level);
 }
@@ -50,15 +65,38 @@ export function loosens(current: HelpLevel, next: HelpLevel): boolean {
 }
 
 /**
- * Reads a level from a notice line such as "AI help: Hints only." Deterministic on purpose: a level
- * is the teacher's words, never something a model decided. Returns null when the text names none.
+ * True for On your own and Test: no help with the work itself, so no quiz, flashcards, guide or
+ * explanation for it.
+ */
+export function noStudyHelp(level: HelpLevel | null | undefined): boolean {
+  return level === "none" || level === "test";
+}
+
+/** True for Test only: Cue is off for the item, so it is not planned or coached either. */
+export function cueIsOff(level: HelpLevel | null | undefined): boolean {
+  return level === "test";
+}
+
+/**
+ * Reads a level from a notice line such as "AI help: Guided help." Deterministic on purpose: a
+ * level is the teacher's words, never something a model decided. Returns null when the text names
+ * none. The earlier words (Full help, Hints only, No help) still read as the level they became.
+ * Pass only the words after "AI help:", since "test" and "study" are ordinary words elsewhere.
  */
 export function parseHelpLevel(text: string): HelpLevel | null {
   const words = text.toLowerCase().replace(/[^a-z ]/g, " ");
-  if (/\bno (ai )?help\b/.test(words)) return "none";
-  if (/\bhints? only\b/.test(words) || /\bonly hints?\b/.test(words))
+  if (/^\s*test\b/.test(words) || /\bcue (is )?off\b/.test(words))
+    return "test";
+  if (/\bno (ai )?help\b/.test(words) || /\bon your own\b/.test(words))
+    return "none";
+  if (
+    /\bhints? only\b/.test(words) ||
+    /\bonly hints?\b/.test(words) ||
+    /\bguided( help)?\b/.test(words)
+  )
     return "hints";
-  if (/\bfull (ai )?help\b/.test(words)) return "full";
+  if (/\bfull (ai )?help\b/.test(words) || /^\s*study\b/.test(words))
+    return "full";
   return null;
 }
 
@@ -195,6 +233,51 @@ export type RulesView = {
   canLoosen: boolean;
   /** When the Classroom notices behind the view were read, or null if never. */
   syncedAt: string | null;
+  couldNotRead: string[];
+};
+
+/* ------------------------------------------------------------------------------------------------
+ * The hub: every class with its work, when it is due and the help level in force
+ * ---------------------------------------------------------------------------------------------- */
+
+/** One piece of work as the Classes screen and list_assignments show it. */
+export type HubAssignment = {
+  id: string;
+  title: string;
+  kind: AssignmentKind;
+  status: AssignmentStatus;
+  /** The instant it is due, ISO, or null when the notice gave no date. */
+  due: string | null;
+  points: number | null;
+  grade: string | null;
+  /** Minutes of work the planner allows for it. */
+  minutes: number;
+  link: string | null;
+  /** The level the study tools obey for it, and what decided that. */
+  level: HelpLevel;
+  source: RuleSource;
+};
+
+export type HubClass = {
+  id: string;
+  name: string;
+  teacher: string | null;
+  period: string | null;
+  color: ClassColor;
+  /** The level the study tools obey for the class as a whole. */
+  level: HelpLevel;
+  source: RuleSource;
+  /** Soonest due first; work with no due date last. */
+  assignments: HubAssignment[];
+};
+
+/** GET /api/openduet/study/hub: the stored classes and work, joined with the rules in force. */
+export type SchoolHub = {
+  /** The student's IANA time zone, for showing due dates and times. */
+  timeZone: string;
+  /** When the Classroom notices behind it were read, or null if never. */
+  syncedAt: string | null;
+  classes: HubClass[];
   couldNotRead: string[];
 };
 
@@ -394,6 +477,8 @@ export type TonightSample = {
     title: string;
     dueAt: string;
     minutes: number;
+    /** The teacher's level for it. Test leaves it out of the plan. */
+    help?: HelpLevel;
   }[];
 };
 
@@ -410,7 +495,23 @@ export type StudyBlock = {
   end: string;
   /** True when the block falls after the assignment's deadline (catch-up work). */
   late?: boolean;
+  /** True once the student said they did it. A block that ended without it was missed. */
+  done?: boolean;
+  /** Where the block was before it was moved to the next free time. */
+  movedFrom?: { date: string; start: string; end: string };
 };
+
+/** How far back the calendar looks for study blocks that ended without being done. */
+export const MISSED_LOOKBACK_DAYS = 7;
+
+/** An applied study block that ended without being marked done, and the plan it belongs to. */
+export type MissedBlock = { planId: string; block: StudyBlock };
+
+/**
+ * POST /api/openduet/study/plans/:id/blocks/:blockId/move answers { answer: BlockAnswer }: the block
+ * at the next free time, and its plan. POST .../done answers the same, with the block marked done.
+ */
+export type BlockAnswer = { plan: StudyPlan; block: StudyBlock };
 
 export type PlanStatus = "proposed" | "applied" | "discarded";
 
@@ -491,6 +592,11 @@ export type CalendarView = {
   allDay: CalendarAllDay[];
   /** Applied study blocks in the range. */
   blocks: StudyBlock[];
+  /**
+   * Applied blocks from the last MISSED_LOOKBACK_DAYS days that ended without being done, oldest
+   * first, whatever range was asked for: what the student can move to the next free time.
+   */
+  missed: MissedBlock[];
   deadlines: CalendarDeadline[];
   couldNotRead: string[];
 };

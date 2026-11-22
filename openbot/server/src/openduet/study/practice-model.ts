@@ -44,7 +44,7 @@ export async function writePractice(
       "Math stays in $...$ so it can be drawn.",
       "These are practice questions. They are not an assignment to turn in.",
       input.help === "hints"
-        ? "Hints only: do not write a solution the student could submit for a grade."
+        ? "Guided help: do not write a solution the student could submit for a grade."
         : "Teach. Do not hand over finished work to submit.",
     ].join(" "),
     user: `Class: ${input.className}\nFocus: ${input.focus}\nSubject: ${draft.subject}\nMode: ${draft.mode}\n\nNotes:\n${notes.slice(0, 14000)}\n\nDraft JSON:\n${JSON.stringify({ items: draft.items })}`,

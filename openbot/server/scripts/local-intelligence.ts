@@ -1,5 +1,5 @@
 /**
- * Starts the local thread service Academic OS uses when no CopilotKit
+ * Starts the local thread service Cue uses when no CopilotKit
  * Intelligence project is configured. The dev script points
  * INTELLIGENCE_API_URL at it and writes a local- key.
  */

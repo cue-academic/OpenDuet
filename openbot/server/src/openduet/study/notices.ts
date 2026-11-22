@@ -14,7 +14,7 @@ import { isDate, zonedInstant } from "./time";
  * The student's classes and assignments, read from the Google Classroom notification emails in
  * their Gmail. Pure: a message in, a notice out, and the notices folded into one snapshot.
  *
- * Deterministic on purpose, and never a model's reading. A teacher's "AI help: No help" pauses the
+ * Deterministic on purpose, and never a model's reading. A teacher's "AI help: On your own" pauses the
  * quiz and flashcard tools for that class, so the level must be the teacher's words as written, and
  * the same mail must always give the same classes, ids and levels.
  *
@@ -30,7 +30,7 @@ import { isDate, zonedInstant } from "./time";
  *   Points: 40
  *   Grade: 34/40
  *   Estimated time: 90 min
- *   AI help: Hints only
+ *   AI help: Guided help
  *
  *   The teacher's own words.
  *

@@ -74,6 +74,7 @@ const SCREEN_NAMES: Record<Exclude<ShellTab, "chat">, string> = {
   tasks: "Your tasks",
   calendar: "Your calendar",
   coach: "Today's plan",
+  classes: "Your classes",
   learn: "What to review",
   make: "Made for you",
 };
@@ -136,7 +137,10 @@ function ChatWithScreen({
         "relative flex min-h-0 flex-1",
         screen === "calendar"
           ? "lg:grid lg:grid-cols-[minmax(300px,0.72fr)_minmax(680px,1.4fr)]"
-          : screen === "learn" || screen === "make" || screen === "coach"
+          : screen === "learn" ||
+              screen === "make" ||
+              screen === "coach" ||
+              screen === "classes"
             ? "lg:grid lg:grid-cols-[minmax(300px,0.7fr)_minmax(640px,1.3fr)]"
             : screen
               ? "lg:grid lg:grid-cols-[minmax(360px,1fr)_minmax(400px,520px)]"
@@ -162,7 +166,7 @@ function ChatWithScreen({
           {/* The bar shares the content's column, and its 20px inset is the screen text's. */}
           <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col lg:max-w-none">
             <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-duet-hair-2 border-b px-5">
-              <p className="type-sub truncate font-semibold">
+              <p className="cue-label truncate text-duet-ink-2">
                 {SCREEN_NAMES[screen]}
               </p>
               <Link

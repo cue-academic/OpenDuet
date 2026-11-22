@@ -275,7 +275,7 @@ export function RowButton({
     <button
       aria-label={label}
       className={cn(
-        "type-label h-8 shrink-0 rounded-full px-3 font-semibold transition-[filter,background-color] disabled:opacity-50",
+        "type-label h-8 shrink-0 rounded-[10px] px-3 font-semibold transition-[filter,background-color] disabled:opacity-50",
         primary
           ? "bg-duet-black text-duet-on-black hover:brightness-125"
           : "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile",

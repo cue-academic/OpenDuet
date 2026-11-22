@@ -39,6 +39,7 @@ const view: CalendarView = {
   events: [],
   allDay: [],
   blocks: [],
+  missed: [],
   deadlines: [],
   couldNotRead: [],
 };

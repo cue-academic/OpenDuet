@@ -1,4 +1,8 @@
-import type { CalendarView, StudyPlan } from "@openbot/shared/study";
+import type {
+  BlockAnswer,
+  CalendarView,
+  StudyPlan,
+} from "@openbot/shared/study";
 import {
   mutationOptions,
   type QueryClient,
@@ -6,7 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { client } from "@/lib/client";
 import { studyKeys } from "./keys";
-import { studyPlanSchema } from "./schemas";
+import { blockAnswerSchema, studyPlanSchema } from "./schemas";
 
 /*
  * A study plan by id and its answers: Apply, Not now, and Remove from calendar once it is applied
@@ -170,4 +174,73 @@ export function removePlanMutationOptions(
     "remove",
     "Couldn't take the plan off your calendar. Try again.",
   );
+}
+
+/** A missed session, as the calendar lists it: the plan it belongs to and the block itself. */
+export type BlockTarget = { planId: string; blockId: string };
+
+/**
+ * POST /api/openduet/study/plans/:id/blocks/:blockId/move or /done: a session that ended undone goes
+ * to the next free time, or is marked done. Either way it leaves the calendar's missed list, and
+ * every range already read shows the block as the server now has it.
+ */
+export function blockMutationOptions(
+  queryClient: QueryClient,
+  answer: "move" | "done",
+) {
+  return mutationOptions({
+    // One at a time: each move takes the next free time, so two at once would race for it.
+    scope: { id: "study-block" },
+    retry: false,
+    mutationFn: async ({
+      planId,
+      blockId,
+    }: BlockTarget): Promise<BlockAnswer> => {
+      const parsed = blockAnswerSchema.safeParse(
+        await client<unknown>(
+          `${planPath(planId)}/blocks/${encodeURIComponent(blockId)}/${answer}`,
+          "answer",
+          {
+            method: "POST",
+            fallback:
+              answer === "move"
+                ? "Couldn't move that session. Try again."
+                : "Couldn't mark that session done. Try again.",
+          },
+        ),
+      );
+      if (!parsed.success)
+        throw new Error("Couldn't read the answer. Reload the page.");
+      return parsed.data;
+    },
+    onSuccess: async ({ plan, block }) => {
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: studyKeys.plan(plan.id),
+          exact: true,
+        }),
+        queryClient.cancelQueries({ queryKey: studyKeys.calendarAll }),
+      ]);
+      queryClient.setQueryData(studyKeys.plan(plan.id), plan);
+      queryClient.setQueriesData<CalendarView>(
+        { queryKey: studyKeys.calendarAll },
+        (view) =>
+          view && {
+            ...view,
+            blocks: [
+              ...view.blocks.filter((entry) => entry.id !== block.id),
+              ...(block.date >= view.from && block.date <= view.to
+                ? [block]
+                : []),
+            ],
+            missed: view.missed.filter((entry) => entry.block.id !== block.id),
+          },
+      );
+      void queryClient.invalidateQueries({ queryKey: studyKeys.calendarAll });
+    },
+    onError: () => {
+      // Refused because the calendar moved on: read it again, so the list says what is true now.
+      void queryClient.invalidateQueries({ queryKey: studyKeys.calendarAll });
+    },
+  });
 }

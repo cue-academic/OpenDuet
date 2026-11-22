@@ -10,13 +10,15 @@ import type { AuditInitiator } from "../../audit";
 import type { CallTool } from "../brief";
 
 /*
- * Academic OS's study features on the server: the seams between the pieces, declared once so each
+ * Cue's study features on the server: the seams between the pieces, declared once so each
  * piece can be built and tested on its own.
  *
  *   store.ts       StudyStore, one owner-scoped table (openduet_study_records) for every kind below
  *   school.ts      SchoolService, the student's classes and assignments read from Classroom notices
  *   rules.ts       RulesService and resolveStudyTarget, the teacher's AI-help level for a class
- *   guard.ts       guardTeacherRules, which pauses make_quiz and make_flashcards under "No help"
+ *   guard.ts       guardTeacherRules, which pauses make_quiz and make_flashcards under "On your own"
+ *   hub.ts         schoolHub, the stored classes and work joined with the level in force
+ *   hub-tools.ts   list_assignments, which reads that hub for the Bot
  *   quiz-tools.ts  make_quiz, make_flashcards, show_progress
  *   plan-tools.ts  propose_study_plan
  *   routes.ts      /api/openduet/study, which mounts quiz-routes, plan-routes and rules-routes
@@ -24,7 +26,7 @@ import type { CallTool } from "../brief";
  * Every record belongs to one person (owner_user_id), and every read and write names that person.
  */
 
-/** What a record holds. school and rules are one per person; the rest are many. */
+/** What a record holds. school, rules and coach are one per person; the rest are many. */
 export type StudyKind =
   | "school"
   | "rules"
@@ -32,7 +34,8 @@ export type StudyKind =
   | "attempt"
   | "deck"
   | "plan"
-  | "practice";
+  | "practice"
+  | "coach";
 
 export type StudyRecord = {
   id: string;

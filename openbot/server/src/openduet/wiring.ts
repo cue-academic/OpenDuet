@@ -12,6 +12,7 @@ import { createPageStore, type PageStore, pageTools } from "./pages";
 import { replyTools } from "./replies";
 import { currentRunChannelId } from "./run-channel";
 import { coachTools } from "./study/coach-tools";
+import { hubTools } from "./study/hub-tools";
 import type {
   RulesService,
   SchoolService,
@@ -147,7 +148,7 @@ export function createTaskIntake(deps: {
   };
 }
 
-/** Academic OS's study records, the classes read from Classroom notices, and the teacher's rules. */
+/** Cue's study records, the classes read from Classroom notices, and the teacher's rules. */
 export type Study = {
   store: StudyStore;
   school: SchoolService;
@@ -234,7 +235,12 @@ export function createOpenDuetTools(deps: {
       callTool: deps.callTool,
     };
     return guardTeacherRules(
-      [...quizTools(toolDeps), ...planTools(toolDeps), ...coachTools(toolDeps)],
+      [
+        ...quizTools(toolDeps),
+        ...planTools(toolDeps),
+        ...coachTools(toolDeps),
+        ...hubTools(toolDeps),
+      ],
       {
         ...context,
         school: study.school,

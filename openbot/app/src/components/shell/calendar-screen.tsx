@@ -1,7 +1,10 @@
 import {
+  noStudyHelp,
   HELP_LEVEL_LABEL,
   type HelpLevel,
+  type MissedBlock,
   type SchoolClass,
+  type StudyBlock,
   type StudyPlan,
 } from "@openbot/shared/study";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
@@ -44,7 +47,10 @@ import {
   calendarQueryOptions,
   pendingPlanQueryOptions,
 } from "@/lib/study/calendar";
-import { removePlanMutationOptions } from "@/lib/study/plans";
+import {
+  blockMutationOptions,
+  removePlanMutationOptions,
+} from "@/lib/study/plans";
 import { cn } from "@/lib/utils";
 
 /** The item whose details are open, and the button it was pressed on. */
@@ -137,7 +143,13 @@ export function CalendarScreen({
   if (view && now.day !== studentToday) setStudentToday(now.day);
 
   const shown = new Set(dates);
-  const details = selected && shown.has(itemDate(selected)) ? selected : null;
+  const missed = view?.missed;
+  const missedIds = useMemo(
+    () => new Set((missed ?? []).map((entry) => entry.block.id)),
+    [missed],
+  );
+  const current = currentItem(selected, view?.blocks);
+  const details = current && shown.has(itemDate(current)) ? current : null;
   useEffect(() => {
     if (!details) return;
     const close = (event: KeyboardEvent) => {
@@ -219,6 +231,15 @@ export function CalendarScreen({
           planId={planId}
         />
       ) : null}
+      {view ? (
+        <MissedNotice
+          missed={view.missed}
+          onGo={(date) => {
+            show(date);
+            heading.current?.focus();
+          }}
+        />
+      ) : null}
       {view && view.couldNotRead.length > 0 ? (
         <CouldNotRead lines={view.couldNotRead} />
       ) : null}
@@ -263,6 +284,9 @@ export function CalendarScreen({
               <ItemDetails
                 classes={view.classes}
                 item={details}
+                missed={
+                  details.kind === "block" && missedIds.has(details.block.id)
+                }
                 onClose={() => {
                   setSelected(null);
                   // The close button goes with the details: focus goes back to the item.
@@ -271,6 +295,7 @@ export function CalendarScreen({
               />
             ) : null
           }
+          missed={missedIds}
           proposed={proposal?.blocks}
           provisional={calendar.isPlaceholderData}
           selectedKey={details?.key ?? null}
@@ -284,6 +309,25 @@ export function CalendarScreen({
       )}
     </div>
   );
+}
+
+/**
+ * The pressed item as the calendar has it now. An applied study block is read again from the
+ * calendar, so its details follow it being marked done; one that was moved or taken off is no
+ * longer where it was pressed, so its details close.
+ */
+function currentItem(
+  item: CalendarItem | null,
+  blocks: readonly StudyBlock[] | undefined,
+): CalendarItem | null {
+  if (item?.kind !== "block" || item.proposed || !blocks) return item;
+  const block = blocks.find((entry) => entry.id === item.block.id);
+  return block &&
+    block.date === item.block.date &&
+    block.start === item.block.start &&
+    block.end === item.block.end
+    ? { ...item, block }
+    : null;
 }
 
 /** Now, read again every half minute while the screen is open. */
@@ -377,7 +421,7 @@ function CalendarToolbar({
         {/* Read out when it changes, so stepping a day says where it landed. */}
         <h1
           aria-live="polite"
-          className="ml-1 min-w-0 truncate font-semibold text-base tabular-nums tracking-tight outline-none sm:text-lg"
+          className="study-display ml-1 min-w-0 truncate text-base tabular-nums outline-none sm:text-lg"
           ref={headingRef}
           tabIndex={-1}
         >
@@ -648,6 +692,163 @@ function PlanNotice({
   );
 }
 
+/** A block's day and hours, as the calendar writes them: "Wed, Nov 4 · 5:40 PM – 6:25 PM". */
+function slotLabel(slot: Pick<StudyBlock, "date" | "start" | "end">): string {
+  return `${dayLabel(slot.date, { weekday: "short", month: "short", day: "numeric" })} · ${clockLabel(slot.start)} – ${clockLabel(slot.end)}`;
+}
+
+/** The most missed sessions listed at once; the rest are counted. */
+const MISSED_SHOWN = 3;
+
+/**
+ * The study sessions that ended without being done, each with its two answers: Move it, which puts
+ * it at the next free time on the calendar, and I did it. Move all takes them oldest first, so each
+ * lands after the one before. A session that was moved stays as a line saying where it went, with a
+ * way to that day, until the screen is left. Nothing is drawn when nothing was missed or moved.
+ */
+function MissedNotice({
+  missed,
+  onGo,
+}: {
+  missed: readonly MissedBlock[];
+  onGo: (date: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const move = useMutation(blockMutationOptions(queryClient, "move"));
+  const done = useMutation(blockMutationOptions(queryClient, "done"));
+  const [moved, setMoved] = useState<readonly StudyBlock[]>([]);
+  const [movingAll, setMovingAll] = useState(false);
+  const title = useRef<HTMLParagraphElement>(null);
+  if (missed.length === 0 && moved.length === 0) return null;
+
+  const busy = move.isPending || done.isPending || movingAll;
+  const failed = move.isError ? move.error : done.isError ? done.error : null;
+  const landed = (block: StudyBlock) => {
+    setMoved((before) => [
+      ...before.filter((entry) => entry.id !== block.id),
+      block,
+    ]);
+    title.current?.focus();
+  };
+  const moveAll = async () => {
+    setMovingAll(true);
+    try {
+      for (const { planId, block } of missed)
+        landed((await move.mutateAsync({ planId, blockId: block.id })).block);
+    } catch {
+      // The mutation holds the refusal, and it is said below.
+    } finally {
+      setMovingAll(false);
+    }
+  };
+  const shown = missed.slice(0, MISSED_SHOWN);
+  const more = missed.length - shown.length;
+  return (
+    <section
+      aria-label="Missed study sessions"
+      className="shrink-0 border-border border-b bg-[color-mix(in_oklab,var(--duet-status-needs)_7%,var(--card))] py-2 pr-2 pl-4"
+    >
+      <div className="flex items-center gap-2">
+        <p
+          className="type-caption min-w-0 flex-1 py-1 font-semibold text-foreground outline-none"
+          ref={title}
+          tabIndex={-1}
+        >
+          {missed.length === 0
+            ? "Nothing missed now"
+            : missed.length === 1
+              ? "You missed a study session"
+              : `You missed ${missed.length} study sessions`}
+        </p>
+        {missed.length > 1 ? (
+          <TextButton disabled={busy} onClick={() => void moveAll()}>
+            {movingAll ? "Moving…" : "Move all to free time"}
+          </TextButton>
+        ) : null}
+      </div>
+      <ul className="type-caption">
+        {shown.map(({ planId, block }) => (
+          <li
+            className="flex flex-wrap items-center gap-x-2 border-border/60 border-t py-1"
+            key={block.id}
+          >
+            <div className="min-w-0 flex-[1_1_12rem] py-1">
+              <p className="font-medium text-foreground [overflow-wrap:anywhere]">
+                {block.title}
+              </p>
+              <p className="text-muted-foreground tabular-nums">
+                {slotLabel(block)}
+              </p>
+            </div>
+            <div className="-ml-2 flex shrink-0 gap-1 sm:ml-0">
+              <TextButton
+                aria-label={`Move ${block.title} to the next free time`}
+                disabled={busy}
+                onClick={() =>
+                  move.mutate(
+                    { planId, blockId: block.id },
+                    { onSuccess: (answer) => landed(answer.block) },
+                  )
+                }
+              >
+                Move it
+              </TextButton>
+              <TextButton
+                aria-label={`I did ${block.title}`}
+                disabled={busy}
+                onClick={() =>
+                  done.mutate(
+                    { planId, blockId: block.id },
+                    { onSuccess: () => title.current?.focus() },
+                  )
+                }
+              >
+                I did it
+              </TextButton>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {more > 0 ? (
+        <p className="type-caption py-1 text-muted-foreground">
+          and {more} more
+        </p>
+      ) : null}
+      {failed ? (
+        <p className="type-caption py-1 text-duet-status-problem" role="alert">
+          {failed.message}
+        </p>
+      ) : null}
+      {moved.length > 0 ? (
+        <ul aria-label="Moved" className="type-caption" role="status">
+          {moved.map((block) => (
+            <li
+              className="flex flex-wrap items-center gap-x-2 border-border/60 border-t py-1"
+              key={block.id}
+            >
+              <p className="min-w-0 flex-[1_1_12rem] py-1 text-muted-foreground [overflow-wrap:anywhere]">
+                <span className="font-medium text-foreground">
+                  {block.title}
+                </span>{" "}
+                moved to{" "}
+                <span className="tabular-nums">{slotLabel(block)}</span>
+                {block.late ? ", after its due date" : ""}
+              </p>
+              <TextButton
+                aria-label={`Show ${block.title} on ${dayLabel(block.date, { weekday: "long" })}`}
+                className="-ml-2 sm:ml-0"
+                onClick={() => onGo(block.date)}
+              >
+                Show it
+              </TextButton>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 /**
  * What the calendar could not read, in the server's own sentences, which say what to do, and the
  * place where most of them are done. Quiet: the rest of the calendar is still worth reading.
@@ -693,7 +894,9 @@ function CouldNotRead({ lines }: { lines: readonly string[] }) {
 function HelpLabel({ level }: { level: HelpLevel }) {
   return (
     <span className="type-caption inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
-      {level === "none" ? <DuetIcon name="lock" size={12} stroke={2} /> : null}
+      {noStudyHelp(level) ? (
+        <DuetIcon name="lock" size={12} stroke={2} />
+      ) : null}
       AI help: {HELP_LEVEL_LABEL[level]}
     </span>
   );
@@ -775,6 +978,10 @@ type ItemFacts = {
   color: string;
   proposed: boolean;
   late: boolean;
+  /** A study block the student marked done. */
+  done: boolean;
+  /** Where a study block was before it was moved to free time. */
+  movedFrom: string | null;
   /** The teacher's AI-help level for what is due, where the notice gave one. */
   help: HelpLevel | null;
 };
@@ -791,6 +998,8 @@ function itemFacts(
     location: null,
     proposed: false,
     late: false,
+    done: false,
+    movedFrom: null,
     help: null,
   };
   if (item.kind === "due") {
@@ -823,6 +1032,11 @@ function itemFacts(
     color: classColor(schoolClass?.color ?? "slate"),
     proposed: item.kind === "block" && item.proposed,
     late: item.kind === "block" && item.block.late === true,
+    done: item.kind === "block" && item.block.done === true,
+    movedFrom:
+      item.kind === "block" && item.block.movedFrom
+        ? slotLabel(item.block.movedFrom)
+        : null,
     help: null,
   };
 }
@@ -835,10 +1049,13 @@ function itemFacts(
 function ItemDetails({
   item,
   classes,
+  missed = false,
   onClose,
 }: {
   item: CalendarItem;
   classes: readonly SchoolClass[];
+  /** A study block that ended without being done. */
+  missed?: boolean;
   onClose: () => void;
 }) {
   const facts = itemFacts(item, classes);
@@ -867,6 +1084,13 @@ function ItemDetails({
             <p className="[overflow-wrap:anywhere]">{facts.location}</p>
           ) : null}
           {facts.className ? <p>{facts.className}</p> : null}
+          {facts.done ? <p>Done</p> : null}
+          {missed ? (
+            <p className="text-duet-status-needs">
+              Missed. Move it from the list above.
+            </p>
+          ) : null}
+          {facts.movedFrom ? <p>Moved from {facts.movedFrom}</p> : null}
           {facts.late ? (
             <p className="text-duet-status-needs">
               After its due date: time to catch up.

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
+  cueIsOff,
   PLAN_TOOL,
   type PlanToolResult,
   type StudyPlan,
@@ -45,7 +46,8 @@ import {
  * draws it as a card with Apply and Not now (lib/copilot/study-plan-card-tool.tsx); nothing reaches
  * their calendar until they press Apply there (plan-routes.ts).
  *
- * No teacher's rule pauses it: planning time for a "No help" essay is not help with the essay.
+ * On your own does not pause it: planning time for that essay is not help with the essay. Test does:
+ * Cue is off for the item, so it is left out of the plan and the plan says so.
  *
  * The answer is small on purpose. A tool's result is replayed to the model on every later turn, and
  * the card reads the plan itself by id, so the model hears only what it needs to say one sentence
@@ -370,7 +372,26 @@ async function propose(deps: StudyToolDeps, args: unknown): Promise<string> {
     throw error;
   }
 
-  const tasks = tasksFrom(snapshot, now);
+  // Test turns Cue off for the item, planning included, so it never becomes a study block.
+  const rules = await deps.rules.view(deps.actorId, snapshot, {
+    canLoosen: false,
+    now,
+  });
+  const off = new Set(
+    rules.classes.flatMap((schoolClass) =>
+      schoolClass.assignments
+        .filter((assignment) => cueIsOff(assignment.level))
+        .map((assignment) => assignment.assignmentId),
+    ),
+  );
+  const open = tasksFrom(snapshot, now);
+  const tasks = open.filter((task) => !off.has(task.id));
+  const leftOut = open
+    .filter((task) => off.has(task.id))
+    .map(
+      (task) =>
+        `${task.title} is set to Test, so Cue is off for it and it is not in this plan.`,
+    );
   const first = resolvePriority(request.priority ?? [], tasks);
   if (!first.ok) return refused(`${first.reason} ${AGAIN}`);
 
@@ -412,6 +433,7 @@ async function propose(deps: StudyToolDeps, args: unknown): Promise<string> {
     warnings: [
       ...new Set([
         ...draft.warnings,
+        ...leftOut,
         ...calendar.couldNotRead,
         // The classes were the copy kept from the last read, which this one could not refresh.
         ...(why ? [`Your assignments may be out of date. ${why}`] : []),

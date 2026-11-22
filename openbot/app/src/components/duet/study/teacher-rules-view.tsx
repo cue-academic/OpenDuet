@@ -43,7 +43,7 @@ const ADMIN_LOOSENED =
   "An admin loosened this rule, so only an admin can change it.";
 
 const PILL =
-  "type-sub inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
+  "type-sub inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
 const QUIET =
   "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile";
 const PRIMARY = "bg-duet-black text-duet-on-black hover:brightness-125";
@@ -272,7 +272,8 @@ export function TeacherRulesView({
     <>
       <div className="mt-6 flex max-w-prose flex-col gap-2">
         <p className="type-sub text-pretty text-duet-ink-2">
-          No help turns off AI quizzes and flashcards for that assignment.
+          On your own turns off AI quizzes and flashcards for that assignment;
+          Cue can still plan the time. Test turns Cue off for it.
           {rules.canLoosen ? "" : " Only a teacher can loosen a rule."}
         </p>
       </div>
@@ -679,7 +680,7 @@ function RuleControl({
       {/* Live, so the question is read out when it appears without taking focus from the choice. */}
       <div aria-live="polite">
         {proposal ? (
-          <div className="mt-3 rounded-[16px] bg-duet-tile p-3">
+          <div className="mt-3 rounded-[var(--duet-radius-card)] bg-duet-tile p-3">
             <p className="type-sub text-pretty text-duet-ink">
               Make {question} {HELP_LEVEL_LABEL[proposal]}? Only a teacher or an
               admin can undo it.
@@ -725,7 +726,7 @@ function RuleControl({
 }
 
 /**
- * Full help, Hints only, No help, side by side: the kit's Segmented, with choices this person can't
+ * Study, Guided help, On your own, Test, side by side: the kit's Segmented, with choices this person can't
  * make drawn and announced as unavailable, and arrow keys that skip them and keep focus on the
  * choice they move to. A radio group to assistive technology.
  */
@@ -762,8 +763,8 @@ function LevelChoice({
       aria-describedby={describedBy}
       aria-label={label}
       // Wraps onto a second line at a large text size rather than running off the screen. Each
-      // choice starts narrower than the kit's 7rem, so all three fit one line inside a phone's card.
-      className="duet-face mt-3 flex w-full flex-wrap gap-1 rounded-[26px] bg-duet-tile p-1"
+      // choice starts narrower than the kit's 7rem, so they wrap evenly inside a phone's card.
+      className="duet-face mt-3 flex w-full flex-wrap gap-1 rounded-[var(--duet-radius-field)] bg-duet-tile p-1"
       ref={group}
       role="radiogroup"
     >
@@ -774,7 +775,7 @@ function LevelChoice({
           <button
             aria-checked={on}
             className={cn(
-              "type-sub flex min-h-11 flex-[1_1_5rem] items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 font-medium transition-colors duration-[var(--duet-dur-swap)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 disabled:cursor-not-allowed disabled:opacity-45",
+              "type-sub flex min-h-11 flex-[1_1_5rem] items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-3 font-medium transition-colors duration-[var(--duet-dur-swap)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 disabled:cursor-not-allowed disabled:opacity-45",
               on
                 ? "bg-duet-card text-duet-ink shadow-duet-float"
                 : "text-duet-ink-2 enabled:hover:text-duet-ink",

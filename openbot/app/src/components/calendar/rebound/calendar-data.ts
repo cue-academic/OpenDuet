@@ -19,7 +19,7 @@ import {
 import type { AgendaItem, Block, Course } from "./lib/types";
 
 /*
- * Academic OS's calendar in the shapes Rebound's timeline draws (lib/types.ts). A Google Calendar
+ * Cue's calendar in the shapes Rebound's timeline draws (lib/types.ts). A Google Calendar
  * event becomes a fixed commitment, an applied study block becomes a block, and a proposed plan's
  * blocks are laid over both without replacing anything. Every id is namespaced by where it came from,
  * so an event and a block can never be taken for one another, and a proposed block is known by its id.
@@ -333,6 +333,8 @@ export function toCalendarData(input: {
   blocks: readonly StudyBlock[];
   /** A proposed plan's blocks, drawn over the rest. */
   proposed?: readonly StudyBlock[];
+  /** The ids of applied blocks that ended without being done. */
+  missed?: ReadonlySet<string>;
 }): CalendarData {
   const known = new Set(input.classes.map((schoolClass) => schoolClass.id));
   const courseOf = (classId: string | null | undefined): string =>
@@ -351,7 +353,13 @@ export function toCalendarData(input: {
         ? `${PROPOSED_TITLE_PREFIX}${source.title}`
         : source.title,
       courseId: courseOf(source.classId),
-      status: "todo",
+      status: proposed
+        ? "todo"
+        : source.done
+          ? "done"
+          : input.missed?.has(source.id)
+            ? "missed"
+            : "todo",
     },
   });
   const blocks = [

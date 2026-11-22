@@ -152,7 +152,7 @@ function Block({
         <ul className="mt-6 grid grid-cols-2 gap-2.5 first:mt-0">
           {block.items.map((metric, index) => (
             <li
-              className="flex min-h-[108px] min-w-0 flex-col rounded-[18px] bg-duet-card px-3.5 py-3 shadow-[0_0_0_1px_var(--duet-hair-2)]"
+              className="flex min-h-[108px] min-w-0 flex-col rounded-[var(--duet-radius-card)] bg-duet-card px-3.5 py-3 shadow-[0_0_0_1px_var(--duet-hair-2)]"
               // biome-ignore lint/suspicious/noArrayIndexKey: two tiles may share a label.
               key={index}
             >
@@ -199,7 +199,7 @@ function Block({
               {block.title}
             </h3>
           ) : null}
-          <ul className="overflow-hidden rounded-[18px] bg-duet-card shadow-[0_0_0_1px_var(--duet-hair-2)]">
+          <ul className="overflow-hidden rounded-[var(--duet-radius-card)] bg-duet-card shadow-[0_0_0_1px_var(--duet-hair-2)]">
             {block.items.map((item, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: rows may repeat a line.
               <Fragment key={index}>
@@ -474,7 +474,7 @@ export function SlideCard({
     >
       <div
         className={cn(
-          "grid grid-cols-1 rounded-[18px] bg-duet-card p-[16px] text-duet-ink shadow-duet-raised",
+          "grid grid-cols-1 rounded-[var(--duet-radius-card)] bg-duet-card p-[16px] text-duet-ink shadow-duet-raised",
           fit ? "absolute top-0 left-0 origin-top-left" : "h-full w-full",
         )}
         style={

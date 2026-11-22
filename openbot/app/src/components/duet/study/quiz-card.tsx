@@ -206,7 +206,7 @@ function QuizQuestions({
               return (
                 <label
                   className={cn(
-                    "flex min-h-[52px] cursor-pointer items-start gap-3 rounded-[16px] px-3 py-3 transition-[background-color,box-shadow,transform] has-[:disabled]:cursor-default has-[:disabled]:opacity-60 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-duet-accent/40 active:scale-[0.99]",
+                    "flex min-h-[52px] cursor-pointer items-start gap-3 rounded-[var(--duet-radius-card)] px-3 py-3 transition-[background-color,box-shadow,transform] has-[:disabled]:cursor-default has-[:disabled]:opacity-60 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-duet-accent/40 active:scale-[0.99]",
                     pop.soft,
                     on
                       ? "shadow-[inset_0_0_0_2px_var(--pop)]"

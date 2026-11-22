@@ -24,7 +24,7 @@ import { guardTeacherRules } from "../src/openduet/study/guard";
 import { createRulesService } from "../src/openduet/study/rules";
 
 /**
- * A teacher's No help, kept in code: make_quiz and make_flashcards are checked against the class's
+ * A teacher's On your own, kept in code: make_quiz and make_flashcards are checked against the class's
  * rule each time they run, and refused with a reason the model must pass on and the card can draw.
  */
 
@@ -281,7 +281,7 @@ describe("the teacher-rule guard", () => {
     expect(held[1]).not.toBe(tools[1]!);
   });
 
-  test("refuses under No help, says whose rule it is, records it, and the card reads it back", async () => {
+  test("refuses under On your own, says whose rule it is, records it, and the card reads it back", async () => {
     const trail = audit();
     const { byName, calls, reads } = guarded({ auditStore: trail.store });
     const answer = await byName(QUIZ_TOOL).execute({
@@ -296,7 +296,7 @@ describe("the teacher-rule guard", () => {
         assignment: "DBQ essay",
         teacher: "Mr. Grant",
         source: "notice",
-      })} Mr. Grant set AP US History to No help while "DBQ essay" is open, so nothing was made. ${ADVICE}`,
+      })} Mr. Grant set AP US History to On your own while "DBQ essay" is open, so nothing was made. ${ADVICE}`,
     );
     expect(readTeacherRuleBlock(answer)).toEqual({
       classId: "apush1",
@@ -359,7 +359,7 @@ describe("the teacher-rule guard", () => {
         teacher: "Mr. Grant",
         source: "notice",
       },
-      said: `Mr. Grant set "DBQ essay" in AP US History to No help, so nothing was made. ${ADVICE}`,
+      said: `Mr. Grant set "DBQ essay" in AP US History to On your own, so nothing was made. ${ADVICE}`,
     });
     // Set on the screen, not by Dr. Okoro: the facts name no teacher, and the words say where.
     expect(await refusal({ class: "Chemistry", assignment: "lab 6" })).toEqual({
@@ -370,7 +370,7 @@ describe("the teacher-rule guard", () => {
         assignment: "Lab 6 report",
         source: "override",
       },
-      said: `"Lab 6 report" in Chemistry is set to No help on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
+      said: `"Lab 6 report" in Chemistry is set to On your own on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
     });
     expect(await refusal({ class: "Chemistry" })).toEqual({
       block: {
@@ -379,7 +379,7 @@ describe("the teacher-rule guard", () => {
         level: "none",
         source: "override",
       },
-      said: `Chemistry is set to No help on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
+      said: `Chemistry is set to On your own on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
     });
     // A class with no teacher named in its notices, set stricter on the screen.
     expect(await refusal({ class: "precalc" })).toEqual({
@@ -389,7 +389,7 @@ describe("the teacher-rule guard", () => {
         level: "none",
         source: "override",
       },
-      said: `Precalculus is set to No help on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
+      said: `Precalculus is set to On your own on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
     });
     expect(calls).toEqual([]);
     // The trail still says where each rule came from.
@@ -407,7 +407,26 @@ describe("the teacher-rule guard", () => {
     ]);
   });
 
-  test("runs the tool under Hints only and Full help, with the call as it came", async () => {
+  test("refuses under Test too, and does not offer to plan the time: Cue is off for it", async () => {
+    const snapshot: SchoolSnapshot = {
+      ...SNAPSHOT,
+      assignments: SNAPSHOT.assignments.map((row) =>
+        row.title === "DBQ essay" ? { ...row, help: "test" as const } : row,
+      ),
+    };
+    const { byName, calls } = guarded({ school: school(snapshot).service });
+    const answer = await byName(QUIZ_TOOL).execute({
+      class: "APUSH",
+      topic: "Causes of the Civil War",
+    });
+    expect(answer).toContain('"level":"test"');
+    expect(answer).toContain("to Test");
+    expect(answer).toContain("offer to help with a different class");
+    expect(answer).not.toContain("plan their time");
+    expect(calls).toEqual([]);
+  });
+
+  test("runs the tool under Guided help and Study, with the call as it came", async () => {
     const trail = audit();
     const { byName, calls } = guarded({ auditStore: trail.store });
     const hints = { class: "Chemistry", assignment: "Lab 6", topic: "rates" };
@@ -505,7 +524,7 @@ describe("the teacher-rule guard", () => {
         school: reader.service,
         auditStore: trail.store,
       });
-      // The DBQ's No help can't be seen, so nothing is made under the default level instead.
+      // The DBQ's On your own can't be seen, so nothing is made under the default level instead.
       answers.push(
         await byName(tool).execute({
           class: "AP US History",
@@ -599,7 +618,7 @@ describe("the teacher-rule guard", () => {
       source: "notice",
     });
     expect(answer).toContain(
-      'Mr. Grant set AP US History to No help while "DBQ essay" is open',
+      'Mr. Grant set AP US History to On your own while "DBQ essay" is open',
     );
   });
 });

@@ -205,7 +205,7 @@ function TitlePill({
   const step = own ?? server;
   const working = status && step !== null;
   return (
-    <div className="duet-glass flex h-[46px] min-w-0 max-w-full flex-col items-center justify-center rounded-full px-4 shadow-duet-glass">
+    <div className="duet-glass flex h-[46px] min-w-0 max-w-full flex-col items-center justify-center rounded-[10px] px-4 shadow-duet-glass">
       {/* The page's heading is its own, for screen readers; this is what the eye reads. */}
       <p
         aria-hidden

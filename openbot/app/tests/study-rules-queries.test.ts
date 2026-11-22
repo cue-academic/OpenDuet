@@ -164,7 +164,10 @@ describe("changeRulesMutationOptions", () => {
       },
     ]);
     expect(cachedRules(queryClient)).toEqual(stricter);
-    expect(invalidated).toEqual([{ queryKey: studyKeys.calendarAll }]);
+    expect(invalidated).toEqual([
+      { queryKey: studyKeys.hub },
+      { queryKey: studyKeys.calendarAll },
+    ]);
     expect(calendarStale(queryClient)).toBe(true);
   });
 
@@ -218,7 +221,10 @@ describe("syncSchoolMutationOptions", () => {
       { url: "/api/openduet/study/school/sync", method: "POST" },
     ]);
     expect(cachedRules(queryClient)).toEqual(after);
-    expect(invalidated).toEqual([{ queryKey: studyKeys.calendarAll }]);
+    expect(invalidated).toEqual([
+      { queryKey: studyKeys.hub },
+      { queryKey: studyKeys.calendarAll },
+    ]);
   });
 
   test("never read before is an answer too: no classes, and why", async () => {

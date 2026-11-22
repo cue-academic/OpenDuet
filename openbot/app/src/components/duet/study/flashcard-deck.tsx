@@ -197,7 +197,7 @@ function DeckBody({
     const again = round.cards.filter((index) => round.marks[index] === "again");
     return (
       <div className="px-4 pt-3 pb-4">
-        <div className="rounded-[18px] bg-duet-tile px-5 py-5">
+        <div className="rounded-[var(--duet-radius-card)] bg-duet-tile px-5 py-5">
           <p
             className="type-nav font-semibold tabular-nums outline-none"
             data-deck-summary
@@ -239,7 +239,7 @@ function DeckBody({
       <button
         aria-label={`${side}: ${text}${marked ? ` (marked ${MARK_WORD[marked]})` : ""}`}
         className={cn(
-          "flex min-h-[176px] w-full flex-col rounded-[18px] px-5 pt-4 pb-3 text-left transition-[background-color,box-shadow,transform] duration-[var(--duet-dur-swap)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.99] motion-reduce:active:scale-100",
+          "flex min-h-[176px] w-full flex-col rounded-[var(--duet-radius-card)] px-5 pt-4 pb-3 text-left transition-[background-color,box-shadow,transform] duration-[var(--duet-dur-swap)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.99] motion-reduce:active:scale-100",
           flipping && "study-flip",
           // The answer side lifts onto the card's own white, so the two sides read as two faces.
           round.flipped
@@ -345,7 +345,7 @@ function DeckBody({
           onKeyDown={arrows}
         />
         <button
-          className="type-sub ml-auto inline-flex h-11 items-center rounded-full px-3 font-medium text-duet-ink-2 transition-colors hover:bg-duet-tile hover:text-duet-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:bg-duet-tile disabled:opacity-40"
+          className="type-sub ml-auto inline-flex h-11 items-center rounded-[10px] px-3 font-medium text-duet-ink-2 transition-colors hover:bg-duet-tile hover:text-duet-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:bg-duet-tile disabled:opacity-40"
           disabled={round.cards.length < 2}
           onClick={shuffle}
           type="button"

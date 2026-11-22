@@ -4,6 +4,11 @@
  * the requests; these only draw them and say what the person pressed.
  */
 
+export {
+  ClassesView,
+  type ClassesViewProps,
+  hubDueText,
+} from "./classes-view";
 export { FlashcardDeck } from "./flashcard-deck";
 export {
   blockMinutes,

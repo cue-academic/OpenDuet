@@ -21,9 +21,7 @@ export function DesktopBar() {
         to="/"
       >
         <ChatOrb size={40} />
-        <span
-          className={`${INTRO_NAME_TARGET} study-display type-nav font-semibold`}
-        >
+        <span className={`${INTRO_NAME_TARGET} study-display type-nav`}>
           {appConfig.brand.productName}
         </span>
       </Link>

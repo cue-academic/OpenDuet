@@ -7,7 +7,11 @@ import {
   test,
 } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import type { CalendarView, StudyPlan } from "@openbot/shared/study";
+import type {
+  CalendarView,
+  StudyBlock,
+  StudyPlan,
+} from "@openbot/shared/study";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -20,11 +24,11 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { UNCLASSED_COURSE_ID } from "@/components/calendar/rebound/calendar-data";
 import {
-  type CalendarSearch,
   CalendarScreen,
+  type CalendarSearch,
 } from "@/components/shell/calendar-screen";
-import { Route as CalendarRoute } from "@/routes/_authed/_app/calendar";
 import { applyPlanMutationOptions } from "@/lib/study/plans";
+import { Route as CalendarRoute } from "@/routes/_authed/_app/calendar";
 import { settleReactWork } from "./settle-react-work";
 
 /**
@@ -86,6 +90,7 @@ function demoWeek(): CalendarView {
     nowMinute: 16 * 60 + 10,
     from: "2026-11-01",
     to: "2026-11-07",
+    missed: [],
     classes: [
       {
         id: "apush1",
@@ -328,6 +333,52 @@ function serving() {
         },
       });
     }
+    const answer = url.pathname.match(
+      /^\/api\/openduet\/study\/plans\/([^/]+)\/blocks\/([^/]+)\/(move|done)$/,
+    );
+    if (answer) {
+      const entry = calendar.missed.find(
+        (missed) => missed.block.id === answer[2],
+      );
+      if (!entry || failing)
+        return Response.json(
+          { error: "Your schedule changed. Nothing was moved." },
+          { status: 409 },
+        );
+      // The next free time, as the server finds it: tomorrow at 5:40 PM, each after the last.
+      const taken = calendar.blocks.filter(
+        (block) => block.date === TOMORROW && block.movedFrom,
+      ).length;
+      const { block } = entry;
+      const next: StudyBlock =
+        answer[3] === "done"
+          ? { ...block, done: true }
+          : {
+              ...block,
+              date: TOMORROW,
+              start: taken === 0 ? "17:40" : "18:35",
+              end: taken === 0 ? "18:25" : "19:20",
+              movedFrom: {
+                date: block.date,
+                start: block.start,
+                end: block.end,
+              },
+            };
+      calendar = {
+        ...calendar,
+        blocks: [
+          ...calendar.blocks.filter((other) => other.id !== block.id),
+          next,
+        ],
+        missed: calendar.missed.filter((other) => other !== entry),
+      };
+      return Response.json({
+        answer: {
+          plan: { ...appliedPlanOf(entry.planId), blocks: [next] },
+          block: next,
+        },
+      });
+    }
     const plan = url.pathname.match(
       /^\/api\/openduet\/study\/plans\/([^/]+)(?:\/(apply|remove))?$/,
     );
@@ -500,7 +551,7 @@ test("opens on the student's today: its classes, a study block, and what is due 
   });
   expect(within(details).getByText("Wed, Nov 4 · Due 11:59 PM")).toBeTruthy();
   expect(within(details).getByText("Precalculus")).toBeTruthy();
-  expect(within(details).getByText("AI help: Full help")).toBeTruthy();
+  expect(within(details).getByText("AI help: Study")).toBeTruthy();
   await user.click(
     view.getByRole("button", { name: "Material: DBQ documents and rubric" }),
   );
@@ -508,7 +559,7 @@ test("opens on the student's today: its classes, a study block, and what is due 
     name: "DBQ documents and rubric, details",
   });
   expect(within(rubric).getByText("Wed, Nov 4 · Material")).toBeTruthy();
-  expect(within(rubric).getByText("AI help: No help")).toBeTruthy();
+  expect(within(rubric).getByText("AI help: On your own")).toBeTruthy();
   // One card at a time.
   expect(view.queryByRole("region", { name: /homework.*details$/ })).toBeNull();
 });
@@ -1235,4 +1286,203 @@ test("the route reads its day, plan and view as the text they were in the addres
     plan: "12345",
     view: "week",
   });
+});
+
+/** A plan as the server answers a block's move with: applied, holding the block. */
+function appliedPlanOf(id: string): StudyPlan {
+  return {
+    id,
+    status: "applied",
+    reason: "Tonight.",
+    timeZone: "America/Chicago",
+    startDate: YESTERDAY,
+    days: 1,
+    blocks: [],
+    remaining: [],
+    warnings: [],
+    totalMinutes: 90,
+    createdAt: "2026-11-03T20:00:00.000Z",
+    appliedAt: "2026-11-03T20:01:00.000Z",
+    stale: false,
+    staleReason: null,
+  };
+}
+
+const YESTERDAY = "2026-11-03";
+/** Two sessions planned for yesterday evening that went by undone. */
+function withMissed(): CalendarView {
+  const week = demoWeek();
+  const blocks: StudyBlock[] = [
+    {
+      id: "missed-1",
+      assignmentId: "chem2-lab6",
+      classId: "chem2",
+      title: "Chemistry: Lab 6 report",
+      date: YESTERDAY,
+      start: "17:40",
+      end: "18:25",
+    },
+    {
+      id: "missed-2",
+      assignmentId: null,
+      classId: null,
+      title: "Spanish: vocabulary",
+      date: YESTERDAY,
+      start: "18:35",
+      end: "19:20",
+    },
+  ];
+  return {
+    ...week,
+    blocks: [...week.blocks, ...blocks],
+    missed: blocks.map((block) => ({ planId: "plan-missed", block })),
+  };
+}
+
+test("missed sessions are listed over the calendar, and Move it puts one at the next free time", async () => {
+  calendar = withMissed();
+  serving();
+  const { view, user, seen } = draw();
+  const notice = within(
+    await view.findByRole("region", { name: "Missed study sessions" }),
+  );
+  expect(notice.getByText("You missed 2 study sessions")).toBeTruthy();
+  expect(notice.getByText("Tue, Nov 3 · 5:40 PM – 6:25 PM")).toBeTruthy();
+
+  await user.click(
+    notice.getByRole("button", {
+      name: "Move Chemistry: Lab 6 report to the next free time",
+    }),
+  );
+  await waitFor(() =>
+    expect(notice.getByText("You missed a study session")).toBeTruthy(),
+  );
+  expect(requests).toContain(
+    "POST /api/openduet/study/plans/plan-missed/blocks/missed-1/move",
+  );
+  expect((await notice.findByRole("status")).textContent).toBe(
+    "Chemistry: Lab 6 report moved to Thu, Nov 5 · 5:40 PM – 6:25 PMShow it",
+  );
+  await user.click(
+    notice.getByRole("button", {
+      name: "Show Chemistry: Lab 6 report on Thursday",
+    }),
+  );
+  expect(seen.at(-1)).toEqual({ date: TOMORROW });
+  expect(heading(view)).toBe("Thu, Nov 5");
+});
+
+test("I did it takes a session off the missed list without moving it, and Move all takes the rest in order", async () => {
+  calendar = withMissed();
+  serving();
+  const { view, user } = draw();
+  const notice = within(
+    await view.findByRole("region", { name: "Missed study sessions" }),
+  );
+  await user.click(
+    notice.getByRole("button", { name: "I did Spanish: vocabulary" }),
+  );
+  await waitFor(() =>
+    expect(notice.getByText("You missed a study session")).toBeTruthy(),
+  );
+  expect(notice.queryByRole("button", { name: /^Move all/ })).toBeNull();
+  expect(notice.queryByRole("status")).toBeNull();
+
+  calendar = withMissed();
+  cleanup();
+  serving();
+  const again = draw();
+  const list = within(
+    await again.view.findByRole("region", { name: "Missed study sessions" }),
+  );
+  await again.user.click(
+    list.getByRole("button", { name: "Move all to free time" }),
+  );
+  await waitFor(() =>
+    expect(list.getByText("Nothing missed now")).toBeTruthy(),
+  );
+  expect(
+    within(list.getByRole("status"))
+      .getAllByRole("listitem")
+      .map((item) => item.textContent),
+  ).toEqual([
+    "Chemistry: Lab 6 report moved to Thu, Nov 5 · 5:40 PM – 6:25 PMShow it",
+    "Spanish: vocabulary moved to Thu, Nov 5 · 6:35 PM – 7:20 PMShow it",
+  ]);
+});
+
+test("details open on a missed session follow it: they say Done once it is, and close when it moves away", async () => {
+  calendar = withMissed();
+  serving();
+  const { view, user } = draw({ date: YESTERDAY });
+  const notice = within(
+    await view.findByRole("region", { name: "Missed study sessions" }),
+  );
+  const open = async (title: string) => {
+    const button = await waitFor(() => {
+      const found = Array.from(
+        view.container.querySelectorAll<HTMLElement>(
+          "[data-calendar-item-id^='block:']",
+        ),
+      ).find((item) => item.textContent?.includes(title));
+      if (!found) throw new Error(`no block for ${title}`);
+      return found;
+    });
+    await user.click(button);
+    return within(
+      await view.findByRole("region", { name: `${title}, details` }),
+    );
+  };
+  const spanish = await open("Spanish: vocabulary");
+  expect(
+    spanish.getByText("Missed. Move it from the list above."),
+  ).toBeTruthy();
+  await user.click(
+    notice.getByRole("button", { name: "I did Spanish: vocabulary" }),
+  );
+  await waitFor(() => expect(spanish.getByText("Done")).toBeTruthy());
+  expect(spanish.queryByText(/^Missed/)).toBeNull();
+
+  await open("Chemistry: Lab 6 report");
+  await user.click(
+    notice.getByRole("button", {
+      name: "Move Chemistry: Lab 6 report to the next free time",
+    }),
+  );
+  await waitFor(() =>
+    expect(
+      view.queryByRole("region", { name: "Chemistry: Lab 6 report, details" }),
+    ).toBeNull(),
+  );
+});
+
+test("a move that is refused says why, and the session stays on the list", async () => {
+  calendar = withMissed();
+  serving();
+  const { view, user } = draw();
+  const notice = within(
+    await view.findByRole("region", { name: "Missed study sessions" }),
+  );
+  failing = true;
+  await user.click(
+    notice.getByRole("button", {
+      name: "Move Spanish: vocabulary to the next free time",
+    }),
+  );
+  expect((await notice.findByRole("alert")).textContent).toBe(
+    "Your schedule changed. Nothing was moved.",
+  );
+  expect(notice.getByText("Spanish: vocabulary")).toBeTruthy();
+});
+
+test("no missed sessions, no list", async () => {
+  serving();
+  const { view } = draw();
+  await view.findByRole("heading", { level: 1 });
+  await waitFor(() =>
+    expect(view.container.querySelector(".academic-calendar")).toBeTruthy(),
+  );
+  expect(
+    view.queryByRole("region", { name: "Missed study sessions" }),
+  ).toBeNull();
 });

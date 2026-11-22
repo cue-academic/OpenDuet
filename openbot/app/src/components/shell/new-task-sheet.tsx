@@ -104,7 +104,7 @@ export function NewTaskSheet({
           )}
           initialFocus={field}
         >
-          <div className="duet-glass rounded-[28px] p-4 shadow-duet-glass">
+          <div className="duet-glass rounded-[var(--duet-radius-field)] p-4 shadow-duet-glass">
             <div className="flex items-start justify-between gap-3">
               <DialogPrimitive.Title className="type-title min-w-0 flex-1 pt-1.5 pl-1 font-semibold [overflow-wrap:anywhere]">
                 {question}
@@ -127,7 +127,7 @@ export function NewTaskSheet({
             >
               <textarea
                 aria-label={question}
-                className="type-body mt-3 min-h-28 w-full resize-none rounded-[20px] bg-duet-card px-4 py-3 text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] outline-none placeholder:text-duet-ink-3 focus-visible:ring-3 focus-visible:ring-duet-violet/25"
+                className="type-body mt-3 min-h-28 w-full resize-none rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-3 text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] outline-none placeholder:text-duet-ink-3 focus-visible:ring-3 focus-visible:ring-duet-violet/25"
                 disabled={busy}
                 maxLength={
                   4000 -
