@@ -2,22 +2,16 @@ import { expoClient } from "@better-auth/expo/client";
 import { ssoClient } from "@better-auth/sso/client";
 import { createAuthClient } from "better-auth/react";
 import * as SecureStore from "expo-secure-store";
+import { readServerUrl } from "./server-url";
 
-const configured = process.env.EXPO_PUBLIC_SERVER_URL;
-if (!configured)
-  throw new Error(
-    "Set EXPO_PUBLIC_SERVER_URL to your OpenBot deployment before building the native app.",
-  );
-const endpoint = new URL(configured);
-if (
-  endpoint.protocol !== "https:" &&
-  !(__DEV__ && endpoint.protocol === "http:")
-)
-  throw new Error("OpenBot native sign-in requires HTTPS.");
-if (endpoint.username || endpoint.password || endpoint.search || endpoint.hash)
-  throw new Error(
-    "Use the public deployment URL without credentials or query parameters.",
-  );
+const server = readServerUrl(process.env.EXPO_PUBLIC_SERVER_URL, __DEV__);
+/** Why this build cannot reach a server. The layout shows it in place of every screen. */
+export const serverProblem = server.problem;
+// The placeholder is never requested: no screen renders while `serverProblem` is set.
+const endpoint =
+  server.problem !== undefined
+    ? { origin: "https://server-url-not-set.invalid", host: "not-set" }
+    : server;
 export const serverUrl = endpoint.origin;
 export const authClient = createAuthClient({
   baseURL: serverUrl,

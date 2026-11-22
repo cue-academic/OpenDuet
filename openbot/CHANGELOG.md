@@ -35,6 +35,12 @@ Newest first. `Unreleased` is what is on `main` and not yet tagged.
   request for an administrator to switch on a work app, grant it to a Bot, or connect a Shared app's
   team account is kept, with who answered it and when. It starts empty and nothing is backfilled.
 
+### The phone app says when it has no server URL
+
+Built without `EXPO_PUBLIC_SERVER_URL`, or with one that is not an `https` URL, the phone app used
+to stop on a red "Uncaught Error" screen as it opened. It now opens to a screen that says the app is
+not set up yet and what to set. A valid URL behaves as before.
+
 ### Plainer words, and one word for each thing
 
 OpenBot now says **Bot** everywhere a person reads it, where screens used to mix Bot, agent, coworker

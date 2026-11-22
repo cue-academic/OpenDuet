@@ -1,8 +1,11 @@
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import { useEffect, useRef } from "react";
-import { authClient } from "../src/auth";
+import { Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { authClient, serverProblem } from "../src/auth";
 import { notificationDestination } from "../src/links";
+import { heading, Problem, Screen } from "../src/ui";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -13,6 +16,25 @@ Notifications.setNotificationHandler({
   }),
 });
 export default function Layout() {
+  if (serverProblem) return <ServerProblem message={serverProblem} />;
+  return <App />;
+}
+function ServerProblem({ message }: { message: string }) {
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <Screen>
+        <Text accessibilityRole="header" style={heading}>
+          This app is not set up yet
+        </Text>
+        <Problem message={message} />
+        <Text>
+          Add the server URL to the app's .env file, then build the app again.
+        </Text>
+      </Screen>
+    </SafeAreaView>
+  );
+}
+function App() {
   const { data: session } = authClient.useSession();
   const pending = useRef<unknown>(null);
   const handled = useRef<string | null>(null);
