@@ -79,6 +79,9 @@ agents:
       on trig identities." For flashcards, call make_flashcards the same way with 8 to 20 cards, each
       one fact or term with a short front and a back of at most 20 words. When they ask how they are
       doing or what to review, call show_progress, with the class when they name one. When they ask
+      what is due, what is missing or what a class has coming up, call list_assignments, with the
+      class when they name one: it reads their stored classes, due dates and each assignment's AI
+      help level, so do not search their mail for those. When they ask
       you to plan their study time, an afternoon, a night or the week, call propose_study_plan with
       the minutes they have, the start time when they say one, the number of days, startDay when it
       starts on a later day (tomorrow, or a weekday such as saturday), and the assignments to do

@@ -1,4 +1,4 @@
-import type { RulesChange, RulesView } from "@openbot/shared/study";
+import type { RulesChange, RulesView, SchoolHub } from "@openbot/shared/study";
 import {
   mutationOptions,
   type QueryClient,
@@ -7,7 +7,11 @@ import {
 import { z } from "zod";
 import { client } from "@/lib/client";
 import { studyKeys } from "./keys";
-import { rulesViewSchema, schoolSnapshotSchema } from "./schemas";
+import {
+  rulesViewSchema,
+  schoolHubSchema,
+  schoolSnapshotSchema,
+} from "./schemas";
 
 /*
  * The Teacher rules screen's reads and writes: the rules as the screen shows them, a change to them,
@@ -20,6 +24,7 @@ const schoolSyncSchema = z.object({
   school: schoolSnapshotSchema.nullable(),
   why: z.string().nullable(),
   rules: rulesViewSchema,
+  hub: schoolHubSchema.optional(),
 });
 
 export type SchoolSync = z.output<typeof schoolSyncSchema>;
@@ -87,6 +92,8 @@ export function changeRulesMutationOptions(queryClient: QueryClient) {
       ),
     onSuccess: async (rules) => {
       await keep(queryClient, rules);
+      // The Classes screen shows each level too.
+      await queryClient.invalidateQueries({ queryKey: studyKeys.hub });
       // The calendar shows each deadline's help level, which this may have changed.
       await queryClient.invalidateQueries({ queryKey: studyKeys.calendarAll });
     },
@@ -113,10 +120,29 @@ export function syncSchoolMutationOptions(queryClient: QueryClient) {
         UNREADABLE,
       );
     },
-    onSuccess: async ({ rules }) => {
+    onSuccess: async ({ rules, hub }) => {
       await keep(queryClient, rules);
+      await queryClient.cancelQueries({ queryKey: studyKeys.hub, exact: true });
+      if (hub) queryClient.setQueryData(studyKeys.hub, hub);
+      else await queryClient.invalidateQueries({ queryKey: studyKeys.hub });
       // New notices can move a deadline or its help level, which the calendar shows.
       await queryClient.invalidateQueries({ queryKey: studyKeys.calendarAll });
     },
+  });
+}
+
+/** GET /api/openduet/study/hub: every class with its work, due dates and the level in force. */
+export function hubQueryOptions() {
+  return queryOptions({
+    queryKey: studyKeys.hub,
+    queryFn: async ({ signal }): Promise<SchoolHub> =>
+      checked(
+        schoolHubSchema,
+        await client<unknown>("/api/openduet/study/hub", "hub", {
+          fallback: "Couldn't load your classes.",
+          signal,
+        }),
+        "Couldn't read your classes. Reload the page to try again.",
+      ),
   });
 }

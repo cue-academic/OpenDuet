@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type {
   ClassRules,
   RulesView,
+  SchoolHub,
   SchoolAssignment,
   SchoolSnapshot,
 } from "@openbot/shared/study";
@@ -614,5 +615,75 @@ describe("the Classroom read", () => {
     expect(status).toBe(200);
     expect(body).toMatchObject({ school: SNAPSHOT, why });
     expect(viewOf(body).couldNotRead).toEqual([why]);
+  });
+});
+
+describe("GET /hub", () => {
+  test("joins the stored classes and work with the level in force for each", async () => {
+    const { as, reader, rules } = setup();
+    // Jordan made Chemistry stricter on Teacher rules; the hub shows the level now obeyed.
+    await rules.change(
+      "jordan",
+      { classes: { chem2: "none" } },
+      { canLoosen: false, snapshot: SNAPSHOT, now: NOW },
+    );
+    const { status, body } = await as("jordan")("GET", "/hub");
+    expect(status).toBe(200);
+    const hub = body.hub as SchoolHub;
+    expect(hub.timeZone).toBe("America/Chicago");
+    expect(hub.syncedAt).toBe("2026-11-04T21:05:00.000Z");
+    expect(hub.classes.map((schoolClass) => schoolClass.name)).toEqual([
+      "AP US History",
+      "Chemistry",
+      "English 11",
+      "Precalculus",
+      "Spanish III",
+    ]);
+    const precalc = hub.classes.find((found) => found.id === "precalc4");
+    expect(precalc).toMatchObject({
+      teacher: "Mr. Chen",
+      period: "4",
+      color: "sky",
+      level: "full",
+      source: "notice",
+    });
+    expect(precalc?.assignments[0]).toEqual({
+      id: "precalc4-hw43",
+      title: "Section 4.3 homework",
+      kind: "assignment",
+      status: "missing",
+      due: "2026-11-04T05:59:00.000Z",
+      points: null,
+      grade: null,
+      minutes: 45,
+      link: null,
+      level: "full",
+      source: "notice",
+    });
+    const chem = hub.classes.find((found) => found.id === "chem2");
+    expect(chem).toMatchObject({ level: "none", source: "override" });
+    expect(
+      chem?.assignments.find((work) => work.id === "chem2-lab5"),
+    ).toMatchObject({ status: "returned", grade: "34/40" });
+    expect(reader.asked).toEqual([{ context: JORDAN, force: false }]);
+  });
+
+  test("is empty, with why, before any classes were read", async () => {
+    const why = "Gmail isn't connected yet. Connect it to read your classes.";
+    const { as } = setup({ snapshot: null, why });
+    const { status, body } = await as("jordan")("GET", "/hub");
+    expect(status).toBe(200);
+    expect(body.hub).toEqual({
+      timeZone: "UTC",
+      syncedAt: null,
+      classes: [],
+      couldNotRead: [why],
+    });
+  });
+
+  test("POST /school/sync answers the hub too", async () => {
+    const { as } = setup();
+    const { body } = await as("jordan")("POST", "/school/sync");
+    expect((body.hub as SchoolHub).classes).toHaveLength(5);
   });
 });

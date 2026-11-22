@@ -9,6 +9,7 @@ import { type MouseEvent, useEffect, useState } from "react";
 const TOOLS = [
   { label: "Tonight", to: "/coach" },
   { label: "Study", to: "/learn" },
+  { label: "Classes", to: "/classes" },
   { label: "Calendar", to: "/calendar" },
   { label: "Tasks", to: "/tasks" },
   { label: "Rules", to: "/settings/teacher-rules" },

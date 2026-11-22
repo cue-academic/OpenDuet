@@ -13,6 +13,8 @@ import {
   type FlashcardDeck,
   HELP_LEVELS,
   type HelpLevel,
+  type HubAssignment,
+  type HubClass,
   type PlanStatus,
   type PlanToolResult,
   type ProgressSummary,
@@ -28,6 +30,7 @@ import {
   type RulesView,
   type SchoolAssignment,
   type SchoolClass,
+  type SchoolHub,
   type SchoolSnapshot,
   type StudyBlock,
   type StudyPlan,
@@ -114,6 +117,40 @@ export const schoolSnapshotSchema = z.object({
   assignments: z.array(schoolAssignmentSchema),
   couldNotRead: z.array(z.string()),
 }) satisfies z.ZodType<SchoolSnapshot>;
+
+/* The hub (the Classes screen) */
+
+export const hubAssignmentSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: assignmentKindSchema,
+  status: assignmentStatusSchema,
+  due: z.string().nullable(),
+  points: z.number().nullable(),
+  grade: z.string().nullable(),
+  minutes: z.number(),
+  link: z.string().nullable(),
+  level: helpLevelSchema,
+  source: ruleSourceSchema,
+}) satisfies z.ZodType<HubAssignment>;
+
+export const hubClassSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  teacher: z.string().nullable(),
+  period: z.string().nullable(),
+  color: classColorSchema,
+  level: helpLevelSchema,
+  source: ruleSourceSchema,
+  assignments: z.array(hubAssignmentSchema),
+}) satisfies z.ZodType<HubClass>;
+
+export const schoolHubSchema = z.object({
+  timeZone: z.string(),
+  syncedAt: z.string().nullable(),
+  classes: z.array(hubClassSchema),
+  couldNotRead: z.array(z.string()),
+}) satisfies z.ZodType<SchoolHub>;
 
 /* Teacher rules */
 
@@ -393,6 +430,7 @@ export type SchemasMirrorShared = [
   Holds<Mirrors<typeof schoolClassSchema, SchoolClass>>,
   Holds<Mirrors<typeof schoolAssignmentSchema, SchoolAssignment>>,
   Holds<Mirrors<typeof schoolSnapshotSchema, SchoolSnapshot>>,
+  Holds<Mirrors<typeof schoolHubSchema, SchoolHub>>,
   Holds<Mirrors<typeof classRulesSchema, ClassRules>>,
   Holds<Mirrors<typeof rulesViewSchema, RulesView>>,
   Holds<Mirrors<typeof rulesChangeSchema, RulesChange>>,

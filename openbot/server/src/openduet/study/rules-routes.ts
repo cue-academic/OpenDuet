@@ -7,6 +7,7 @@ import {
   StudyInputError,
   type StudyRouteDeps,
 } from "./contracts";
+import { schoolHub } from "./hub";
 import { canLoosen, studyContextOf } from "./routes";
 
 /*
@@ -121,12 +122,22 @@ export function rulesRoutes(deps: StudyRouteDeps) {
     return context.json({ school: read.snapshot, why: read.why });
   });
 
+  // The Classes screen: the stored classes and work, each with the level in force.
+  routes.get("/hub", async (context) => {
+    const read = await school(context);
+    return context.json({
+      hub: schoolHub(read.snapshot, await screen(context, read)),
+    });
+  });
+
   routes.post("/school/sync", async (context) => {
     const read = await school(context, true);
+    const rules = await screen(context, read);
     return context.json({
       school: read.snapshot,
       why: read.why,
-      rules: await screen(context, read),
+      rules,
+      hub: schoolHub(read.snapshot, rules),
     });
   });
 

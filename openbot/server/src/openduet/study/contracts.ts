@@ -17,6 +17,8 @@ import type { CallTool } from "../brief";
  *   school.ts      SchoolService, the student's classes and assignments read from Classroom notices
  *   rules.ts       RulesService and resolveStudyTarget, the teacher's AI-help level for a class
  *   guard.ts       guardTeacherRules, which pauses make_quiz and make_flashcards under "No help"
+ *   hub.ts         schoolHub, the stored classes and work joined with the level in force
+ *   hub-tools.ts   list_assignments, which reads that hub for the Bot
  *   quiz-tools.ts  make_quiz, make_flashcards, show_progress
  *   plan-tools.ts  propose_study_plan
  *   routes.ts      /api/openduet/study, which mounts quiz-routes, plan-routes and rules-routes
