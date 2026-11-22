@@ -1,5 +1,5 @@
 /**
- * Which model Academic OS calls, from the environment.
+ * Which model Cue calls, from the environment.
  *
  * OPENAI_API_KEY is the primary provider. The tenant package's model.yaml
  * reads ACADEMIC_OS_MODEL when it is set, and gpt-5.6-terra when it is not.

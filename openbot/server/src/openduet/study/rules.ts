@@ -49,7 +49,7 @@ const overridesSchema = z.object({
 
 /**
  * The stored overrides. Rules that cannot be read throw rather than read as none: no rules is the
- * loosest answer there is, and a teacher's No help must never fall to a record that broke.
+ * loosest answer there is, and a teacher's On your own must never fall to a record that broke.
  */
 function readOverrides(data: Record<string, unknown>): RuleOverrides {
   const parsed = overridesSchema.safeParse(data);
@@ -70,7 +70,7 @@ function overrideOf(
  * Whether an override takes the place of what the notices say, rather than adding to it. Only one
  * that allowed more help than the notices when it was set does, and only an admin can set one. An
  * override saved before the flag existed reads as not loosening: read the other way, an old
- * stricter setting would hide a teacher's later No help, and an admin's old loosening is one tap
+ * stricter setting would hide a teacher's later On your own, and an admin's old loosening is one tap
  * to set again.
  */
 const loosening = (override: RuleOverride) => override.loosens === true;
@@ -299,8 +299,8 @@ function noticeRule(
 
 /**
  * The class's level: what its notices give, with its override in place of that when the override
- * loosens, and otherwise the stricter of the two. So a student who made a class Hints only still
- * gets the No help a teacher posts later. On a tie the notice is named, being the teacher's rule
+ * loosens, and otherwise the stricter of the two. So a student who made a class Guided help still
+ * gets the On your own a teacher posts later. On a tie the notice is named, being the teacher's rule
  * that stands if the override goes; an override beats the default, which is nobody's rule.
  */
 function classRule(
@@ -600,7 +600,9 @@ function assertKnown(snapshot: SchoolSnapshot, change: RulesChange) {
       );
   for (const [, level] of [...classes, ...assignments])
     if (level !== null && !HELP_LEVELS.includes(level))
-      throw new StudyInputError("Choose Full help, Hints only or No help.");
+      throw new StudyInputError(
+        "Choose Study, Guided help, On your own or Test.",
+      );
 }
 
 function classRulesOf(

@@ -433,7 +433,7 @@ describe("readToolResult", () => {
         level: "none",
         source: "notice",
       },
-      "Mr. Grant set AP US History to No help, so quizzes are paused for it.",
+      "Mr. Grant set AP US History to On your own, so quizzes are paused for it.",
     )}`;
     for (const result of [
       refusal,

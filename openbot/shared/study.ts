@@ -1,5 +1,5 @@
 /**
- * Academic OS's study features, declared once and read from both sides: the names of the study
+ * Cue's study features, declared once and read from both sides: the names of the study
  * tools, the shapes their results and the /api/openduet/study routes carry, and the teacher-rule
  * refusal the server writes and the app draws.
  *
@@ -15,28 +15,41 @@ export const PLAN_TOOL = "propose_study_plan";
 /** Reads the stored classes and assignments. It makes nothing, so no card is drawn for it. */
 export const ASSIGNMENTS_TOOL = "list_assignments";
 
-/** The tools a teacher's "No help" pauses for that class. Planning and progress are never paused. */
+/** The tools a teacher's "On your own" or "Test" pauses for that class. Planning and progress are never paused. */
 export const RULED_STUDY_TOOLS = [QUIZ_TOOL, FLASHCARDS_TOOL] as const;
 
 /* ------------------------------------------------------------------------------------------------
  * Teacher AI-help levels
  * ---------------------------------------------------------------------------------------------- */
 
-/** How much AI help a teacher allows, from most to least. */
-export const HELP_LEVELS = ["full", "hints", "none"] as const;
+/**
+ * How much AI help a teacher allows, from most to least. The ids are the stored values and stay as
+ * they were; the words a person reads are in HELP_LEVEL_LABEL. "test" is the fourth and strictest:
+ * Cue is off for that item, planning included.
+ */
+export const HELP_LEVELS = ["full", "hints", "none", "test"] as const;
 export type HelpLevel = (typeof HELP_LEVELS)[number];
 
 /** The words a Classroom notice and the app use for each level. */
 export const HELP_LEVEL_LABEL: Record<HelpLevel, string> = {
-  full: "Full help",
-  hints: "Hints only",
-  none: "No help",
+  full: "Study",
+  hints: "Guided help",
+  none: "On your own",
+  test: "Test",
 };
 
-/** A class with no notice that says otherwise is treated as Hints only, as the Bot's prompt says. */
+/** What each level lets Cue do, in a few words, for anywhere the label needs explaining. */
+export const HELP_LEVEL_MEANS: Record<HelpLevel, string> = {
+  full: "Cue teaches and quizzes",
+  hints: "Hints only",
+  none: "Cue plans the time only",
+  test: "Cue is off",
+};
+
+/** A class with no notice that says otherwise is treated as Guided help, as the Bot's prompt says. */
 export const DEFAULT_HELP_LEVEL: HelpLevel = "hints";
 
-/** 0 for full, 1 for hints, 2 for none: a higher rank is stricter. */
+/** 0 for full, 1 for hints, 2 for none, 3 for test: a higher rank is stricter. */
 export function helpLevelRank(level: HelpLevel): number {
   return HELP_LEVELS.indexOf(level);
 }
@@ -52,15 +65,38 @@ export function loosens(current: HelpLevel, next: HelpLevel): boolean {
 }
 
 /**
- * Reads a level from a notice line such as "AI help: Hints only." Deterministic on purpose: a level
- * is the teacher's words, never something a model decided. Returns null when the text names none.
+ * True for On your own and Test: no help with the work itself, so no quiz, flashcards, guide or
+ * explanation for it.
+ */
+export function noStudyHelp(level: HelpLevel | null | undefined): boolean {
+  return level === "none" || level === "test";
+}
+
+/** True for Test only: Cue is off for the item, so it is not planned or coached either. */
+export function cueIsOff(level: HelpLevel | null | undefined): boolean {
+  return level === "test";
+}
+
+/**
+ * Reads a level from a notice line such as "AI help: Guided help." Deterministic on purpose: a
+ * level is the teacher's words, never something a model decided. Returns null when the text names
+ * none. The earlier words (Full help, Hints only, No help) still read as the level they became.
+ * Pass only the words after "AI help:", since "test" and "study" are ordinary words elsewhere.
  */
 export function parseHelpLevel(text: string): HelpLevel | null {
   const words = text.toLowerCase().replace(/[^a-z ]/g, " ");
-  if (/\bno (ai )?help\b/.test(words)) return "none";
-  if (/\bhints? only\b/.test(words) || /\bonly hints?\b/.test(words))
+  if (/^\s*test\b/.test(words) || /\bcue (is )?off\b/.test(words))
+    return "test";
+  if (/\bno (ai )?help\b/.test(words) || /\bon your own\b/.test(words))
+    return "none";
+  if (
+    /\bhints? only\b/.test(words) ||
+    /\bonly hints?\b/.test(words) ||
+    /\bguided( help)?\b/.test(words)
+  )
     return "hints";
-  if (/\bfull (ai )?help\b/.test(words)) return "full";
+  if (/\bfull (ai )?help\b/.test(words) || /^\s*study\b/.test(words))
+    return "full";
   return null;
 }
 
@@ -441,6 +477,8 @@ export type TonightSample = {
     title: string;
     dueAt: string;
     minutes: number;
+    /** The teacher's level for it. Test leaves it out of the plan. */
+    help?: HelpLevel;
   }[];
 };
 

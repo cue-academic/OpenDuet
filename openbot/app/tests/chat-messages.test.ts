@@ -1426,7 +1426,7 @@ test("a page revised twice in one turn draws only its latest card", () => {
   ).toEqual(["save-2"]);
 });
 
-describe("repliesLast and Academic OS's study cards", () => {
+describe("repliesLast and Cue's study cards", () => {
   const call = (name: string, id: string): ToolCall => ({
     id,
     type: "function",
@@ -1436,7 +1436,7 @@ describe("repliesLast and Academic OS's study cards", () => {
     repliesLast(toVisibleChatItems(messages)).map((item) => item.id);
   const ADVICE =
     "This is the teacher's rule, not an error: tell the student in one short sentence, offer to plan their time or help with a different class, and don't retry or quiz them on it another way.";
-  /** The server's refusal under a teacher's No help (server/src/openduet/study/guard.ts). */
+  /** The server's refusal under a teacher's On your own (server/src/openduet/study/guard.ts). */
   const noHelp = (classId: string, className: string) =>
     `Refused. ${teacherRuleText(
       {
@@ -1447,7 +1447,7 @@ describe("repliesLast and Academic OS's study cards", () => {
         teacher: "Mr. Grant",
         source: "notice",
       },
-      `Mr. Grant set ${className} to No help while "DBQ essay" is open, so nothing was made. ${ADVICE}`,
+      `Mr. Grant set ${className} to On your own while "DBQ essay" is open, so nothing was made. ${ADVICE}`,
     )}`;
 
   test("draws each study card under the Bot's words, in the order made, above the chips", () => {
@@ -1562,7 +1562,7 @@ describe("repliesLast and Academic OS's study cards", () => {
     ).toEqual(["u1", "a3", "call-2"]);
   });
 
-  test("keeps a teacher's No help and the Bot's sentence about it, so the card can say whose rule it was", () => {
+  test("keeps a teacher's On your own and the Bot's sentence about it, so the card can say whose rule it was", () => {
     expect(
       ids([
         { id: "u1", role: "user", content: "Quiz me for the DBQ." },
@@ -1582,7 +1582,7 @@ describe("repliesLast and Academic OS's study cards", () => {
           id: "a2",
           role: "assistant",
           content:
-            "Mr. Grant set AP US History to No help while the DBQ is open. Want me to plan your time for it?",
+            "Mr. Grant set AP US History to On your own while the DBQ is open. Want me to plan your time for it?",
         },
         { id: "u2", role: "user", content: "Sure." },
       ]),
@@ -1622,7 +1622,11 @@ describe("repliesLast and Academic OS's study cards", () => {
           toolCallId: "call-3",
           content: noHelp("gov2", "AP Government"),
         },
-        { id: "a2", role: "assistant", content: "Both are No help for now." },
+        {
+          id: "a2",
+          role: "assistant",
+          content: "Both are On your own for now.",
+        },
       ]),
     ).toEqual(["u1", "a2", "call-2", "call-3"]);
   });

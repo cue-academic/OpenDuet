@@ -101,8 +101,8 @@ function sampleWeek(state: CoachState): TonightSample {
     assignments: state.assignments.flatMap((assignment) => {
       const minutes = remainingMin(assignment);
       if (minutes <= 0) return [];
-      const { id, classId, title, dueAt } = assignment;
-      return [{ id, classId, title, dueAt, minutes }];
+      const { id, classId, title, dueAt, helpLevel: help } = assignment;
+      return [{ id, classId, title, dueAt, minutes, help }];
     }),
   };
 }

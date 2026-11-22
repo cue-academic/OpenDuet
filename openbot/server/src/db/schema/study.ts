@@ -19,7 +19,7 @@ export type StudyMisconception = {
 };
 
 /**
- * Academic OS's study memory: one row per topic a student has practiced, per Bot.
+ * Cue's study memory: one row per topic a student has practiced, per Bot.
  *
  * Written by the `record_study` tool after any quiz, flashcard round, tutoring step or teach-back
  * (openduet/study-memory.ts), and read by `study_memory`, the Learn tab and the review skill. The

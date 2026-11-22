@@ -24,7 +24,7 @@ import { COURSE_COLORS } from "@/components/calendar/rebound/lib/helpers";
 import { usePace } from "@/components/calendar/rebound/lib/store";
 
 /**
- * The adapter between Academic OS's calendar (shared/study.ts) and Rebound's timeline: Google events
+ * The adapter between Cue's calendar (shared/study.ts) and Rebound's timeline: Google events
  * become fixed commitments in their class's colour, applied study blocks become blocks, and a
  * proposed plan's blocks are laid over both, marked, without taking anything's place.
  */

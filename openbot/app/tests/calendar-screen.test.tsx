@@ -551,7 +551,7 @@ test("opens on the student's today: its classes, a study block, and what is due 
   });
   expect(within(details).getByText("Wed, Nov 4 · Due 11:59 PM")).toBeTruthy();
   expect(within(details).getByText("Precalculus")).toBeTruthy();
-  expect(within(details).getByText("AI help: Full help")).toBeTruthy();
+  expect(within(details).getByText("AI help: Study")).toBeTruthy();
   await user.click(
     view.getByRole("button", { name: "Material: DBQ documents and rubric" }),
   );
@@ -559,7 +559,7 @@ test("opens on the student's today: its classes, a study block, and what is due 
     name: "DBQ documents and rubric, details",
   });
   expect(within(rubric).getByText("Wed, Nov 4 · Material")).toBeTruthy();
-  expect(within(rubric).getByText("AI help: No help")).toBeTruthy();
+  expect(within(rubric).getByText("AI help: On your own")).toBeTruthy();
   // One card at a time.
   expect(view.queryByRole("region", { name: /homework.*details$/ })).toBeNull();
 });

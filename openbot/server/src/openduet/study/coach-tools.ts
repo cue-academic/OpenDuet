@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { randomUUID } from "node:crypto";
 import {
   HELP_LEVEL_LABEL,
@@ -29,6 +30,7 @@ const MAY = {
   hints:
     "Explain the concept and practice from the notes. Do not solve work they will turn in.",
   none: "Do not help with this class. Offer to plan their time or help with a different class.",
+  test: "Cue is off for this class. Do not help or plan it. Offer help with a different class.",
 } as const;
 
 export function coachTools(deps: StudyToolDeps): GrantedTool[] {
@@ -85,7 +87,7 @@ export function coachTools(deps: StudyToolDeps): GrantedTool[] {
           const attribution =
             target.source === "override"
               ? "Set on the Teacher rules screen."
-              : target.source === "notice" || (onFile && level === "none")
+              : target.source === "notice" || (onFile && noStudyHelp(level))
                 ? "That's how your teacher set it."
                 : "That's the app's default.";
           return JSON.stringify({
@@ -115,7 +117,7 @@ export function coachTools(deps: StudyToolDeps): GrantedTool[] {
         "Make a short quiz or a practice test from the student's own class notes and save it.",
         "mode quiz is a few questions. mode test is a longer practice test, with AP-style questions where they fit.",
         "The card runs it and grades it. Never write the questions or answers in the chat. Say one short sentence.",
-        "If the class is set to no AI help, say so in one sentence and offer another class.",
+        "If the class is set to On your own or Test, say so in one sentence and offer another class.",
       ].join(" "),
       parameters: z.object({
         class: z.string().describe("The class name."),
@@ -161,8 +163,8 @@ export function coachTools(deps: StudyToolDeps): GrantedTool[] {
         );
         if (!target.ok) return `Refused. ${target.reason}`;
         const level = stricter(input.help, target.level);
-        if (level === "none") {
-          return teacherRuleRefusal({ ...target, level: "none" });
+        if (noStudyHelp(level)) {
+          return teacherRuleRefusal({ ...target, level });
         }
         const made = await writePractice(input, mode, process.env);
         if ("refused" in made) return `Refused. ${made.refused}`;

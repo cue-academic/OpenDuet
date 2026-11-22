@@ -184,7 +184,7 @@ const RULE: TeacherRuleBlock = {
 };
 const PAUSED = `Refused. ${teacherRuleText(
   RULE,
-  "AP US History is set to No help, so nothing was made.",
+  "AP US History is set to On your own, so nothing was made.",
 )}`;
 
 describe("the flashcards card", () => {
@@ -208,13 +208,13 @@ describe("the flashcards card", () => {
     expect(seen).toEqual([]);
   });
 
-  test("a teacher's No help draws the notice in the deck's place, however the result arrived", async () => {
+  test("a teacher's On your own draws the notice in the deck's place, however the result arrived", async () => {
     for (const result of [PAUSED, JSON.stringify(PAUSED)]) {
       const view = render(<Chat messages={asked(result)} queries={fresh()} />);
       const notice = await view.findByRole("region", {
         name: "Flashcards paused",
       });
-      expect(within(notice).getByText("No help")).toBeTruthy();
+      expect(within(notice).getByText("On your own")).toBeTruthy();
       expect(
         within(notice).getByText(
           "AI quizzes and flashcards are paused for AP US History. Planning still works.",

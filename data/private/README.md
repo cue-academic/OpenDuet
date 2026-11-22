@@ -1,6 +1,6 @@
 # Private school pack
 
-Academic OS can run the demo on a real class list. That export stays on this machine. It is not committed.
+Cue can run the demo on a real class list. That export stays on this machine. It is not committed.
 
 Unzip the pack so one of these files exists:
 

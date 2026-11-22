@@ -78,8 +78,8 @@ test("Calculus resolves to hints and chemistry stays no help", () => {
   expect(calc.classId).toBe("calc-bc");
   expect(calc.help).toBe("hints");
   const text = classRulesText(pack);
-  expect(text).toContain("AP Calculus BC (Calc BC): Hints only.");
-  expect(text).toContain("Advanced Chemistry (Adv Chem): No help.");
+  expect(text).toContain("AP Calculus BC (Calc BC): Guided help.");
+  expect(text).toContain("Advanced Chemistry (Adv Chem): On your own.");
   expect(text).toContain("Never say the AI help level is unavailable");
 });
 
@@ -106,8 +106,8 @@ test("class rules are added to a run only when the pack is on", () => {
     ACADEMIC_OS_PRIVATE_DEMO: "1",
     ACADEMIC_OS_DATA_DIR: root,
   });
-  expect(next.context.some((entry) => entry.value.includes("Hints only"))).toBe(
-    true,
-  );
+  expect(
+    next.context.some((entry) => entry.value.includes("Guided help")),
+  ).toBe(true);
   expect(next).not.toBe(input);
 });

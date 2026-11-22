@@ -19,7 +19,7 @@ import {
 import type { AgendaItem, Block, Course } from "./lib/types";
 
 /*
- * Academic OS's calendar in the shapes Rebound's timeline draws (lib/types.ts). A Google Calendar
+ * Cue's calendar in the shapes Rebound's timeline draws (lib/types.ts). A Google Calendar
  * event becomes a fixed commitment, an applied study block becomes a block, and a proposed plan's
  * blocks are laid over both without replacing anything. Every id is namespaced by where it came from,
  * so an event and a block can never be taken for one another, and a proposed block is known by its id.

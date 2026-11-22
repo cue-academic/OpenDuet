@@ -321,13 +321,13 @@ describe("the Teacher rules page", () => {
     ]);
     const history = section(view.container, "AP US History");
     expect(within(history).getByText("Mr. Grant")).toBeTruthy();
-    expect(chosen(history, "AP US History")).toEqual(["No help"]);
+    expect(chosen(history, "AP US History")).toEqual(["On your own"]);
     expect(
       within(history).getByText("From Mr. Grant's post: DBQ essay"),
     ).toBeTruthy();
-    expect(chosen(history, "DBQ essay")).toEqual(["No help"]);
+    expect(chosen(history, "DBQ essay")).toEqual(["On your own"]);
     const chemistry = section(view.container, "Chemistry");
-    expect(chosen(chemistry, "Chemistry")).toEqual(["Hints only"]);
+    expect(chosen(chemistry, "Chemistry")).toEqual(["Guided help"]);
     expect(
       within(chemistry).getByText("From Dr. Okoro's post: Lab 6 report"),
     ).toBeTruthy();
@@ -346,7 +346,7 @@ describe("the Teacher rules page", () => {
     expect(view.getByText("Last read 5 min ago")).toBeTruthy();
     expect(
       view.getByText(
-        /No help turns off AI quizzes and flashcards for that assignment/,
+        /On your own turns off AI quizzes and flashcards for that assignment/,
       ),
     ).toBeTruthy();
     expect(view.getByText(/Only a teacher can loosen a rule/)).toBeTruthy();
@@ -357,19 +357,19 @@ describe("the Teacher rules page", () => {
     const view = drawPage();
     await view.findByRole("radiogroup", { name: "AI help for Chemistry" });
     expect(offered(view.container, "AP US History")).toEqual([
-      ["Full help", false],
-      ["Hints only", false],
-      ["No help", true],
+      ["Study", false],
+      ["Guided help", false],
+      ["On your own", true],
     ]);
     expect(offered(view.container, "Chemistry")).toEqual([
-      ["Full help", false],
-      ["Hints only", true],
-      ["No help", true],
+      ["Study", false],
+      ["Guided help", true],
+      ["On your own", true],
     ]);
     expect(offered(view.container, "Precalculus")).toEqual([
-      ["Full help", true],
-      ["Hints only", true],
-      ["No help", true],
+      ["Study", true],
+      ["Guided help", true],
+      ["On your own", true],
     ]);
     // The reason is what the choice is described by, so it is read with it.
     const chemistry = group(view.container, "Chemistry");
@@ -414,16 +414,16 @@ describe("the Teacher rules page", () => {
     const user = userEvent.setup({ document });
     const view = drawPage();
     await view.findByRole("radiogroup", { name: "AI help for Chemistry" });
-    await user.click(option(view.container, "Chemistry", "No help"));
+    await user.click(option(view.container, "Chemistry", "On your own"));
     expect(
       view.getByText(
-        "Make Chemistry No help? Only a teacher or an admin can undo it.",
+        "Make Chemistry On your own? Only a teacher or an admin can undo it.",
       ),
     ).toBeTruthy();
     // Nothing is sent until the student says so.
     expect(server.writes()).toEqual([]);
-    expect(chosen(view.container, "Chemistry")).toEqual(["No help"]);
-    await user.click(view.getByRole("button", { name: "Make it No help" }));
+    expect(chosen(view.container, "Chemistry")).toEqual(["On your own"]);
+    await user.click(view.getByRole("button", { name: "Make it On your own" }));
     await waitFor(() =>
       expect(
         within(section(view.container, "Chemistry")).getByText("Set here"),
@@ -437,19 +437,19 @@ describe("the Teacher rules page", () => {
         body: { classes: { chem2: "none" } },
       },
     ]);
-    expect(chosen(view.container, "Chemistry")).toEqual(["No help"]);
+    expect(chosen(view.container, "Chemistry")).toEqual(["On your own"]);
     expect(offered(view.container, "Chemistry")).toEqual([
-      ["Full help", false],
-      ["Hints only", false],
-      ["No help", true],
+      ["Study", false],
+      ["Guided help", false],
+      ["On your own", true],
     ]);
     expect(
       view.queryByText(
-        "Make Chemistry No help? Only a teacher or an admin can undo it.",
+        "Make Chemistry On your own? Only a teacher or an admin can undo it.",
       ),
     ).toBeNull();
     // Focus is back on the choice, not lost with the buttons that went away.
-    expect(focused()).toEqual(["AI help for Chemistry", "No help"]);
+    expect(focused()).toEqual(["AI help for Chemistry", "On your own"]);
   });
 
   test("Cancel leaves the rule as it was, and sends nothing", async () => {
@@ -457,10 +457,12 @@ describe("the Teacher rules page", () => {
     const user = userEvent.setup({ document });
     const view = drawPage();
     await view.findByRole("radiogroup", { name: "AI help for Chemistry" });
-    await user.click(option(view.container, "Chemistry", "No help"));
+    await user.click(option(view.container, "Chemistry", "On your own"));
     await user.click(view.getByRole("button", { name: "Cancel" }));
-    expect(chosen(view.container, "Chemistry")).toEqual(["Hints only"]);
-    expect(view.queryByRole("button", { name: "Make it No help" })).toBeNull();
+    expect(chosen(view.container, "Chemistry")).toEqual(["Guided help"]);
+    expect(
+      view.queryByRole("button", { name: "Make it On your own" }),
+    ).toBeNull();
     expect(server.writes()).toEqual([]);
   });
 
@@ -472,13 +474,15 @@ describe("the Teacher rules page", () => {
     const user = userEvent.setup({ document });
     const view = drawPage();
     await view.findByRole("radiogroup", { name: "AI help for Chemistry" });
-    await user.click(option(view.container, "Great Gatsby essay", "No help"));
+    await user.click(
+      option(view.container, "Great Gatsby essay", "On your own"),
+    );
     expect(
       view.getByText(
-        "Make “Great Gatsby essay” No help? Only a teacher or an admin can undo it.",
+        "Make “Great Gatsby essay” On your own? Only a teacher or an admin can undo it.",
       ),
     ).toBeTruthy();
-    await user.click(view.getByRole("button", { name: "Make it No help" }));
+    await user.click(view.getByRole("button", { name: "Make it On your own" }));
     await waitFor(() => expect(server.writes()).toHaveLength(1));
     expect(server.writes()[0]?.body).toEqual({
       assignments: { "eng11-gatsby": "none" },
@@ -493,21 +497,21 @@ describe("the Teacher rules page", () => {
     const user = userEvent.setup({ document });
     const view = drawPage();
     await view.findByRole("radiogroup", { name: "AI help for Chemistry" });
-    await user.click(option(view.container, "Chemistry", "No help"));
-    await user.click(view.getByRole("button", { name: "Make it No help" }));
+    await user.click(option(view.container, "Chemistry", "On your own"));
+    await user.click(view.getByRole("button", { name: "Make it On your own" }));
     const alert = await within(section(view.container, "Chemistry")).findByRole(
       "alert",
     );
     expect(alert.textContent).toBe(LOOSENING);
     // Nothing changed, so the choice is the server's again.
-    expect(chosen(view.container, "Chemistry")).toEqual(["Hints only"]);
+    expect(chosen(view.container, "Chemistry")).toEqual(["Guided help"]);
     expect(
       within(section(view.container, "English 11")).queryByRole("alert"),
     ).toBeNull();
   });
 
   test("Use the teacher's rule clears an override that adds nothing to the notices", async () => {
-    // Hints only is what Chemistry's notices say already, so the teacher's post is named.
+    // Guided help is what Chemistry's notices say already, so the teacher's post is named.
     const tied = withClass(demo(), "chem2", (rules) => ({
       ...rules,
       override: "hints",
@@ -525,7 +529,7 @@ describe("the Teacher rules page", () => {
     await view.findByRole("radiogroup", { name: "AI help for Chemistry" });
     const chemistry = section(view.container, "Chemistry");
     expect(
-      within(chemistry).getByText("Also set here: Hints only"),
+      within(chemistry).getByText("Also set here: Guided help"),
     ).toBeTruthy();
     await user.click(
       within(chemistry).getByRole("button", {
@@ -579,13 +583,13 @@ describe("the Teacher rules page", () => {
     await view.findByRole("radiogroup", { name: "AI help for AP US History" });
     expect(view.queryByText("Only a teacher can loosen a rule.")).toBeNull();
     expect(offered(view.container, "AP US History")).toEqual([
-      ["Full help", true],
-      ["Hints only", true],
-      ["No help", true],
+      ["Study", true],
+      ["Guided help", true],
+      ["On your own", true],
     ]);
-    await user.click(option(view.container, "AP US History", "Full help"));
+    await user.click(option(view.container, "AP US History", "Study"));
     await waitFor(() =>
-      expect(chosen(view.container, "AP US History")).toEqual(["Full help"]),
+      expect(chosen(view.container, "AP US History")).toEqual(["Study"]),
     );
     expect(
       view.queryByText(/Only a teacher or an admin can undo it/),
@@ -593,15 +597,15 @@ describe("the Teacher rules page", () => {
     const history = section(view.container, "AP US History");
     // Their own loosening, so it says here rather than naming an admin.
     await within(history).findByText("Loosened here");
-    // The DBQ's own No help still stands, and an admin can put the class back.
-    expect(chosen(view.container, "DBQ essay")).toEqual(["No help"]);
+    // The DBQ's own On your own still stands, and an admin can put the class back.
+    expect(chosen(view.container, "DBQ essay")).toEqual(["On your own"]);
     await user.click(
       within(history).getByRole("button", {
         name: "Use the teacher's rule for AP US History",
       }),
     );
     await waitFor(() =>
-      expect(chosen(view.container, "AP US History")).toEqual(["No help"]),
+      expect(chosen(view.container, "AP US History")).toEqual(["On your own"]),
     );
     expect(server.writes().map((request) => request.body)).toEqual([
       { classes: { apush1: "full" } },
@@ -827,12 +831,12 @@ describe("TeacherRulesView alone", () => {
     );
     const { view } = drawView(later);
     const spanish = section(view.container, "Spanish III");
-    expect(within(spanish).getByText("Default: Hints only")).toBeTruthy();
+    expect(within(spanish).getByText("Default: Guided help")).toBeTruthy();
     // No work listed, so the class's own choice is all there is.
     expect(within(spanish).queryByRole("list")).toBeNull();
     const english = section(view.container, "English 11");
     expect(within(english).getByText("Set here")).toBeTruthy();
-    expect(chosen(english, "Great Gatsby essay")).toEqual(["No help"]);
+    expect(chosen(english, "Great Gatsby essay")).toEqual(["On your own"]);
   });
 
   test("an admin's loosening is locked for a student, with its own reason", () => {
@@ -851,9 +855,9 @@ describe("TeacherRulesView alone", () => {
       ),
     ).toBeTruthy();
     expect(offered(history, "AP US History")).toEqual([
-      ["Full help", true],
-      ["Hints only", false],
-      ["No help", false],
+      ["Study", true],
+      ["Guided help", false],
+      ["On your own", false],
     ]);
     expect(
       within(history).queryByRole("button", { name: /Use the teacher's rule/ }),
@@ -863,13 +867,13 @@ describe("TeacherRulesView alone", () => {
   test("arrow keys move the choice past the ones a student can't make", async () => {
     const user = userEvent.setup({ document });
     const { view, changes } = drawView(demo());
-    option(view.container, "Chemistry", "Hints only").focus();
+    option(view.container, "Chemistry", "Guided help").focus();
     await user.keyboard("{ArrowRight}");
-    expect(chosen(view.container, "Chemistry")).toEqual(["No help"]);
-    expect(focused()).toEqual(["AI help for Chemistry", "No help"]);
-    // Full help is off for a student, so the next step wraps to Hints only, which cancels.
+    expect(chosen(view.container, "Chemistry")).toEqual(["On your own"]);
+    expect(focused()).toEqual(["AI help for Chemistry", "On your own"]);
+    // Study is off for a student, so the next step wraps to Guided help, which cancels.
     await user.keyboard("{ArrowRight}");
-    expect(chosen(view.container, "Chemistry")).toEqual(["Hints only"]);
+    expect(chosen(view.container, "Chemistry")).toEqual(["Guided help"]);
     expect(view.queryByRole("button", { name: /Make it/ })).toBeNull();
     expect(changes).toEqual([]);
   });
@@ -877,7 +881,7 @@ describe("TeacherRulesView alone", () => {
   test("an admin's arrow key sends the change it lands on", async () => {
     const user = userEvent.setup({ document });
     const { view, changes } = drawView({ ...demo(), canLoosen: true });
-    option(view.container, "Chemistry", "Hints only").focus();
+    option(view.container, "Chemistry", "Guided help").focus();
     await user.keyboard("{ArrowLeft}");
     expect(changes).toEqual([{ classes: { chem2: "full" } }]);
   });
@@ -889,12 +893,12 @@ describe("TeacherRulesView alone", () => {
       { saving: [{ classes: { chem2: "none" } }] },
     );
     const chemistry = section(view.container, "Chemistry");
-    expect(chosen(chemistry, "Chemistry")).toEqual(["No help"]);
+    expect(chosen(chemistry, "Chemistry")).toEqual(["On your own"]);
     expect(group(chemistry, "Chemistry").getAttribute("aria-busy")).toBe(
       "true",
     );
     expect(within(chemistry).getByText("Saving…")).toBeTruthy();
-    await user.click(option(chemistry, "Chemistry", "Full help"));
+    await user.click(option(chemistry, "Chemistry", "Study"));
     expect(changes).toEqual([]);
   });
 

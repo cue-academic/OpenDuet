@@ -47,7 +47,7 @@
   --calendar-motion-panel: var(--duet-dur-enter);
   --calendar-ease-standard: var(--duet-ease-out);
   --calendar-ease-enter: var(--duet-ease-out);
-  /* Rebound docked an assistant panel beside its calendar; Academic OS has none. */
+  /* Rebound docked an assistant panel beside its calendar; Cue has none. */
   --app-assistant-width: 0px;
   --shell-layer-popover: 70;
 }

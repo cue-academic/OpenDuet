@@ -66,7 +66,9 @@ export function reasonsFor(a: Assignment, now: Date): string[] {
   }
   if (left > 0) reasons.push(`about ${formatMinutes(left)} left`);
   if (a.points != null && a.points > 0) reasons.push(`${a.points} pts`);
-  if (a.helpLevel === "none") reasons.push(`${HELP_LABEL.none}: on your own`);
+  if (a.helpLevel === "none")
+    reasons.push(`${HELP_LABEL.none}: Cue only plans the time`);
+  if (a.helpLevel === "test") reasons.push(`${HELP_LABEL.test}: Cue is off`);
   return reasons;
 }
 
@@ -230,7 +232,7 @@ export function catchUpInstruction(state: CoachState, now: Date): string {
     .map((r) => line(r.assignment));
   return [
     "I'm behind and want to catch up. Make me a catch-up plan as a page: the order to do things tonight and this week, how long each takes, and where it fits around what's due.",
-    "Follow each teacher's AI help rule exactly; for No help work, only help me plan my time.",
+    "Follow each teacher's AI help rule exactly; for On your own work, only help me plan my time, and leave Test items out.",
     plan.askAbout.length
       ? "For late work that no longer earns credit, draft a short, polite email to the teacher asking whether I can still turn it in, and don't send it until I approve."
       : "",

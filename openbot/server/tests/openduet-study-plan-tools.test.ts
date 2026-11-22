@@ -634,7 +634,7 @@ describe("propose_study_plan", () => {
     ]);
   });
 
-  test("plans a No help assignment like any other: a teacher's rule never pauses planning", async () => {
+  test("plans a On your own assignment like any other: a teacher's rule never pauses planning", async () => {
     const { tool, store, deps } = setUp();
     const [guarded] = guardTeacherRules([tool], deps);
     // Returned as it came: only make_quiz and make_flashcards meet the rule.
@@ -653,6 +653,27 @@ describe("propose_study_plan", () => {
       plan.blocks.every((block) => block.assignmentId === "apush1-dbq3"),
     ).toBe(true);
     expect(plan.totalMinutes).toBe(60);
+  });
+
+  test("leaves an item set to Test out of the plan and says so: Cue is off for it", async () => {
+    const snapshot = demoSnapshot();
+    const dbq = snapshot.assignments.find((row) => row.id === "apush1-dbq3");
+    if (!dbq) throw new Error("no DBQ in the demo");
+    dbq.help = "test";
+    const { tool, store } = setUp({ read: { snapshot, why: null } });
+    const result = toolResultSchema.parse(
+      JSON.parse(
+        await tool.execute({ minutes: 120, reason: "Tonight's work." }),
+      ),
+    );
+    const plan = await proposed(store, result.id);
+    expect(
+      plan.blocks.some((block) => block.assignmentId === "apush1-dbq3"),
+    ).toBe(false);
+    expect(plan.blocks.length).toBeGreaterThan(0);
+    expect(plan.warnings.join(" ")).toContain(
+      "is set to Test, so Cue is off for it and it is not in this plan.",
+    );
   });
 
   test("several days stay clear of each day's classes and practice, and of a quiz already taken", async () => {
