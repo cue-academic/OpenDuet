@@ -61,7 +61,7 @@ function GlassPill({ className, ...props }: ComponentProps<"button">) {
   return (
     <button
       className={cn(
-        "duet-glass inline-flex h-11 min-w-[86px] items-center justify-center rounded-full px-4 font-medium text-[17px] text-duet-ink shadow-duet-glass outline-none transition-[opacity,transform] focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40",
+        "duet-glass inline-flex h-11 min-w-[86px] items-center justify-center rounded-[10px] px-4 font-medium text-[17px] text-duet-ink shadow-duet-glass outline-none transition-[opacity,transform] focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40",
         className,
       )}
       type="button"
@@ -359,7 +359,7 @@ export function ChannelSheet({
             </div>
 
             <label
-              className="mt-6 flex h-14 items-center gap-3 rounded-full bg-duet-tile px-4 focus-within:ring-3 focus-within:ring-duet-violet/25"
+              className="mt-6 flex h-14 items-center gap-3 rounded-[10px] bg-duet-tile px-4 focus-within:ring-3 focus-within:ring-duet-violet/25"
               htmlFor={nameId}
             >
               <span className="shrink-0 text-[16px] text-duet-ink-2">Name</span>
@@ -390,7 +390,7 @@ export function ChannelSheet({
               Purpose
             </label>
             <textarea
-              className="mt-1.5 min-h-24 w-full resize-none rounded-[22px] bg-duet-tile px-4 py-3 text-[17px] text-duet-ink leading-[23px] outline-none placeholder:text-duet-ink-3 focus-visible:ring-3 focus-visible:ring-duet-violet/25"
+              className="mt-1.5 min-h-24 w-full resize-none rounded-[var(--duet-radius-field)] bg-duet-tile px-4 py-3 text-[17px] text-duet-ink leading-[23px] outline-none placeholder:text-duet-ink-3 focus-visible:ring-3 focus-visible:ring-duet-violet/25"
               disabled={busy}
               id={purposeId}
               maxLength={MAX_CHANNEL_PURPOSE}
@@ -402,7 +402,7 @@ export function ChannelSheet({
             />
             {channel && onArchived ? (
               <button
-                className="type-label mt-6 self-center rounded-full px-3 py-1.5 font-semibold text-duet-ink-2 outline-none transition-colors hover:bg-duet-tile focus-visible:ring-3 focus-visible:ring-duet-violet/40 disabled:opacity-50"
+                className="type-label mt-6 self-center rounded-[10px] px-3 py-1.5 font-semibold text-duet-ink-2 outline-none transition-colors hover:bg-duet-tile focus-visible:ring-3 focus-visible:ring-duet-violet/40 disabled:opacity-50"
                 disabled={busy}
                 onClick={() =>
                   archive.mutate(
@@ -445,7 +445,7 @@ function ConfirmDiscard({
   return (
     <div
       aria-live="polite"
-      className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-[22px] bg-duet-tile px-4 py-3"
+      className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-[var(--duet-radius-field)] bg-duet-tile px-4 py-3"
     >
       <p className="type-label font-medium text-duet-ink">
         {editing ? "Discard your changes?" : "Discard this channel?"}

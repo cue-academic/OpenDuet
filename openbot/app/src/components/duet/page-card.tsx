@@ -57,13 +57,15 @@ export function PageCard({
   return link({
     className: cn(
       "group block w-full outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
-      size === "grid" ? "rounded-[20px]" : "rounded-[22px]",
+      size === "grid"
+        ? "rounded-[var(--duet-radius-card)]"
+        : "rounded-[var(--duet-radius-field)]",
     ),
     children: (
       <DuetCard
         className={cn(
           "transition-transform motion-safe:group-active:scale-[0.985]",
-          size === "grid" && "rounded-[20px]",
+          size === "grid" && "rounded-[var(--duet-radius-card)]",
         )}
         // Before the link navigates: the sheet it opens reads this as it mounts.
         onClick={(event) => rememberOpenedFrom(event.currentTarget, page, size)}

@@ -94,7 +94,7 @@ function useRememberedGroup(key: string) {
  * at least 48px tall, on the filled capsule when it is where you are.
  */
 const ROW =
-  "type-nav flex min-h-12 w-full items-center gap-3 rounded-[22px] px-3 font-medium text-duet-ink transition-colors duration-[var(--duet-dur-tap)] hover:bg-duet-tile active:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 [&_svg]:shrink-0 [&_svg]:text-duet-ink-2";
+  "type-nav flex min-h-12 w-full items-center gap-3 rounded-[var(--duet-radius-field)] px-3 font-medium text-duet-ink transition-colors duration-[var(--duet-dur-tap)] hover:bg-duet-tile active:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 [&_svg]:shrink-0 [&_svg]:text-duet-ink-2";
 
 /** The glyph at the head of a menu row. */
 function RowIcon({ name }: { name: DuetIconName }) {
@@ -103,7 +103,7 @@ function RowIcon({ name }: { name: DuetIconName }) {
 
 /** A row with a disc, a name and a line under it: Everything and each channel. */
 const TALL_ROW =
-  "flex min-h-[50px] w-full items-center gap-3 rounded-[24px] px-2.5 py-1.5 text-left transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40";
+  "flex min-h-[50px] w-full items-center gap-3 rounded-[var(--duet-radius-card)] px-2.5 py-1.5 text-left transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40";
 
 /**
  * The drawer behind the header's left disc, which is for focus, not history. From the top: the
@@ -275,7 +275,7 @@ export function MenuSheet({
                         />
                         <button
                           aria-label={`Unarchive ${channel.name}`}
-                          className="type-label shrink-0 rounded-full px-3 py-1.5 font-semibold text-duet-ink-2 outline-none transition-colors hover:bg-duet-tile focus-visible:ring-3 focus-visible:ring-duet-violet/40 disabled:opacity-50"
+                          className="type-label shrink-0 rounded-[10px] px-3 py-1.5 font-semibold text-duet-ink-2 outline-none transition-colors hover:bg-duet-tile focus-visible:ring-3 focus-visible:ring-duet-violet/40 disabled:opacity-50"
                           disabled={
                             unarchive.isPending &&
                             unarchive.variables?.id === channel.id

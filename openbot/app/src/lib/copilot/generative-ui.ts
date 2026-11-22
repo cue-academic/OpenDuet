@@ -46,7 +46,7 @@ THEME. ${product} tells the frame which theme the person chose. Include this scr
 
 COLOUR ROLES. Everything is grey (--duet-ink, --duet-ink-2 for secondary text, --duet-ink-3 for captions and placeholders, --duet-hair for lines, --duet-card and --duet-tile for fills). --duet-accent is the one brand colour, used in a few places only: a selected control, a link, a focus ring, the one chart series that matters. It is never a heading colour. Status has four colours and they are only for status words: --duet-status-done "Ready for review", --duet-status-needs "Needs input", --duet-status-working "Working", --duet-status-problem "Couldn't finish".
 
-TYPE. font-family: Inter, ui-sans-serif, system-ui, sans-serif. Five sizes, no others:
+TYPE. font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif. Five sizes, no others:
 - title ${type.display.size}px/${type.display.line}px weight 600, for the interface's one heading;
 - nav ${type.nav.size}px/${type.nav.line}px weight 500, for a section title;
 - body ${type.body.size}px/${type.body.line}px weight 400, for content and row titles (500);

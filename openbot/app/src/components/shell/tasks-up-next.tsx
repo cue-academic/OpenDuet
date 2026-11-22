@@ -458,7 +458,7 @@ function TakeOffYourPlate({ bot }: { bot: AgentProfile }) {
           </p>
         ) : (
           <button
-            className="type-row inline-flex h-[46px] items-center gap-2 rounded-full bg-duet-black px-6 font-semibold text-duet-on-black transition-[filter,transform,opacity] hover:brightness-125 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50"
+            className="type-row inline-flex h-[46px] items-center gap-2 rounded-[10px] bg-duet-black px-6 font-semibold text-duet-on-black transition-[filter,transform,opacity] hover:brightness-125 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50"
             disabled={busy}
             onClick={showMe}
             type="button"

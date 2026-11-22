@@ -34,7 +34,7 @@ export function Card({
   return (
     <section
       className={cn(
-        "study-rise mb-3 rounded-[24px] bg-duet-card p-4 shadow-duet-card",
+        "study-rise mb-3 rounded-[var(--duet-radius-card)] bg-duet-card p-4 shadow-duet-card",
         className,
       )}
       {...props}
@@ -55,10 +55,7 @@ export function CardTitle({
 }) {
   return (
     <div className="mb-2 flex items-center justify-between gap-2">
-      <h2
-        className="study-display type-sub font-semibold text-duet-ink"
-        id={id}
-      >
+      <h2 className="cue-label text-duet-ink-3" id={id}>
         {children}
       </h2>
       {action}
@@ -71,7 +68,7 @@ export function ClassPill({ name, color }: { name: string; color: string }) {
   return (
     <span
       className={cn(
-        "type-caption inline-flex items-center rounded-full px-2 py-0.5 font-semibold",
+        "cue-label inline-flex items-center rounded-[6px] px-1.5 py-0.5",
         SOFT[color] ?? SOFT.accent,
       )}
     >
@@ -90,7 +87,7 @@ export function CoachButton({
   return (
     <button
       className={cn(
-        "type-row inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 py-2 font-semibold transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50",
+        "type-row inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 font-semibold transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50",
         primary
           ? "bg-duet-black text-duet-on-black hover:brightness-125"
           : "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile",
@@ -126,7 +123,7 @@ export function ChipChoice<T extends string | number>({
           <button
             aria-pressed={value === o.value}
             className={cn(
-              "type-row min-h-10 rounded-full px-3 font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
+              "type-row min-h-10 rounded-[10px] px-3 font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
               value === o.value
                 ? "bg-duet-black text-duet-on-black"
                 : "bg-duet-tile text-duet-ink hover:brightness-95",
@@ -228,7 +225,7 @@ export function CoachSheet({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="duet-veil fixed inset-0 z-50 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0" />
         <DialogPrimitive.Popup className="duet-face fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] w-full max-w-[430px] overflow-y-auto overscroll-contain px-2.5 pb-[max(env(safe-area-inset-bottom),12px)] text-duet-ink outline-none transition-[opacity,translate] motion-safe:data-ending-style:translate-y-full motion-safe:data-starting-style:translate-y-full">
-          <div className="duet-glass rounded-[28px] p-4 shadow-duet-glass">
+          <div className="duet-glass rounded-[var(--duet-radius-field)] p-4 shadow-duet-glass">
             <div className="mb-3 flex items-start justify-between gap-3">
               <DialogPrimitive.Title className="type-title min-w-0 flex-1 pt-1.5 pl-1 font-semibold">
                 {title}
@@ -251,7 +248,7 @@ export function CoachSheet({
 }
 
 export const FIELD =
-  "type-body w-full rounded-[16px] bg-duet-card px-3.5 py-2.5 text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] outline-none placeholder:text-duet-ink-3 focus-visible:ring-3 focus-visible:ring-duet-violet/25";
+  "type-body w-full rounded-[var(--duet-radius-card)] bg-duet-card px-3.5 py-2.5 text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] outline-none placeholder:text-duet-ink-3 focus-visible:ring-3 focus-visible:ring-duet-violet/25";
 
 export function Field({
   label,

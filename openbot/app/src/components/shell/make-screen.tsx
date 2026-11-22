@@ -448,7 +448,7 @@ function MakeFilters({
           <button
             aria-pressed={on}
             className={cn(
-              "type-label flex min-h-11 shrink-0 items-center rounded-full px-3.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
+              "type-label flex min-h-11 shrink-0 items-center rounded-[10px] px-3.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
               on
                 ? "bg-duet-black text-duet-on-black"
                 : "bg-duet-card text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile",
@@ -480,11 +480,11 @@ function MakingCard({
 }) {
   return (
     <Link
-      className="group block w-full rounded-[20px] outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40"
+      className="group block w-full rounded-[var(--duet-radius-card)] outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40"
       params={{ taskId }}
       to="/tasks/$taskId"
     >
-      <DuetCard className="rounded-[20px] transition-transform motion-safe:group-active:scale-[0.985]">
+      <DuetCard className="rounded-[var(--duet-radius-card)] transition-transform motion-safe:group-active:scale-[0.985]">
         <div
           aria-hidden
           className="relative grid place-items-center overflow-hidden bg-duet-tile"

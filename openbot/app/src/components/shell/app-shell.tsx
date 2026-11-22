@@ -162,7 +162,7 @@ function ChatWithScreen({
           {/* The bar shares the content's column, and its 20px inset is the screen text's. */}
           <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col lg:max-w-none">
             <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-duet-hair-2 border-b px-5">
-              <p className="type-sub truncate font-semibold">
+              <p className="cue-label truncate text-duet-ink-2">
                 {SCREEN_NAMES[screen]}
               </p>
               <Link

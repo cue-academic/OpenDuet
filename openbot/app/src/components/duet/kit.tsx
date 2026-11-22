@@ -363,7 +363,7 @@ export function Row({
   const interactive = Boolean(action.onClick || action.link);
   const classes = cn(
     // Gaps in px, not rem: at a large text size the words need the room, not the margins.
-    "duet-face flex w-full min-w-0 items-center gap-[12px] rounded-[22px] px-[12px] text-left text-duet-ink",
+    "duet-face flex w-full min-w-0 items-center gap-[12px] rounded-[var(--duet-radius-field)] px-[12px] text-left text-duet-ink",
     detail || meta ? "min-h-[66px] py-2.5" : "min-h-[50px] py-2",
     current && "bg-duet-tile",
     interactive &&
@@ -445,7 +445,7 @@ export function Segmented<T extends string>({
     <div
       aria-label={label}
       // Wraps onto a second line at a large text size rather than running off the screen.
-      className="duet-face flex w-full flex-wrap gap-1 rounded-[26px] bg-duet-tile p-1"
+      className="duet-face flex w-full flex-wrap gap-1 rounded-[var(--duet-radius-field)] bg-duet-tile p-1"
       role="radiogroup"
     >
       {options.map((option, index) => {
@@ -455,7 +455,7 @@ export function Segmented<T extends string>({
           <button
             aria-checked={on}
             className={cn(
-              "type-sub flex min-h-11 flex-[1_1_7rem] items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 font-medium transition-colors duration-[var(--duet-dur-swap)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40",
+              "type-sub flex min-h-11 flex-[1_1_7rem] items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-3 font-medium transition-colors duration-[var(--duet-dur-swap)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40",
               on
                 ? "bg-duet-card text-duet-ink shadow-duet-float"
                 : "text-duet-ink-2 hover:text-duet-ink",

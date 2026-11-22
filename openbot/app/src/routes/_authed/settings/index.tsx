@@ -84,7 +84,7 @@ function AvatarPicker() {
             aria-checked={on}
             aria-label={ORB_COLOUR_LABEL[colour]}
             className={cn(
-              "flex flex-col items-center gap-1.5 rounded-[18px] px-2 py-3 transition-[background-color,box-shadow,transform] active:scale-[0.97]",
+              "flex flex-col items-center gap-1.5 rounded-[var(--duet-radius-card)] px-2 py-3 transition-[background-color,box-shadow,transform] active:scale-[0.97]",
               on
                 ? "bg-duet-accent-soft shadow-[inset_0_0_0_2px_var(--duet-accent)]"
                 : "bg-duet-card shadow-duet-card hover:bg-duet-tile",

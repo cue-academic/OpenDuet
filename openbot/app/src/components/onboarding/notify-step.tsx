@@ -131,7 +131,7 @@ function NotifyStep({ botName }: { botName: string }) {
           className="absolute inset-0 rounded-[46px] bg-linear-to-b from-duet-surface to-duet-tile shadow-[inset_0_0_0_1.5px_var(--duet-hair)] [mask-image:linear-gradient(to_bottom,transparent,black_38%)]"
         />
         <div
-          className="relative mt-[120px] flex w-[272px] max-w-[calc(100%-24px)] items-center gap-3 rounded-[20px] bg-duet-card px-3 py-3 shadow-duet-card"
+          className="relative mt-[120px] flex w-[272px] max-w-[calc(100%-24px)] items-center gap-3 rounded-[var(--duet-radius-card)] bg-duet-card px-3 py-3 shadow-duet-card"
           data-notification-preview=""
         >
           <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-duet-tile">

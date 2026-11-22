@@ -68,8 +68,8 @@ export function StudyDock() {
             aria-current={current ? "page" : undefined}
             className={
               current
-                ? "type-caption inline-flex min-h-11 items-center rounded-full bg-duet-accent px-3 font-semibold text-duet-on-accent transition-transform focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.97] motion-reduce:active:scale-100"
-                : "type-caption inline-flex min-h-11 items-center rounded-full bg-duet-card px-3 font-semibold text-duet-ink shadow-duet-card transition-[transform,background-color,color] hover:bg-duet-accent-soft hover:text-duet-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.97] motion-reduce:active:scale-100"
+                ? "type-caption inline-flex min-h-11 items-center gap-1.5 rounded-[10px] bg-duet-black px-3 font-semibold text-duet-on-black transition-transform before:size-1.5 before:rounded-full before:bg-duet-highlight focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.97] motion-reduce:active:scale-100"
+                : "type-caption inline-flex min-h-11 items-center rounded-[10px] bg-duet-card px-3 font-semibold text-duet-ink shadow-duet-card transition-[transform,background-color,color] hover:bg-duet-accent-soft hover:text-duet-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.97] motion-reduce:active:scale-100"
             }
             href={tool.to}
             key={tool.to}

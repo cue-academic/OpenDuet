@@ -421,7 +421,7 @@ function CalendarToolbar({
         {/* Read out when it changes, so stepping a day says where it landed. */}
         <h1
           aria-live="polite"
-          className="ml-1 min-w-0 truncate font-semibold text-base tabular-nums tracking-tight outline-none sm:text-lg"
+          className="study-display ml-1 min-w-0 truncate text-base tabular-nums outline-none sm:text-lg"
           ref={headingRef}
           tabIndex={-1}
         >

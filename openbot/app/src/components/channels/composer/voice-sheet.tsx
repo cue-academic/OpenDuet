@@ -130,7 +130,7 @@ export function VoiceSheet({
 function Status({ dictation }: { dictation: Dictation }) {
   const { state, session } = dictation;
   const pill =
-    "duet-glass type-label flex min-h-10 max-w-full items-center gap-2.5 rounded-[20px] px-4 py-2.5 shadow-duet-glass animate-in fade-in duration-[var(--duet-dur-swap)]";
+    "duet-glass type-label flex min-h-10 max-w-full items-center gap-2.5 rounded-[var(--duet-radius-card)] px-4 py-2.5 shadow-duet-glass animate-in fade-in duration-[var(--duet-dur-swap)]";
   if (state.phase === "error") {
     return (
       <div className={cn(pill, "py-1.5 pr-1.5")}>

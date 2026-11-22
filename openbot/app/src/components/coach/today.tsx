@@ -90,8 +90,10 @@ export function TodayHero({
         <div className="min-w-0 flex-1">
           <p className="study-display type-title font-semibold">
             <DeskMark className="mr-1.5 inline size-7 align-[-6px]" />
-            {greeting(now)}
-            {state.profile.name ? `, ${state.profile.name}` : ""}.
+            <span className="cue-mark">
+              {greeting(now)}
+              {state.profile.name ? `, ${state.profile.name}` : ""}.
+            </span>
           </p>
           {tomorrowLine(state, now) ? (
             <p className="type-sub mt-1 text-duet-ink [overflow-wrap:anywhere]">
@@ -125,7 +127,7 @@ export function TodayHero({
       {nudge ? (
         <div
           className={cn(
-            "type-sub mb-3 flex items-start gap-2 rounded-[20px] px-4 py-3 font-medium",
+            "type-sub mb-3 flex items-start gap-2 rounded-[var(--duet-radius-card)] px-4 py-3 font-medium",
             nudge.tone === "past"
               ? "bg-duet-violet-soft text-duet-violet"
               : "bg-duet-amber-soft text-duet-amber",
@@ -200,7 +202,7 @@ export function CheckInCard({
           {pace.goalMin} min.
         </p>
         {pace.support ? (
-          <p className="type-sub mt-2 rounded-[16px] bg-duet-violet-soft px-3 py-2 text-duet-violet">
+          <p className="type-sub mt-2 rounded-[var(--duet-radius-card)] bg-duet-violet-soft px-3 py-2 text-duet-violet">
             If it's more than a rough day, talk to someone you trust, like your
             school counselor. In the US you can call or text 988 any time.
           </p>

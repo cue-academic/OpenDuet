@@ -1607,7 +1607,7 @@ export function Composer({
                * The film's composer: a white pill floating on a soft shadow, its controls on the
                * bottom line. No ring when it has the caret; the caret says so.
                */
-              "duet-face flex min-h-[54px] flex-col rounded-[27px] p-[9px]",
+              "duet-face flex min-h-[54px] flex-col rounded-[var(--duet-radius-field)] p-[9px]",
               glass ? "relative isolate" : "bg-duet-card shadow-duet-float",
               className,
             )}

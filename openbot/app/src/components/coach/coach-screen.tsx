@@ -161,7 +161,7 @@ export function CoachScreen() {
       <header className="mb-3 flex items-center justify-between gap-2 px-1">
         <div>
           <h1 className="sr-only">Coach</h1>
-          <p className="type-sub text-duet-ink-2">
+          <p className="cue-label text-duet-ink-2">
             {now.toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -190,7 +190,7 @@ export function CoachScreen() {
       </header>
 
       {!state.profile.setupDone ? (
-        <div className="mb-3 flex items-center gap-3 rounded-[20px] bg-duet-card px-4 py-3 shadow-duet-card">
+        <div className="mb-3 flex items-center gap-3 rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-3 shadow-duet-card">
           <p className="type-sub min-w-0 flex-1 text-duet-ink-2">
             {state.source === "private"
               ? "These are your classes this term. Last spring stays off the plan."

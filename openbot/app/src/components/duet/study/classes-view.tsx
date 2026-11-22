@@ -22,7 +22,7 @@ import { HelpLevelPill } from "./help-level-pill";
  */
 
 const PILL =
-  "type-sub inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
+  "type-sub inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
 const QUIET =
   "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile";
 const LINK =
@@ -214,7 +214,7 @@ export function ClassesView({
       ) : null}
       {hub.classes.length === 0 ? (
         <div className="mt-8 max-w-prose">
-          <p className="type-body font-medium text-duet-ink">
+          <p className="study-display type-nav text-duet-ink">
             {hub.syncedAt
               ? "No classes found yet"
               : "Your classes haven't been read yet"}
