@@ -14,6 +14,7 @@ export type ShellTab =
   | "tasks"
   | "calendar"
   | "coach"
+  | "classes"
   | "learn"
   | "make";
 
@@ -47,6 +48,7 @@ export function tabForPath(pathname: string): ShellTab | null {
   if (path === "/tasks" || /^\/tasks\/[^/]+$/.test(path)) return "tasks";
   if (path === "/calendar") return "calendar";
   if (path === "/coach") return "coach";
+  if (path === "/classes") return "classes";
   if (path === "/learn") return "learn";
   if (path === "/make" || /^\/make\/[^/]+$/.test(path)) return "make";
   return null;

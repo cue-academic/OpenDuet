@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { loadTenantPackage } from "../src/tenant-package";
 
 /*
- * Academic OS's learning skills ship in the tenant package (examples/openduet/skills.yaml). These
+ * Cue's learning skills ship in the tenant package (examples/openduet/skills.yaml). These
  * checks hold the parts of each instruction the product depends on: every practice skill saves to
  * study memory, every skill that touches an assignment follows the teacher's AI help level, and
  * none of them hands over finished work.
@@ -29,9 +29,9 @@ const skill = (slug: string) => {
   return found;
 };
 
-test("the package loads with every learning skill on Academic OS's own Bot", () => {
+test("the package loads with every learning skill on Cue's own Bot", () => {
   const bot = tenant.agents.find((agent) => agent.id === tenant.tenantId);
-  expect(bot?.name).toBe("Academic OS");
+  expect(bot?.name).toBe("Cue");
   for (const slug of LEARNING_SKILLS) {
     expect(bot?.skills).toContain(slug);
     expect(skill(slug).title.length).toBeGreaterThan(0);
@@ -41,7 +41,7 @@ test("the package loads with every learning skill on Academic OS's own Bot", () 
 
 test("the Bot's prompt tells it to save practice to study memory", () => {
   const bot = tenant.agents.find((agent) => agent.id === tenant.tenantId);
-  if (!bot) throw new Error("no Academic OS Bot");
+  if (!bot) throw new Error("no Cue Bot");
   const prompt = (bot.configuration as { systemPrompt?: string }).systemPrompt;
   expect(prompt).toContain("record_study");
   expect(prompt).toContain("study_memory");

@@ -74,6 +74,7 @@ const SCREEN_NAMES: Record<Exclude<ShellTab, "chat">, string> = {
   tasks: "Your tasks",
   calendar: "Your calendar",
   coach: "Today's plan",
+  classes: "Your classes",
   learn: "What to review",
   make: "Made for you",
 };
@@ -136,7 +137,10 @@ function ChatWithScreen({
         "relative flex min-h-0 flex-1",
         screen === "calendar"
           ? "lg:grid lg:grid-cols-[minmax(300px,0.72fr)_minmax(680px,1.4fr)]"
-          : screen === "learn" || screen === "make" || screen === "coach"
+          : screen === "learn" ||
+              screen === "make" ||
+              screen === "coach" ||
+              screen === "classes"
             ? "lg:grid lg:grid-cols-[minmax(300px,0.7fr)_minmax(640px,1.3fr)]"
             : screen
               ? "lg:grid lg:grid-cols-[minmax(360px,1fr)_minmax(400px,520px)]"

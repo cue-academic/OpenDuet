@@ -371,7 +371,7 @@ export function reportText(
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const lines = [
-    `${state.profile.name}'s week, ${fmt(report.from)} to ${fmt(report.to)} (from Academic OS)`,
+    `${state.profile.name}'s week, ${fmt(report.from)} to ${fmt(report.to)} (from Cue)`,
     "",
     `Focused study: ${formatMinutes(report.totalMin)}, with a ${report.streakDays}-day streak.`,
     report.byClass.length

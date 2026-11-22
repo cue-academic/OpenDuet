@@ -7,13 +7,21 @@ import { type MouseEvent, useEffect, useState } from "react";
  * shell to open the screen without reloading the chat.
  */
 const TOOLS = [
-  { label: "Tonight", to: "/coach" },
-  { label: "Study", to: "/learn" },
-  { label: "Classes", to: "/classes" },
-  { label: "Calendar", to: "/calendar" },
-  { label: "Tasks", to: "/tasks" },
-  { label: "Rules", to: "/settings/teacher-rules" },
-  { label: "Made", to: "/make" },
+  {
+    label: "Tonight",
+    to: "/coach",
+    about: "What to do next, and for how long",
+  },
+  { label: "Study", to: "/learn", about: "Review, flashcards and practice" },
+  { label: "Classes", to: "/classes", about: "What's due in each class" },
+  { label: "Calendar", to: "/calendar", about: "Your day and week" },
+  { label: "Tasks", to: "/tasks", about: "What Cue is working on" },
+  {
+    label: "Rules",
+    to: "/settings/teacher-rules",
+    about: "How much AI help is allowed",
+  },
+  { label: "Made", to: "/make", about: "Notes and decks made for you" },
 ] as const;
 
 function here(): string {
@@ -57,8 +65,52 @@ function usePath(): string {
   return path;
 }
 
+/**
+ * The hub: with no screen open, the tools are a numbered board under the day's date instead of a
+ * row of chips, so the first thing on `/` is where to go, not an empty chat.
+ */
+function HubBoard() {
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  return (
+    <nav aria-label="Study tools" className="mb-3">
+      <p className="cue-label text-duet-ink-3">{today}</p>
+      <p className="study-display mt-1 mb-3 text-[1.75rem] text-duet-ink leading-[2rem]">
+        Pick up where <span className="cue-mark">you left off.</span>
+      </p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {TOOLS.map((tool, index) => (
+          <a
+            className="group flex min-h-[84px] flex-col justify-between rounded-[var(--duet-radius-card)] bg-duet-card p-3 shadow-duet-card transition-[transform,background-color] first:bg-duet-black first:text-duet-on-black hover:bg-duet-accent-soft first:hover:bg-duet-black first:hover:brightness-125 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] motion-reduce:active:scale-100"
+            href={tool.to}
+            key={tool.to}
+            onClick={(event) => openTool(event, tool.to)}
+          >
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="study-display type-nav">{tool.label}</span>
+              <span
+                aria-hidden
+                className="cue-label text-duet-ink-3 group-first:text-duet-highlight"
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+            </span>
+            <span className="type-caption mt-2 text-duet-ink-2 group-first:text-duet-on-black/80">
+              {tool.about}
+            </span>
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
 export function StudyDock() {
   const path = usePath();
+  if (path === "/") return <HubBoard />;
   return (
     <nav aria-label="Study tools" className="mb-2 flex flex-wrap gap-1.5 pb-1">
       {TOOLS.map((tool) => {

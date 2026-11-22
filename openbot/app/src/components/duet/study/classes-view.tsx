@@ -22,11 +22,11 @@ import { HelpLevelPill } from "./help-level-pill";
  */
 
 const PILL =
-  "type-sub inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
+  "type-caption inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
 const QUIET =
   "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile";
 const LINK =
-  "type-sub -mb-2 inline-flex min-h-11 items-center rounded-full font-medium text-duet-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40";
+  "type-caption -mb-2 inline-flex min-h-11 items-center rounded-full font-medium text-duet-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40";
 
 type LinkSlot = (props: {
   className: string;
@@ -129,13 +129,13 @@ export function ClassesView({
   if (!hub) {
     if (!loadError)
       return (
-        <p className="type-sub mt-8 text-duet-ink-2" role="status">
+        <p className="type-caption mt-8 text-duet-ink-2" role="status">
           Loading your classes…
         </p>
       );
     return (
       <div className="mt-8">
-        <p className="type-sub text-duet-status-problem" role="alert">
+        <p className="type-caption text-duet-status-problem" role="alert">
           {loadError}
         </p>
         <button
@@ -169,7 +169,7 @@ export function ClassesView({
           <DuetIcon name="repeat" size={18} />
           {refreshing ? "Refreshing…" : "Refresh from Classroom"}
         </button>
-        <p aria-live="polite" className="type-sub text-duet-ink-2">
+        <p aria-live="polite" className="type-caption text-duet-ink-2">
           {hub.syncedAt
             ? `Last read ${agoShort(hub.syncedAt, now.getTime())}`
             : "Not read yet"}
@@ -179,7 +179,7 @@ export function ClassesView({
         </p>
       </div>
       {refreshError ? (
-        <p className="type-sub mt-2 text-duet-status-problem" role="alert">
+        <p className="type-caption mt-2 text-duet-status-problem" role="alert">
           {refreshError}
         </p>
       ) : null}
@@ -195,13 +195,13 @@ export function ClassesView({
             size={18}
           />
           <div className="min-w-0 flex-1">
-            <p className="type-sub font-medium text-duet-ink">
+            <p className="type-caption font-medium text-duet-ink">
               Not everything could be read
             </p>
             <ul className="mt-0.5">
               {[...new Set(hub.couldNotRead)].map((line) => (
                 <li
-                  className="type-sub text-duet-ink-2 [overflow-wrap:anywhere]"
+                  className="type-caption text-duet-ink-2 [overflow-wrap:anywhere]"
                   key={line}
                 >
                   {line}
@@ -219,7 +219,7 @@ export function ClassesView({
               ? "No classes found yet"
               : "Your classes haven't been read yet"}
           </p>
-          <p className="type-sub mt-1 text-pretty text-duet-ink-2">
+          <p className="type-caption mt-1 text-pretty text-duet-ink-2">
             {hub.syncedAt
               ? "Your Gmail has no Google Classroom emails from the last 30 days. If your school uses a different Google account, connect that one."
               : "Connect the Google account your school uses, then refresh from Classroom. Your classes and assignments show up here."}
@@ -273,7 +273,7 @@ function ClassSection({
     >
       <DuetCard className="mt-3">
         {schoolClass.assignments.length === 0 ? (
-          <p className="type-sub px-4 py-4 text-duet-ink-2">
+          <p className="type-caption px-4 py-4 text-duet-ink-2">
             Nothing posted for this class yet.
           </p>
         ) : (
@@ -328,7 +328,7 @@ function AssignmentRow({
         style={{ backgroundColor: color }}
       />
       <div className="min-w-0 flex-1">
-        <h3 className="type-body font-medium text-duet-ink [overflow-wrap:anywhere]">
+        <h3 className="type-sub font-medium text-duet-ink [overflow-wrap:anywhere]">
           {work.link ? (
             <a
               className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
@@ -344,13 +344,15 @@ function AssignmentRow({
         </h3>
         <p
           className={cn(
-            "type-sub mt-0.5",
+            "type-caption mt-0.5",
             late ? "text-duet-status-problem" : "text-duet-ink-2",
           )}
         >
           {hubDueText(work, now, timeZone)}
         </p>
-        <p className="type-sub mt-0.5 text-duet-ink-2">{facts.join(" · ")}</p>
+        <p className="type-caption mt-0.5 text-duet-ink-2">
+          {facts.join(" · ")}
+        </p>
       </div>
       <HelpLevelPill level={work.level} />
     </div>
