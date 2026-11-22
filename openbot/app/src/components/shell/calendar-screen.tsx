@@ -147,7 +147,8 @@ export function CalendarScreen({
     () => new Set((missed ?? []).map((entry) => entry.block.id)),
     [missed],
   );
-  const details = selected && shown.has(itemDate(selected)) ? selected : null;
+  const current = currentItem(selected, view?.blocks);
+  const details = current && shown.has(itemDate(current)) ? current : null;
   useEffect(() => {
     if (!details) return;
     const close = (event: KeyboardEvent) => {
@@ -307,6 +308,25 @@ export function CalendarScreen({
       )}
     </div>
   );
+}
+
+/**
+ * The pressed item as the calendar has it now. An applied study block is read again from the
+ * calendar, so its details follow it being marked done; one that was moved or taken off is no
+ * longer where it was pressed, so its details close.
+ */
+function currentItem(
+  item: CalendarItem | null,
+  blocks: readonly StudyBlock[] | undefined,
+): CalendarItem | null {
+  if (item?.kind !== "block" || item.proposed || !blocks) return item;
+  const block = blocks.find((entry) => entry.id === item.block.id);
+  return block &&
+    block.date === item.block.date &&
+    block.start === item.block.start &&
+    block.end === item.block.end
+    ? { ...item, block }
+    : null;
 }
 
 /** Now, read again every half minute while the screen is open. */

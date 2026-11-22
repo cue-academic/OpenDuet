@@ -1411,6 +1411,51 @@ test("I did it takes a session off the missed list without moving it, and Move a
   ]);
 });
 
+test("details open on a missed session follow it: they say Done once it is, and close when it moves away", async () => {
+  calendar = withMissed();
+  serving();
+  const { view, user } = draw({ date: YESTERDAY });
+  const notice = within(
+    await view.findByRole("region", { name: "Missed study sessions" }),
+  );
+  const open = async (title: string) => {
+    const button = await waitFor(() => {
+      const found = Array.from(
+        view.container.querySelectorAll<HTMLElement>(
+          "[data-calendar-item-id^='block:']",
+        ),
+      ).find((item) => item.textContent?.includes(title));
+      if (!found) throw new Error(`no block for ${title}`);
+      return found;
+    });
+    await user.click(button);
+    return within(
+      await view.findByRole("region", { name: `${title}, details` }),
+    );
+  };
+  const spanish = await open("Spanish: vocabulary");
+  expect(
+    spanish.getByText("Missed. Move it from the list above."),
+  ).toBeTruthy();
+  await user.click(
+    notice.getByRole("button", { name: "I did Spanish: vocabulary" }),
+  );
+  await waitFor(() => expect(spanish.getByText("Done")).toBeTruthy());
+  expect(spanish.queryByText(/^Missed/)).toBeNull();
+
+  await open("Chemistry: Lab 6 report");
+  await user.click(
+    notice.getByRole("button", {
+      name: "Move Chemistry: Lab 6 report to the next free time",
+    }),
+  );
+  await waitFor(() =>
+    expect(
+      view.queryByRole("region", { name: "Chemistry: Lab 6 report, details" }),
+    ).toBeNull(),
+  );
+});
+
 test("a move that is refused says why, and the session stays on the list", async () => {
   calendar = withMissed();
   serving();
