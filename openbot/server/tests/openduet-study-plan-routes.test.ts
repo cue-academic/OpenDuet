@@ -1315,3 +1315,165 @@ describe("Tonight plan saves", () => {
     expect(plans[0]?.endsAt).toBeNull();
   });
 });
+
+describe("a missed study block", () => {
+  const WEEK = `/calendar?from=${TODAY}&to=${addDays(TODAY, 6)}`;
+  const TOMORROW = addDays(TODAY, 1);
+
+  /** Tonight's plan applied, then the evening gone by: 10:10 PM, every session over. */
+  async function missedEvening() {
+    const kit = setUp();
+    const id = await kit.propose();
+    const plan = kit.planIn(
+      (await kit.send("POST", `/plans/${id}/apply`)).body,
+    );
+    kit.advance(8 * 60);
+    const calendarOf = async () =>
+      (await kit.send("GET", WEEK)).body.calendar as CalendarView;
+    const [first, second, third, fourth] = plan.blocks;
+    if (!first || !second || !third || !fourth) throw new Error("four blocks");
+    return { ...kit, id, plan, calendarOf, first, second, third, fourth };
+  }
+  const slot = (block: StudyBlock) =>
+    `${block.date} ${block.start}-${block.end}`;
+
+  test("is listed on the calendar once it has ended, and not before", async () => {
+    const { propose, send, planIn, advance } = setUp();
+    const id = await propose();
+    const plan = planIn((await send("POST", `/plans/${id}/apply`)).body);
+    const read = async () =>
+      ((await send("GET", WEEK)).body.calendar as CalendarView).missed;
+    expect(await read()).toEqual([]);
+    // 6:25 PM: the first session has just ended; the second is under way.
+    advance(4 * 60 + 15);
+    expect(await read()).toEqual([{ planId: id, block: plan.blocks[0] }]);
+    advance(4 * 60);
+    expect((await read()).map((entry) => entry.block.id)).toEqual(
+      plan.blocks.map((block) => block.id),
+    );
+    // Whatever days are shown, and for a week after.
+    const later = `/calendar?from=${addDays(TODAY, 7)}&to=${addDays(TODAY, 9)}`;
+    advance(6 * 24 * 60);
+    expect(
+      ((await send("GET", later)).body.calendar as CalendarView).missed,
+    ).toHaveLength(4);
+    advance(2 * 24 * 60);
+    expect(
+      ((await send("GET", later)).body.calendar as CalendarView).missed,
+    ).toEqual([]);
+  });
+
+  test("moves to the next free time, after practice and clear of what was moved before it", async () => {
+    const { id, send, calendarOf, first, second, store } =
+      await missedEvening();
+    const moved = await send("POST", `/plans/${id}/blocks/${first.id}/move`);
+    expect(moved.status).toBe(200);
+    // Thursday has soccer until 5:30 PM, and ten minutes are kept after it.
+    expect(answerIn(moved.body).block).toEqual({
+      ...first,
+      date: TOMORROW,
+      start: "17:40",
+      end: "18:25",
+      movedFrom: { date: first.date, start: first.start, end: first.end },
+    });
+    const next = await send("POST", `/plans/${id}/blocks/${second.id}/move`);
+    // After the first, with the rest between sessions, and past the quiz it was for: late.
+    expect(answerIn(next.body).block).toEqual({
+      ...second,
+      date: TOMORROW,
+      start: "18:35",
+      end: "19:20",
+      late: true,
+      movedFrom: { date: second.date, start: second.start, end: second.end },
+    });
+    expect(answerIn(next.body).plan.blocks.map(slot)).toEqual([
+      `${TODAY} 20:25-20:40`,
+      `${TODAY} 20:50-21:35`,
+      `${TOMORROW} 17:40-18:25`,
+      `${TOMORROW} 18:35-19:20`,
+    ]);
+
+    const calendar = await calendarOf();
+    expect(calendar.missed.map((entry) => slot(entry.block))).toEqual([
+      `${TODAY} 20:25-20:40`,
+      `${TODAY} 20:50-21:35`,
+    ]);
+    expect(calendar.blocks.map(slot)).toEqual(
+      answerIn(next.body).plan.blocks.map(slot),
+    );
+    // The plan's span follows its blocks, so the moved ones are busy time for the next plan.
+    expect((await store.get("jordan", "plan", id))?.endsAt).toEqual(
+      zonedInstant(TOMORROW, "19:20", TZ),
+    );
+  });
+
+  test("marked done is not missed, and can't be moved", async () => {
+    const { id, send, calendarOf, first } = await missedEvening();
+    const done = await send("POST", `/plans/${id}/blocks/${first.id}/done`);
+    expect(done.status).toBe(200);
+    expect(answerIn(done.body).block).toEqual({ ...first, done: true });
+    expect(
+      (await calendarOf()).missed.map((entry) => entry.block.id),
+    ).not.toContain(first.id);
+    expect(await send("POST", `/plans/${id}/blocks/${first.id}/move`)).toEqual({
+      status: 409,
+      body: { error: "You marked this session done." },
+    });
+  });
+
+  test("a session still ahead can be moved on, but not marked done", async () => {
+    const { propose, send, planIn } = setUp();
+    const id = await propose();
+    const plan = planIn((await send("POST", `/plans/${id}/apply`)).body);
+    const last = plan.blocks.at(-1);
+    if (!last) throw new Error("no block");
+    expect(await send("POST", `/plans/${id}/blocks/${last.id}/done`)).toEqual({
+      status: 409,
+      body: { error: "This session hasn't started yet." },
+    });
+    const moved = await send("POST", `/plans/${id}/blocks/${last.id}/move`);
+    // Tonight's cap is spent, so it goes to tomorrow, after practice.
+    expect(slot(answerIn(moved.body).block)).toBe(`${TOMORROW} 17:40-18:25`);
+  });
+
+  test("moves nothing when the calendar can't be checked, the plan is off the calendar, or it isn't theirs", async () => {
+    const { id, send, google, first, appFor, propose, store } =
+      await missedEvening();
+    const path = `/plans/${id}/blocks/${first.id}/move`;
+    google.state.fail = "Calendar is unavailable.";
+    const refused = await send("POST", path);
+    expect(refused.status).toBe(409);
+    expect(String(refused.body.error)).toEndWith("Nothing was moved.");
+    google.state.fail = null;
+
+    for (const [as, where] of [
+      [appFor("sam"), path],
+      [appFor("jordan"), `/plans/${id}/blocks/no-such-block/move`],
+      [appFor("jordan"), `/plans/${id}/blocks/no-such-block/done`],
+    ] as const)
+      expect((await send("POST", where, as)).status).toBe(404);
+
+    const waiting = await propose({
+      minutes: 30,
+      startDay: "tomorrow",
+      reason: "Later.",
+    });
+    const [block] = planFromData(await store.get("jordan", "plan", waiting));
+    expect(
+      await send("POST", `/plans/${waiting}/blocks/${block}/move`),
+    ).toEqual({
+      status: 409,
+      body: { error: "This session isn't on your calendar." },
+    });
+    await send("POST", `/plans/${id}/remove`);
+    expect((await send("POST", path)).status).toBe(409);
+  });
+});
+
+const answerIn = (body: Record<string, unknown>) =>
+  body.answer as { plan: StudyPlan; block: StudyBlock };
+
+/** The block ids a stored plan holds. */
+function planFromData(record: { data: Record<string, unknown> } | null) {
+  return ((record?.data.blocks ?? []) as StudyBlock[]).map((block) => block.id);
+}

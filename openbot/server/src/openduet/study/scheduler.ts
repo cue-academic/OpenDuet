@@ -363,6 +363,110 @@ export function checkApply(input: {
   return null;
 }
 
+/** How many days ahead, counting today, a missed block may be moved. */
+export const MOVE_DAYS = 7;
+
+export type MoveInput = {
+  /** The student's today, "YYYY-MM-DD", and the minute of their day now (0 to 1439). */
+  today: string;
+  nowMinute: number;
+  /** The block to move: one that was missed, or one the student knows they will miss. */
+  block: StudyBlock;
+  /** Its assignment's deadline, when it has one and it is known. */
+  due: string | null;
+  dueTime: string | null;
+  /** Commitments and every other applied study block on the days searched. */
+  busy: BusyEvent[];
+  availability: (date: string) => DayWindow;
+  classBufferMin: number;
+};
+
+/**
+ * A study block moved to the next free time, or null when the next MOVE_DAYS days have no room.
+ * The block keeps its id, its length and what it works on; `movedFrom` says where it was.
+ *
+ * The next free time is the first gap of the block's length inside the student's study hours, clear
+ * of commitments (with the class buffer) and other study blocks (with the rest between sessions),
+ * on a day whose cap still has room. It starts no sooner than a few minutes from now, and for a
+ * block that has not begun yet, no sooner than that block would have ended. When that time is after
+ * the assignment's deadline the block is marked late, as catch-up work is everywhere else: the
+ * deadline does not move. With no deadline known, a block already late stays late.
+ */
+export function moveBlock(input: MoveInput): StudyBlock | null {
+  const { today, nowMinute, block } = input;
+  const { start: was, end: wasEnd } = blockSpan(block);
+  const length = wasEnd - was;
+  if (!isDay(today) || !isWhole(nowMinute, 0, DAY_END - 1) || length <= 0)
+    throw new Error("The block to move cannot be read.");
+  const dueMinute = minuteOf(input.dueTime ?? LAST_MINUTE);
+  if ((input.due !== null && !isDay(input.due)) || dueMinute === null)
+    throw new Error("The block's deadline cannot be read.");
+  const calendar = input.busy
+    .filter((event) => event.id !== block.id)
+    .map((event) => ({ event, ...busySpan(event) }));
+  const firstDay = block.date > today ? block.date : today;
+  const isLate = (date: string, finish: number) =>
+    input.due === null
+      ? block.late === true
+      : date > input.due || (date === input.due && finish > dueMinute);
+
+  for (let offset = 0; offset < MOVE_DAYS; offset++) {
+    const date = addDays(today, offset);
+    if (date < firstDay) continue;
+    const asked = input.availability(date);
+    if (!asked.enabled) continue;
+    const hours = readHours(date, asked);
+    const onDay = calendar.filter((busy) => busy.event.date === date);
+    const applied = onDay
+      .filter((busy) => busy.event.kind === "study")
+      .reduce((sum, busy) => sum + busy.end - busy.start, 0);
+    if (applied + length > hours.cap) continue;
+    const occupied = onDay
+      .map(({ event, start, end }) => {
+        const pad =
+          event.kind === "commitment" ? input.classBufferMin : hours.rest;
+        return {
+          start: Math.max(0, start - pad),
+          end: Math.min(DAY_END, end + pad),
+        };
+      })
+      .sort((a, b) => a.start - b.start);
+    let at = Math.max(
+      hours.start,
+      date === today ? Math.ceil((nowMinute + LEAD_MIN) / 5) * 5 : 0,
+      date === block.date ? wasEnd + hours.rest : 0,
+    );
+    while (at + length <= hours.end) {
+      const clash = occupied.find(
+        (span) => span.start < at + length && span.end > at,
+      );
+      if (!clash) break;
+      at = clash.end;
+    }
+    if (at + length <= hours.end)
+      return movedTo(block, date, at, isLate(date, at + length));
+  }
+  return null;
+}
+
+function movedTo(
+  block: StudyBlock,
+  date: string,
+  at: number,
+  late: boolean,
+): StudyBlock {
+  const { start, end } = blockSpan(block);
+  const { late: _late, done: _done, movedFrom: _from, ...rest } = block;
+  return {
+    ...rest,
+    date,
+    start: clockOf(at),
+    end: clockOf(at + end - start),
+    ...(late ? { late: true } : {}),
+    movedFrom: { date: block.date, start: block.start, end: block.end },
+  };
+}
+
 /**
  * A high school student's study hours until they set their own: weekday afternoons and evenings
  * after school, and longer weekend days with a bigger cap.

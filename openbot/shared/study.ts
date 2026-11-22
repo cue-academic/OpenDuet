@@ -410,7 +410,23 @@ export type StudyBlock = {
   end: string;
   /** True when the block falls after the assignment's deadline (catch-up work). */
   late?: boolean;
+  /** True once the student said they did it. A block that ended without it was missed. */
+  done?: boolean;
+  /** Where the block was before it was moved to the next free time. */
+  movedFrom?: { date: string; start: string; end: string };
 };
+
+/** How far back the calendar looks for study blocks that ended without being done. */
+export const MISSED_LOOKBACK_DAYS = 7;
+
+/** An applied study block that ended without being marked done, and the plan it belongs to. */
+export type MissedBlock = { planId: string; block: StudyBlock };
+
+/**
+ * POST /api/openduet/study/plans/:id/blocks/:blockId/move answers { answer: BlockAnswer }: the block
+ * at the next free time, and its plan. POST .../done answers the same, with the block marked done.
+ */
+export type BlockAnswer = { plan: StudyPlan; block: StudyBlock };
 
 export type PlanStatus = "proposed" | "applied" | "discarded";
 
@@ -491,6 +507,11 @@ export type CalendarView = {
   allDay: CalendarAllDay[];
   /** Applied study blocks in the range. */
   blocks: StudyBlock[];
+  /**
+   * Applied blocks from the last MISSED_LOOKBACK_DAYS days that ended without being done, oldest
+   * first, whatever range was asked for: what the student can move to the next free time.
+   */
+  missed: MissedBlock[];
   deadlines: CalendarDeadline[];
   couldNotRead: string[];
 };

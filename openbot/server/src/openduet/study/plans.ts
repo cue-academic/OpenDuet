@@ -280,6 +280,14 @@ const blockSchema = z.object({
   start: z.string().regex(CLOCK),
   end: z.string().regex(CLOCK),
   late: z.boolean().optional(),
+  done: z.boolean().optional(),
+  movedFrom: z
+    .object({
+      date: z.string().refine(isDate),
+      start: z.string().regex(CLOCK),
+      end: z.string().regex(CLOCK),
+    })
+    .optional(),
 }) satisfies z.ZodType<StudyBlock>;
 
 const storedSchema = z.object({
