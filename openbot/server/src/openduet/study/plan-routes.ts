@@ -1,9 +1,12 @@
-import type {
-  CalendarDeadline,
-  CalendarView,
-  HelpLevel,
-  StudyBlock,
-  StudyPlan,
+import {
+  type BlockAnswer,
+  type CalendarDeadline,
+  type CalendarView,
+  type HelpLevel,
+  MISSED_LOOKBACK_DAYS,
+  type MissedBlock,
+  type StudyBlock,
+  type StudyPlan,
 } from "@openbot/shared/study";
 import { Hono } from "hono";
 import type { AppVariables } from "../../auth/guards";
@@ -22,15 +25,32 @@ import {
   type StudyRecord,
   type StudyRouteDeps,
 } from "./contracts";
-import { appliedPlans, busyFrom, isStale, planFromRecord } from "./plans";
+import {
+  appliedPlans,
+  busyFrom,
+  isStale,
+  planFromRecord,
+  planSpan,
+} from "./plans";
 import { studyContextOf } from "./routes";
-import { checkApply, PASSED } from "./scheduler";
+import {
+  checkApply,
+  DEFAULT_CLASS_BUFFER_MIN,
+  defaultAvailability,
+  MOVE_DAYS,
+  moveBlock,
+  PASSED,
+} from "./scheduler";
 import { addDays, isDate, isTimeZone, zonedInstant, zonedParts } from "./time";
 
 /*
  * A study plan the plan tool proposed (plan-tools.ts), its Apply, its Not now and its Remove (off
  * the calendar again, once applied), and the calendar the Calendar tab draws: the student's Google
  * Calendar, the study blocks they applied and what is due, for a run of their own days.
+ *
+ * An applied block that ended without being marked done was missed. The calendar lists those, and
+ * Move puts one at the next free time (scheduler.ts moveBlock), checked against the calendar as it
+ * is at that moment, the same as Apply. Done says the student did it, so it is not missed.
  *
  * Apply is the only way a plan reaches the calendar, and it checks the plan against the calendar as
  * it is at that moment, not as it was when the plan was made: a practice moved onto the evening, or
@@ -46,6 +66,10 @@ const CHANGED =
   "Your schedule changed since this plan was made. Ask for a fresh one.";
 const NOTHING_FITS = "Nothing in this plan fits on your calendar.";
 const ON_CALENDAR = "This plan is already on your calendar.";
+const OFF_CALENDAR = "This session isn't on your calendar.";
+const ALREADY_DONE = "You marked this session done.";
+const NOT_STARTED = "This session hasn't started yet.";
+const NO_ROOM = `There's no free time for this session in the next ${MOVE_DAYS} days. Ask for a fresh plan.`;
 
 /** The most days the Calendar tab may ask for at once: two weeks, so a week view can look ahead. */
 const MOST_CALENDAR_DAYS = 14;
@@ -198,6 +222,124 @@ export function planRoutes(deps: StudyRouteDeps) {
     return planFromRecord(saved);
   }
 
+  /** An applied plan and one of its blocks, or why there is nothing to act on. */
+  function blockOf(
+    record: StudyRecord,
+    blockId: string,
+  ): { plan: StudyPlan; block: StudyBlock } {
+    const plan = planFromRecord(record);
+    const block = plan.blocks.find((entry) => entry.id === blockId);
+    if (!block) throw new StudyNotFoundError();
+    if (plan.status !== "applied") throw new StudyConflictError(OFF_CALENDAR);
+    return { plan, block };
+  }
+
+  /** Writes one block of an applied plan back, under the row lock, and answers with both. */
+  async function writeBlock(
+    owner: string,
+    id: string,
+    blockId: string,
+    change: (block: StudyBlock, plan: StudyPlan) => StudyBlock,
+  ): Promise<BlockAnswer> {
+    const saved = await deps.store.update(owner, "plan", id, (stored) => {
+      const { plan, block } = blockOf(stored, blockId);
+      const blocks = plan.blocks
+        .map((entry) => (entry.id === blockId ? change(block, plan) : entry))
+        .sort(byTime);
+      return {
+        ...planSpan(blocks, plan.timeZone),
+        data: { ...stored.data, blocks },
+      };
+    });
+    const plan = planFromRecord(saved);
+    const block = plan.blocks.find((entry) => entry.id === blockId);
+    if (!block) throw new StudyNotFoundError();
+    return { plan, block };
+  }
+
+  /**
+   * Moves a block of an applied plan to the next free time: after now, inside the study hours,
+   * clear of the calendar and every other applied block. A block that has not ended yet moves to
+   * the next free time after it, for the evening the student already knows is gone.
+   */
+  async function move(
+    owner: string,
+    id: string,
+    blockId: string,
+    study: StudyContext,
+  ): Promise<BlockAnswer> {
+    const now = clock();
+    const { plan, block } = blockOf(await recordOf(owner, id), blockId);
+    if (block.done) throw new StudyConflictError(ALREADY_DONE);
+    const { timeZone } = plan;
+    const { date: today, minute: nowMinute } = zonedParts(now, timeZone);
+    const days = { from: today, to: addDays(today, MOVE_DAYS - 1) };
+
+    // Google first, outside any transaction, as Apply reads it.
+    const calendar = await readCalendar(deps.callTool, study, days, {
+      timeZone,
+    });
+    const [unread] = calendar.couldNotRead;
+    if (unread) throw new StudyConflictError(`${unread} Nothing was moved.`);
+    const applied = await appliedPlans(
+      deps.store,
+      owner,
+      zonedInstant(days.from, "00:00", timeZone),
+      zonedInstant(days.to, "24:00", timeZone),
+    );
+    // The deadline as the classes have it now. Unread, the block keeps the lateness it had.
+    const { snapshot } = await deps.school.current(study);
+    const assignment = snapshot?.assignments.find(
+      (entry) => entry.id === block.assignmentId,
+    );
+    const moved = moveBlock({
+      today,
+      nowMinute,
+      block,
+      due: assignment?.dueDate ?? null,
+      dueTime: assignment?.dueTime ?? null,
+      busy: busyFrom(calendar.events, applied),
+      availability: defaultAvailability,
+      classBufferMin: DEFAULT_CLASS_BUFFER_MIN,
+    });
+    if (!moved) throw new StudyConflictError(NO_ROOM);
+    return writeBlock(owner, id, blockId, (current) => {
+      // Moved or done meanwhile, in another tab: it is not where this move found it.
+      if (current.done) throw new StudyConflictError(ALREADY_DONE);
+      if (
+        current.date !== block.date ||
+        current.start !== block.start ||
+        current.end !== block.end
+      )
+        throw new StudyConflictError(CHANGED);
+      return moved;
+    });
+  }
+
+  /** The person's applied blocks that ended in the last week without being marked done. */
+  async function missedBlocks(
+    owner: string,
+    now: Date,
+    timeZone: string,
+  ): Promise<MissedBlock[]> {
+    const { date: today } = zonedParts(now, timeZone);
+    const since = zonedInstant(
+      addDays(today, -MISSED_LOOKBACK_DAYS),
+      "00:00",
+      timeZone,
+    );
+    const plans = await appliedPlans(deps.store, owner, since, now);
+    const missed = new Map<string, MissedBlock>();
+    for (const plan of plans)
+      for (const block of plan.blocks) {
+        if (block.done || missed.has(block.id)) continue;
+        const ended = zonedInstant(block.date, block.end, plan.timeZone);
+        if (since <= ended && ended <= now)
+          missed.set(block.id, { planId: plan.id, block });
+      }
+    return [...missed.values()].sort((a, b) => byTime(a.block, b.block));
+  }
+
   return new Hono<{ Variables: AppVariables }>()
     .get("/plans/:id", async (context) => {
       const owner = context.var.actor.id;
@@ -234,6 +376,29 @@ export function planRoutes(deps: StudyRouteDeps) {
       const id = context.req.param("id");
       const plan = await applying(owner, () => remove(owner, id));
       return context.json({ plan });
+    })
+    .post("/plans/:id/blocks/:blockId/move", async (context) => {
+      const owner = context.var.actor.id;
+      const { id, blockId } = context.req.param();
+      const study = studyContextOf(context, deps);
+      const answer = await applying(owner, () =>
+        move(owner, id, blockId, study),
+      );
+      return context.json({ answer });
+    })
+    .post("/plans/:id/blocks/:blockId/done", async (context) => {
+      const owner = context.var.actor.id;
+      const { id, blockId } = context.req.param();
+      const now = clock();
+      const answer = await applying(owner, () =>
+        writeBlock(owner, id, blockId, (block, plan) => {
+          // Done is said of time spent: a session still ahead has nothing to mark.
+          if (zonedInstant(block.date, block.start, plan.timeZone) > now)
+            throw new StudyConflictError(NOT_STARTED);
+          return { ...block, done: true };
+        }),
+      );
+      return context.json({ answer });
     })
     .get("/private-demo", (context) => {
       const pack = loadEnabledPack();
@@ -338,6 +503,7 @@ export function planRoutes(deps: StudyRouteDeps) {
         events: calendar.events,
         allDay: calendar.allDay,
         blocks: [...blocks.values()].sort(byTime),
+        missed: await missedBlocks(owner, now, timeZone),
         deadlines,
         couldNotRead: [
           ...new Set([

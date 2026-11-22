@@ -1,11 +1,12 @@
 import {
   type AssignmentKind,
   type AssignmentStatus,
-  CLASS_COLORS,
+  type BlockAnswer,
   type CalendarAllDay,
   type CalendarDeadline,
   type CalendarEvent,
   type CalendarView,
+  CLASS_COLORS,
   type ClassColor,
   type ClassRules,
   type DeckToolResult,
@@ -13,6 +14,7 @@ import {
   type FlashcardDeck,
   HELP_LEVELS,
   type HelpLevel,
+  type MissedBlock,
   type PlanStatus,
   type PlanToolResult,
   type ProgressSummary,
@@ -246,7 +248,16 @@ export const studyBlockSchema = z.object({
   start: z.string(),
   end: z.string(),
   late: z.boolean().optional(),
+  done: z.boolean().optional(),
+  movedFrom: z
+    .object({ date: z.string(), start: z.string(), end: z.string() })
+    .optional(),
 }) satisfies z.ZodType<StudyBlock>;
+
+export const missedBlockSchema = z.object({
+  planId: z.string(),
+  block: studyBlockSchema,
+}) satisfies z.ZodType<MissedBlock>;
 
 export const studyPlanSchema = z.object({
   id: z.string(),
@@ -271,6 +282,11 @@ export const studyPlanSchema = z.object({
   stale: z.boolean(),
   staleReason: z.enum(["changed", "started"]).nullable(),
 }) satisfies z.ZodType<StudyPlan>;
+
+export const blockAnswerSchema = z.object({
+  plan: studyPlanSchema,
+  block: studyBlockSchema,
+}) satisfies z.ZodType<BlockAnswer>;
 
 export const calendarEventSchema = z.object({
   id: z.string(),
@@ -308,6 +324,7 @@ export const calendarViewSchema = z.object({
   events: z.array(calendarEventSchema),
   allDay: z.array(calendarAllDaySchema),
   blocks: z.array(studyBlockSchema),
+  missed: z.array(missedBlockSchema),
   deadlines: z.array(calendarDeadlineSchema),
   couldNotRead: z.array(z.string()),
 }) satisfies z.ZodType<CalendarView>;

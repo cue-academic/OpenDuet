@@ -4,8 +4,8 @@ import {
   type ClassRules,
   type DeckToolResult,
   type FlashcardDeck,
-  PROGRESS_NOTE,
   type PlanToolResult,
+  PROGRESS_NOTE,
   type ProgressSummary,
   type ProgressToolResult,
   type QuizAttempt,
@@ -274,6 +274,17 @@ const calendar: CalendarView = {
   ],
   allDay: [{ id: "retakes", title: "Picture retakes", date: "2026-11-05" }],
   blocks: [block],
+  missed: [
+    {
+      planId: "plan-1",
+      block: {
+        ...block,
+        id: "b0",
+        date: "2026-11-03",
+        movedFrom: { date: "2026-11-02", start: "16:00", end: "16:45" },
+      },
+    },
+  ],
   deadlines: [
     {
       assignmentId: "lab6",

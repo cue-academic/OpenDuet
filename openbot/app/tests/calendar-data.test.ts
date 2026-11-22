@@ -212,6 +212,22 @@ describe("toCalendarData", () => {
     expect(data.agendaByDate[0]?.[0]?.courseId).toBe(UNCLASSED_COURSE_ID);
   });
 
+  test("a block is done once the student said so, missed when it is in the missed list, and a proposal is neither", () => {
+    const data = toCalendarData({
+      dates: ["2026-11-04"],
+      classes,
+      events: [],
+      blocks: [{ ...applied, done: true }, general],
+      proposed: [{ ...general, id: "block-3", done: true }],
+      missed: new Set([applied.id, general.id, "block-3"]),
+    });
+    expect(data.allBlocks.map((block) => block.status)).toEqual([
+      "done",
+      "missed",
+      "todo",
+    ]);
+  });
+
   test("an applied study block is a block in its class's colour, and general study is neutral", () => {
     const data = toCalendarData({
       dates: ["2026-11-04", "2026-11-05"],
