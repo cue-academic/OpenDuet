@@ -73,6 +73,7 @@ export function AcademicCalendar({
   events,
   blocks,
   proposed,
+  missed,
   allDay = [],
   deadlines = [],
   selectedKey,
@@ -97,6 +98,8 @@ export function AcademicCalendar({
   blocks: readonly StudyBlock[];
   /** A proposed plan's blocks, drawn dashed over the rest. */
   proposed?: readonly StudyBlock[];
+  /** The ids of applied blocks that ended without being done. */
+  missed?: ReadonlySet<string>;
   /** All-day events and what is due, for the row under the day headings. */
   allDay?: readonly CalendarAllDay[];
   deadlines?: readonly CalendarDeadline[];
@@ -113,8 +116,8 @@ export function AcademicCalendar({
   // Kept the same array while the day and mode are: the timeline scrolls to now when its dates change.
   const dates = useMemo(() => visibleDates(day, mode), [day, mode]);
   const data = useMemo(
-    () => toCalendarData({ dates, classes, events, blocks, proposed }),
-    [dates, classes, events, blocks, proposed],
+    () => toCalendarData({ dates, classes, events, blocks, proposed, missed }),
+    [dates, classes, events, blocks, proposed, missed],
   );
   const showsToday = dates.includes(today);
   const hours = useMemo(

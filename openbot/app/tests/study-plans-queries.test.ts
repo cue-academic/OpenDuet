@@ -99,6 +99,7 @@ const week: CalendarView = {
   events: [],
   allDay: [],
   blocks: [],
+  missed: [],
   deadlines: [],
   couldNotRead: [],
 };
