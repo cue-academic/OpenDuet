@@ -178,13 +178,24 @@ test("Plan tonight sends the sample's unfinished work and shows the returned pla
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           assignments: getCoachState()
             .assignments.filter((assignment) => assignment.status !== "done")
-            .map(({ id, classId, title, dueAt, estimateMin, spentMin }) => ({
-              id,
-              classId,
-              title,
-              dueAt,
-              minutes: estimateMin - spentMin,
-            })),
+            .map(
+              ({
+                id,
+                classId,
+                title,
+                dueAt,
+                estimateMin,
+                spentMin,
+                helpLevel,
+              }) => ({
+                id,
+                classId,
+                title,
+                dueAt,
+                minutes: estimateMin - spentMin,
+                help: helpLevel,
+              }),
+            ),
         },
       },
     },

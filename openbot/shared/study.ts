@@ -430,6 +430,8 @@ export type TonightSample = {
     title: string;
     dueAt: string;
     minutes: number;
+    /** The teacher's level for it. Test leaves it out of the plan. */
+    help?: HelpLevel;
   }[];
 };
 

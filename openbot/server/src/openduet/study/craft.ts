@@ -1,4 +1,4 @@
-import { noStudyHelp } from "@openbot/shared/study";
+import { cueIsOff, noStudyHelp } from "@openbot/shared/study";
 import type {
   HelpLevel,
   SchoolSnapshot,
@@ -407,11 +407,12 @@ export function planTonight(
   const soon = addDays(today, 2);
   const done = new Set(options.skip ?? []);
   const names = new Map(pack.classes.map((row) => [row.id, row]));
-  const open = pack.assignments.filter((item) => {
+  const due = pack.assignments.filter((item) => {
     if (done.has(item.id) || item.completed) return false;
     if (item.due < today || item.due > soon) return false;
     return !(item.due === today && clockMinute(item.dueTime) <= parts.minute);
   });
+  const open = due.filter((item) => !cueIsOff(item.help));
   const ordered = [...open].sort(
     (a, b) =>
       eveningTier(a.due, a.kind !== "assignment" || inClassEssay(a), today) -
@@ -436,12 +437,30 @@ export function planTonight(
     end: event.end,
     kind: "commitment" as const,
   }));
-  return scheduleTonight(
-    parts,
-    tasks,
-    [...busy, ...(options.busy ?? [])],
-    options.minutes,
+  return withLeftOut(
+    scheduleTonight(
+      parts,
+      tasks,
+      [...busy, ...(options.busy ?? [])],
+      options.minutes,
+    ),
+    due.filter((item) => cueIsOff(item.help)).map((item) => item.title),
   );
+}
+
+/** Test turns Cue off for an item, planning included: it is left out, and the plan says so. */
+function withLeftOut(plan: PlanDraft, titles: string[]): PlanDraft {
+  if (titles.length === 0) return plan;
+  return {
+    ...plan,
+    warnings: [
+      ...plan.warnings,
+      ...titles.map(
+        (title) =>
+          `${title} is set to Test, so Cue is off for it and it is not in this plan.`,
+      ),
+    ],
+  };
 }
 
 export function planSampleTonight(
@@ -452,13 +471,18 @@ export function planSampleTonight(
   const parts = zonedParts(now, sample.timeZone);
   const soon = addDays(parts.date, 2);
   const skipped = new Set(options.skip);
+  const leftOut: string[] = [];
   const tasks = sample.assignments
-    .flatMap(({ dueAt, ...assignment }) => {
+    .flatMap(({ dueAt, help, ...assignment }) => {
       if (skipped.has(assignment.id) || assignment.minutes <= 0) return [];
       const instant = new Date(dueAt);
       if (instant <= now) return [];
       const due = zonedParts(instant, sample.timeZone);
       if (due.date > soon) return [];
+      if (cueIsOff(help)) {
+        leftOut.push(assignment.title);
+        return [];
+      }
       return [
         {
           ...assignment,
@@ -474,7 +498,10 @@ export function planSampleTonight(
         a.due.localeCompare(b.due) ||
         a.dueTime.localeCompare(b.dueTime),
     );
-  return scheduleTonight(parts, tasks, [], options.minutes);
+  return withLeftOut(
+    scheduleTonight(parts, tasks, [], options.minutes),
+    leftOut,
+  );
 }
 
 function scheduleTonight(

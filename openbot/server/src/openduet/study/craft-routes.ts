@@ -1,4 +1,4 @@
-import { noStudyHelp } from "@openbot/shared/study";
+import { HELP_LEVELS, noStudyHelp } from "@openbot/shared/study";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
@@ -73,6 +73,7 @@ const tonightSampleSchema = z.object({
         title: z.string().trim().min(1).max(500),
         dueAt: z.iso.datetime(),
         minutes: z.number().min(0),
+        help: z.enum(HELP_LEVELS).optional(),
       }),
     )
     .max(100),
