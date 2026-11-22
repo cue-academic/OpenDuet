@@ -18,4 +18,6 @@ export const studyKeys = {
     ["openduet-study", "calendar", from, to] as const,
   rules: ["openduet-study", "rules"] as const,
   school: ["openduet-study", "school"] as const,
+  /** The Classes screen: the stored classes and work with the level in force. */
+  hub: ["openduet-study", "hub"] as const,
 } as const;

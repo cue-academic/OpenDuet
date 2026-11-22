@@ -42,6 +42,7 @@ describe("the suggest_replies tool", () => {
       "openduet/propose_study_plan",
       "openduet/class_help",
       "openduet/make_notes_quiz",
+      "openduet/list_assignments",
       "openduet/record_study",
       "openduet/study_memory",
     ]);

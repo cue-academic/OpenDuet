@@ -12,6 +12,8 @@ export const QUIZ_TOOL = "make_quiz";
 export const FLASHCARDS_TOOL = "make_flashcards";
 export const PROGRESS_TOOL = "show_progress";
 export const PLAN_TOOL = "propose_study_plan";
+/** Reads the stored classes and assignments. It makes nothing, so no card is drawn for it. */
+export const ASSIGNMENTS_TOOL = "list_assignments";
 
 /** The tools a teacher's "No help" pauses for that class. Planning and progress are never paused. */
 export const RULED_STUDY_TOOLS = [QUIZ_TOOL, FLASHCARDS_TOOL] as const;
@@ -195,6 +197,51 @@ export type RulesView = {
   canLoosen: boolean;
   /** When the Classroom notices behind the view were read, or null if never. */
   syncedAt: string | null;
+  couldNotRead: string[];
+};
+
+/* ------------------------------------------------------------------------------------------------
+ * The hub: every class with its work, when it is due and the help level in force
+ * ---------------------------------------------------------------------------------------------- */
+
+/** One piece of work as the Classes screen and list_assignments show it. */
+export type HubAssignment = {
+  id: string;
+  title: string;
+  kind: AssignmentKind;
+  status: AssignmentStatus;
+  /** The instant it is due, ISO, or null when the notice gave no date. */
+  due: string | null;
+  points: number | null;
+  grade: string | null;
+  /** Minutes of work the planner allows for it. */
+  minutes: number;
+  link: string | null;
+  /** The level the study tools obey for it, and what decided that. */
+  level: HelpLevel;
+  source: RuleSource;
+};
+
+export type HubClass = {
+  id: string;
+  name: string;
+  teacher: string | null;
+  period: string | null;
+  color: ClassColor;
+  /** The level the study tools obey for the class as a whole. */
+  level: HelpLevel;
+  source: RuleSource;
+  /** Soonest due first; work with no due date last. */
+  assignments: HubAssignment[];
+};
+
+/** GET /api/openduet/study/hub: the stored classes and work, joined with the rules in force. */
+export type SchoolHub = {
+  /** The student's IANA time zone, for showing due dates and times. */
+  timeZone: string;
+  /** When the Classroom notices behind it were read, or null if never. */
+  syncedAt: string | null;
+  classes: HubClass[];
   couldNotRead: string[];
 };
 
