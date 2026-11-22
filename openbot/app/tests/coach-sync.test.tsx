@@ -169,6 +169,12 @@ describe("coach sync", () => {
     server = { state: null, revision: null };
     puts = [];
     mount("sam");
+    // Gone before Sam's own copy has loaded, and the sample week has its badges.
+    expect(getCoachState().checkIns.some((c) => c.date === "2026-11-04")).toBe(
+      false,
+    );
+    expect(getCoachSync()?.owner).toBe("sam");
+    expect(Object.keys(getCoachState().unlocked).length).toBeGreaterThan(0);
     await waitFor(() => expect(server.revision).toBe(1));
     expect(getCoachSync()?.owner).toBe("sam");
     expect(JSON.stringify(puts)).not.toContain('"2026-11-04"');

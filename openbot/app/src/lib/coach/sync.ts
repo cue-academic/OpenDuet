@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { saveCoachMutationOptions } from "./mutations";
 import { type CoachRecord, coachKeys, coachQueryOptions } from "./queries";
 import { demoState } from "./seed";
@@ -10,6 +10,7 @@ import {
   getCoachSync,
   markCoachSaved,
   subscribeCoach,
+  syncAchievements,
 } from "./store";
 
 /*
@@ -19,7 +20,8 @@ import {
  * - The account has none: this browser's copy is saved as the first one. That is how a week kept
  *   only in a browser before the server stored it moves to the account.
  * - This browser's copy belongs to someone else who signed in here: it is never saved to this
- *   account. The account's copy is taken, or the sample week when it has none.
+ *   account or shown. The sample week replaces it before the screen paints, then the account's
+ *   copy is taken when it has one.
  * - A school pack (source "private") stays on this machine and is never sent.
  *
  * A save names the revision it was made on. If another device saved first, the server keeps its copy
@@ -41,8 +43,26 @@ export function reconcileCoach(owner: string, remote: CoachRecord): boolean {
     }
     return sync.dirty;
   }
-  claimCoach(owner, null, foreign ? demoState(new Date()) : undefined);
+  if (foreign) startOver(owner);
+  else claimCoach(owner, null);
   return true;
+}
+
+/** The sample week, as this person's, with the badges it has already earned. */
+function startOver(owner: string): void {
+  claimCoach(owner, null, demoState(new Date()));
+  syncAchievements();
+}
+
+/**
+ * Someone else's week left in this browser is replaced with the sample week. Called before the
+ * screen paints, so the person signing in never sees the other one's check-ins while theirs load.
+ */
+export function dropForeignCoach(owner: string): void {
+  const sync = getCoachSync();
+  if (!sync || sync.owner === owner) return;
+  if (getCoachState().source === "private") return;
+  startOver(owner);
 }
 
 /** Call once from the Coach screen with the signed-in person's id. */
@@ -54,6 +74,10 @@ export function useCoachSync(owner: string | undefined): void {
   }).data;
   const { mutateAsync } = useMutation(saveCoachMutationOptions());
   const saving = useRef(false);
+
+  useLayoutEffect(() => {
+    if (owner) dropForeignCoach(owner);
+  }, [owner]);
 
   const save = useCallback(async () => {
     if (!owner || saving.current) return;
