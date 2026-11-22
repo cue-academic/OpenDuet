@@ -23,6 +23,7 @@ import {
   withAccountName,
   withSampleColors,
 } from "@/lib/coach/seed";
+import { useCoachSync } from "@/lib/coach/sync";
 import {
   adoptPrivatePack,
   getCoachState,
@@ -93,7 +94,9 @@ export function CoachScreen() {
   const navigate = useNavigate();
   const agents = useQuery(agentListQueryOptions());
   const bot = primaryBot(agents.data);
-  const accountName = useQuery(currentUserQueryOptions()).data?.name;
+  const account = useQuery(currentUserQueryOptions()).data;
+  const accountName = account?.name;
+  useCoachSync(account?.id);
   const [handOff, setHandOff] = useState<HandOff | null>(null);
   const [report, setReport] = useState(false);
   const [setup, setSetup] = useState(false);

@@ -11,6 +11,7 @@ import {
   StudyNotFoundError,
   type StudyRouteDeps,
 } from "./contracts";
+import { coachRoutes } from "./coach-routes";
 import { craftRoutes } from "./craft-routes";
 import { planRoutes } from "./plan-routes";
 import { quizRoutes } from "./quiz-routes";
@@ -57,15 +58,14 @@ export function mountStudyRoutes(
   requireUser: MiddlewareHandler<{ Variables: AppVariables }>,
 ): StudyRoutes {
   const routes = new Hono<{ Variables: AppVariables }>();
-  routes.use(
-    "*",
-    requireUser,
-    bodyLimit({
-      maxSize: 32_768,
-      // In the `{ error }` shape every other answer here has, so the app can show the sentence.
-      onError: (context) =>
-        context.json({ error: "That's too much to send at once." }, 413),
-    }),
+  // In the `{ error }` shape every other answer here has, so the app can show the sentence.
+  const tooMuch = (context: Context) =>
+    context.json({ error: "That's too much to send at once." }, 413);
+  const limit = bodyLimit({ maxSize: 32_768, onError: tooMuch });
+  // The Coach tab saves its whole state at once: a year of focus sessions is past 32 KB.
+  const coachLimit = bodyLimit({ maxSize: 524_288, onError: tooMuch });
+  routes.use("*", requireUser, (context, next) =>
+    (context.req.path.endsWith("/coach") ? coachLimit : limit)(context, next),
   );
   routes.onError((error, context) => {
     if (error instanceof StudyNotFoundError)
@@ -100,7 +100,13 @@ export function createStudyRoutes(
   requireUser: MiddlewareHandler<{ Variables: AppVariables }>,
 ) {
   return mountStudyRoutes(
-    [quizRoutes(deps), planRoutes(deps), rulesRoutes(deps), craftRoutes(deps)],
+    [
+      quizRoutes(deps),
+      planRoutes(deps),
+      rulesRoutes(deps),
+      craftRoutes(deps),
+      coachRoutes(deps),
+    ],
     requireUser,
   );
 }

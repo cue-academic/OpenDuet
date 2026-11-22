@@ -6,12 +6,16 @@ import { newlyEarned } from "./progress";
 import { blankState, demoState } from "./seed";
 
 /*
- * The Coach tab's state, kept in this browser's localStorage under one key. One store for the tab,
- * read with useSyncExternalStore so every card redraws together after a change. Storage can be
- * missing or full; the tab then still works for the visit and starts over next time.
+ * The Coach tab's state. One store for the tab, read with useSyncExternalStore so every card
+ * redraws together after a change. The copy the student's account keeps is on the server (sync.ts
+ * saves each change there and takes what another device saved); localStorage holds this browser's
+ * copy under one key, so the tab draws at once and a change made offline is saved later. Storage
+ * can be missing or full; the tab then still works for the visit.
  */
 
 export const COACH_STORAGE_KEY = "academic-os.coach.v1";
+export const COACH_SYNC_KEY = "academic-os.coach.sync.v1";
+export const COACH_BASE_KEY = "academic-os.coach.base.v1";
 export const TIMER_STORAGE_KEY = "academic-os.coach.timer.v1";
 
 type Listener = () => void;
@@ -36,14 +40,135 @@ function read(): CoachState {
   return cached;
 }
 
-function write(next: CoachState): void {
+/**
+ * How this browser's copy stands against the account's: whose it is, the server revision it was
+ * last level with (null before a first save), and whether it has changed since. Absent for a copy
+ * made before the server kept one.
+ */
+export type CoachSync = {
+  owner: string;
+  revision: number | null;
+  dirty: boolean;
+};
+
+let syncCached: CoachSync | null | undefined;
+
+export function getCoachSync(): CoachSync | null {
+  if (syncCached !== undefined) return syncCached;
+  try {
+    const raw = window.localStorage.getItem(COACH_SYNC_KEY);
+    syncCached = raw ? (JSON.parse(raw) as CoachSync) : null;
+  } catch {
+    syncCached = null;
+  }
+  return syncCached;
+}
+
+function setCoachSync(next: CoachSync): void {
+  syncCached = next;
+  try {
+    window.localStorage.setItem(COACH_SYNC_KEY, JSON.stringify(next));
+  } catch {
+    // Kept in memory for this visit.
+  }
+}
+
+let baseCached: CoachState | null | undefined;
+
+/**
+ * The copy this browser was last level with the account on. When another device saves first, it is
+ * what tells this browser's own changes apart from the other device's (merge.ts).
+ */
+export function getCoachBase(): CoachState | null {
+  if (baseCached !== undefined) return baseCached;
+  try {
+    const raw = window.localStorage.getItem(COACH_BASE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as CoachState) : null;
+    baseCached = parsed?.version === 1 ? parsed : null;
+  } catch {
+    baseCached = null;
+  }
+  return baseCached;
+}
+
+function setCoachBase(next: CoachState | null): void {
+  baseCached = next;
+  try {
+    if (next) window.localStorage.setItem(COACH_BASE_KEY, JSON.stringify(next));
+    else window.localStorage.removeItem(COACH_BASE_KEY);
+  } catch {
+    // Kept in memory for this visit.
+  }
+}
+
+function store(next: CoachState): void {
   cached = next;
   try {
     window.localStorage.setItem(COACH_STORAGE_KEY, JSON.stringify(next));
   } catch {
     // Kept in memory for this visit.
   }
+}
+
+function write(next: CoachState): void {
+  store(next);
+  const sync = getCoachSync();
+  if (sync && !sync.dirty) setCoachSync({ ...sync, dirty: true });
   for (const listener of listeners) listener();
+}
+
+/** Take the account's copy as this browser's: nothing is left to save. */
+export function adoptServerCoach(
+  owner: string,
+  state: CoachState,
+  revision: number,
+): void {
+  store(state);
+  setCoachBase(state);
+  setCoachSync({ owner, revision, dirty: false });
+  for (const listener of listeners) listener();
+}
+
+/**
+ * Another device saved first: `merged` holds both devices' changes, `theirs` is what the account
+ * has at `revision`. The merged copy is shown and is still to be saved on top of that revision.
+ */
+export function rebaseCoach(
+  owner: string,
+  revision: number,
+  theirs: CoachState,
+  merged: CoachState,
+): void {
+  store(merged);
+  setCoachBase(theirs);
+  setCoachSync({ owner, revision, dirty: true });
+  for (const listener of listeners) listener();
+}
+
+/** This browser's copy becomes the person's, still to be saved on top of `revision`. */
+export function claimCoach(
+  owner: string,
+  revision: number | null,
+  state?: CoachState,
+): void {
+  if (state) store(state);
+  if (revision === null) setCoachBase(null);
+  setCoachSync({ owner, revision, dirty: true });
+  if (state) for (const listener of listeners) listener();
+}
+
+/** A save landed. Anything changed while it was on its way is still to be saved. */
+export function markCoachSaved(
+  owner: string,
+  revision: number,
+  saved: CoachState,
+): void {
+  setCoachBase(saved);
+  setCoachSync({ owner, revision, dirty: read() !== saved });
+}
+
+export function subscribeCoach(listener: Listener): () => void {
+  return subscribe(listener);
 }
 
 function subscribe(listener: Listener): () => void {
@@ -58,6 +183,8 @@ export function getCoachState(): CoachState {
 /** For tests: forget what was read so the next read goes back to storage. */
 export function resetCoachCache(): void {
   cached = null;
+  syncCached = undefined;
+  baseCached = undefined;
   timerCached = undefined;
 }
 

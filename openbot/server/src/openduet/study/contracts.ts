@@ -24,7 +24,7 @@ import type { CallTool } from "../brief";
  * Every record belongs to one person (owner_user_id), and every read and write names that person.
  */
 
-/** What a record holds. school and rules are one per person; the rest are many. */
+/** What a record holds. school, rules and coach are one per person; the rest are many. */
 export type StudyKind =
   | "school"
   | "rules"
@@ -32,7 +32,8 @@ export type StudyKind =
   | "attempt"
   | "deck"
   | "plan"
-  | "practice";
+  | "practice"
+  | "coach";
 
 export type StudyRecord = {
   id: string;
