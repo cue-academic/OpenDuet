@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { randomUUID } from "node:crypto";
 import {
   FLASHCARDS_TOOL,
@@ -49,13 +50,13 @@ const COULD_NOT_READ = `${REFUSAL_MARKER} The student's classes couldn't be read
 type Resolved = Extract<StudyTarget, { ok: true }>;
 
 /**
- * A second lock behind guard.ts, which refuses No help before these tools run and records an audit
+ * A second lock behind guard.ts, which refuses On your own before these tools run and records an audit
  * row. These tools check the level they resolved as well, in the guard's words, so a No-help quiz
  * is never made if they are ever held without the guard, or if a rule was made stricter between the
  * guard's read and this one.
  */
 function pausedBy(target: Resolved): string | null {
-  return target.level === "none" ? teacherRuleRefusal(target) : null;
+  return noStudyHelp(target.level) ? teacherRuleRefusal(target) : null;
 }
 
 /** The tools a teacher's rule pauses, which make nothing when no rule can be read. */

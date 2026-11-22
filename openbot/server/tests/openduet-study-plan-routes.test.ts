@@ -502,6 +502,28 @@ describe("Tonight on the sample week without a private pack", () => {
     expect(await store.list("jordan", "plan")).toEqual([]);
   });
 
+  test("leaves an item set to Test out of tonight's plan and says so", async () => {
+    const { sample, post } = sampleTonight();
+    const assignments = sample.assignments.map((row) =>
+      row.id === "quiz" ? { ...row, help: "test" as const } : row,
+    );
+    const response = await post({
+      sample: { ...sample, assignments },
+      minutes: 120,
+    });
+    expect(response.status).toBe(200);
+    const { plan } = (await response.json()) as {
+      plan: { blocks: { assignmentId: string }[]; warnings: string[] };
+    };
+    expect(plan.blocks.length).toBeGreaterThan(0);
+    expect(plan.blocks.every((block) => block.assignmentId === "report")).toBe(
+      true,
+    );
+    expect(plan.warnings).toContain(
+      "Study for the trig quiz is set to Test, so Cue is off for it and it is not in this plan.",
+    );
+  });
+
   test("accepts an empty sample and rejects a bad sample or a missing pack", async () => {
     const { sample, post } = sampleTonight();
     const empty = await post({ sample: { ...sample, assignments: [] } });
@@ -923,7 +945,7 @@ describe("the calendar", () => {
     const id = await propose();
     const applied = (await send("POST", `/plans/${id}/apply`)).body
       .plan as StudyPlan;
-    // A stricter rule for Precalculus, set on the Teacher rules screen, beats the notices' Full help.
+    // A stricter rule for Precalculus, set on the Teacher rules screen, beats the notices' Study.
     await rules.change(
       "jordan",
       { classes: { precalc4: "hints" } },

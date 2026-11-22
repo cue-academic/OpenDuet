@@ -1,5 +1,5 @@
 /**
- * A local stand-in for the CopilotKit Intelligence calls Academic OS chat
+ * A local stand-in for the CopilotKit Intelligence calls Cue chat
  * actually makes: thread records, the run lock, and the Phoenix sockets the
  * runtime and the browser use to pass a turn.
  *

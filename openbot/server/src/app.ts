@@ -473,7 +473,7 @@ export function createApp(
       report?: TaskReportReader;
       /** The drawer's channels. See openduet/channels.ts. */
       channels?: DuetChannelStore;
-      /** Academic OS's quizzes, plans, calendar and teacher rules. See openduet/study/routes.ts. */
+      /** Cue's quizzes, plans, calendar and teacher rules. See openduet/study/routes.ts. */
       study?: StudyRouteDeps;
     };
   },

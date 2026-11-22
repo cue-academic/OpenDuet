@@ -65,7 +65,7 @@ const LAB6: Mail = {
     "Due: Thu, Nov 5, 2026, 11:59 PM",
     "Points: 40",
     "Estimated time: 90 min",
-    "AI help: Hints only",
+    "AI help: Guided help",
     "",
     "Include a data table and a conclusion.",
     "",
@@ -83,7 +83,7 @@ const QUIZ: Mail = {
     "New quiz",
     "Unit 4 quiz: Trig identities",
     "Due: Thu, Nov 5, 2026, 10:45 AM",
-    "AI help: No help",
+    "AI help: On your own",
     "",
     "Open: https://classroom.google.com/c/precalc4/a/quiz4",
   ].join("\n"),
@@ -363,7 +363,7 @@ describe("the school service", () => {
       date: "2026-11-04T13:05:00.000Z",
       body: LAB6.body
         .replace("New assignment", "Due soon")
-        .replace("AI help: Hints only", "AI help: No help"),
+        .replace("AI help: Guided help", "AI help: On your own"),
     });
     const read = await school.current(CONTEXT, { force: true });
     expect(google.count(GMAIL_READ)).toBe(3);
@@ -400,7 +400,7 @@ describe("the school service", () => {
   test("a teacher's rule stays when its email is deleted, until its work is done", async () => {
     const { school, google, clock, store } = fixture();
     await school.current(CONTEXT);
-    // The quiz's notice, the one that says No help, is deleted.
+    // The quiz's notice, the one that says On your own, is deleted.
     google.state.mail = google.state.mail.filter((mail) => mail.id !== QUIZ.id);
     const kept = await school.current(CONTEXT, { force: true });
     expect(kept.why).toBeNull();
@@ -440,7 +440,7 @@ describe("the school service", () => {
         "New assignment",
         "DBQ essay: Causes of the Civil War",
         "Due: Fri, Nov 6, 2026, 8:00 AM",
-        "AI help: No help",
+        "AI help: On your own",
         "",
         "Open: https://classroom.google.com/c/apush1/a/dbq3",
       ].join("\n"),
@@ -475,7 +475,7 @@ describe("the school service", () => {
       date: "2026-11-04T12:00:00.000Z",
       body: DBQ.body
         .replace("New assignment", "Due soon")
-        .replace("\nAI help: No help", ""),
+        .replace("\nAI help: On your own", ""),
     });
 
     const read = await school.current(CONTEXT, { force: true });
@@ -925,7 +925,7 @@ describe("the demo student, through the real adapter", () => {
     const notices = mailbox.filter((seed) =>
       seed.from.endsWith("<no-reply@classroom.google.com>"),
     );
-    expect(notices.length).toBe(12);
+    expect(notices.length).toBe(13);
 
     const store = createMemoryStudyStore({ now: () => new Date(NOW) });
     const school = createSchoolService({
@@ -1019,6 +1019,16 @@ describe("the demo student, through the real adapter", () => {
         grade: null,
       },
       {
+        // The Chemistry test is set to Test: Cue is off for it.
+        id: "chem2-u6test",
+        kind: "test",
+        status: "open",
+        due: `${addDays(today, 2)} 09:15`,
+        help: "test",
+        minutes: 60,
+        grade: null,
+      },
+      {
         // Three days from Wednesday is a Saturday, so the test is on Monday, in class.
         id: "spanish5-u5test",
         kind: "test",
@@ -1095,10 +1105,11 @@ describe("the demo student, through the real adapter", () => {
       "precalc4-quiz4": "2026-11-04 10:45",
       "chem2-lab6": "2026-11-04 23:59",
       "apush1-dbq3": "2026-11-05 08:00",
+      "chem2-u6test": "2026-11-05 09:15",
       "spanish5-u5test": "2026-11-06 12:20",
       "eng11-gatsby": "2026-11-09 23:59",
     });
-    expect(reads).toBe(12);
+    expect(reads).toBe(13);
 
     clock = Date.parse("2026-11-05T15:00:00.000Z");
     const thursday = startFakeGoogle({ persona: "student", now: () => clock });
@@ -1112,6 +1123,7 @@ describe("the demo student, through the real adapter", () => {
         "chem2-lab6": "2026-11-06 23:59",
         // Two and three days from Thursday are the weekend, so both are on Monday.
         "apush1-dbq3": "2026-11-09 08:00",
+        "chem2-u6test": "2026-11-09 09:15",
         "spanish5-u5test": "2026-11-09 12:20",
         "eng11-gatsby": "2026-11-11 23:59",
       });
@@ -1121,7 +1133,7 @@ describe("the demo student, through the real adapter", () => {
       );
       for (const entry of read.snapshot?.assignments ?? [])
         expect(entry.noticeId).not.toBe(before.get(entry.id) ?? "");
-      expect(reads).toBe(24);
+      expect(reads).toBe(26);
 
       // Reset later the same day, the ids stay but every date moved, so each is read again.
       clock += 30 * 60_000;
@@ -1129,7 +1141,7 @@ describe("the demo student, through the real adapter", () => {
       const reset = await school.current(CONTEXT, { force: true });
       expect(reset.why).toBeNull();
       expect(dueDates(reset.snapshot)).toEqual(dueDates(read.snapshot));
-      expect(reads).toBe(36);
+      expect(reads).toBe(39);
     } finally {
       await thursday.stop();
     }

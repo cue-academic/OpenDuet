@@ -15,7 +15,7 @@ import {
 import { settleReactWork } from "./settle-react-work";
 
 /*
- * The notice drawn where a quiz or a deck would have been when a teacher's "No help" paused it, and
+ * The notice drawn where a quiz or a deck would have been when a teacher's "On your own" paused it, and
  * the pill that names a level the way the Classroom notice does.
  */
 
@@ -39,7 +39,7 @@ test("with an assignment and a teacher: the level, who set it, and what is pause
   const view = render(<TeacherRuleNotice block={block} what="Quiz" />);
 
   expect(view.getByRole("region", { name: "Quiz paused" })).toBeTruthy();
-  expect(view.getByText("No help")).toBeTruthy();
+  expect(view.getByText("On your own")).toBeTruthy();
   expect(view.getByText("Set by Mr. Grant")).toBeTruthy();
   expect(
     view.getByText(
@@ -83,11 +83,11 @@ test("a level nobody set names nobody", () => {
   );
 
   expect(view.queryByText(/^Set /)).toBeNull();
-  expect(view.getByText("No help")).toBeTruthy();
+  expect(view.getByText("On your own")).toBeTruthy();
 });
 
 test("drawn from the server's refusal, through the shared reader", () => {
-  const refusal = `Refused. ${teacherRuleText(block, "The teacher set AP US History to No help, so nothing was made.")}`;
+  const refusal = `Refused. ${teacherRuleText(block, "The teacher set AP US History to On your own, so nothing was made.")}`;
   const read = readTeacherRuleBlock(refusal);
 
   expect(read).not.toBeNull();
@@ -108,14 +108,14 @@ test("each level in the notice's words, coloured only as status", () => {
   const pill = (level: string) =>
     view.container.querySelector<HTMLElement>(`[data-help-level="${level}"]`)!;
 
-  expect(pill("none").textContent).toBe("No help");
+  expect(pill("none").textContent).toBe("On your own");
   expect(pill("none").className).toContain("text-duet-status-problem");
   expect(pill("none").querySelector("svg")).toBeTruthy();
-  expect(pill("hints").textContent).toBe("Hints only");
+  expect(pill("hints").textContent).toBe("Guided help");
   expect(pill("hints").className).toContain("text-duet-status-needs");
   expect(pill("hints").querySelector("svg")).toBeTruthy();
-  expect(pill("full").textContent).toBe("Full help");
-  // Full help asks nothing of the student, so it is grey and plain.
+  expect(pill("full").textContent).toBe("Study");
+  // Study asks nothing of the student, so it is grey and plain.
   expect(pill("full").className).toContain("text-duet-ink-2");
   expect(pill("full").className).not.toContain("status");
   expect(pill("full").querySelector("svg")).toBeNull();

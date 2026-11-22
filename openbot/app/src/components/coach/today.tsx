@@ -308,10 +308,12 @@ export function DoNextCard({
         >
           <DuetIcon name="clock" size={18} /> Focus {pace.focusMin} min
         </CoachButton>
-        <CoachButton onClick={() => onHandOff(top)}>
-          <DuetIcon name="sparkle" size={18} />
-          {top.assignment.helpLevel === "none" ? "Plan my time" : "Coach me"}
-        </CoachButton>
+        {top.assignment.helpLevel === "test" ? null : (
+          <CoachButton onClick={() => onHandOff(top)}>
+            <DuetIcon name="sparkle" size={18} />
+            {top.assignment.helpLevel === "none" ? "Plan my time" : "Coach me"}
+          </CoachButton>
+        )}
       </div>
       {ranked.length > 1 ? (
         <div className="mt-3 border-duet-hair border-t pt-2">

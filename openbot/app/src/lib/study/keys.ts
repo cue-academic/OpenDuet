@@ -1,5 +1,5 @@
 /*
- * The query keys for Academic OS's study features (/api/openduet/study), under one root so a change
+ * The query keys for Cue's study features (/api/openduet/study), under one root so a change
  * can refresh exactly what it touched. A calendar range is keyed under `calendarAll`, so applying a
  * plan invalidates that one prefix and every range on screen reloads with the new blocks.
  */

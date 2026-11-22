@@ -41,7 +41,7 @@ import { resolveStudyTarget } from "../src/openduet/study/rules";
 /**
  * make_quiz, make_flashcards and show_progress over the demo student's classes: what each takes and
  * refuses, what it saves, and that its answer to the model never carries a quiz's answers. Then the
- * grading and the practice summary they stand on, and the teacher's No help in front of them.
+ * grading and the practice summary they stand on, and the teacher's On your own in front of them.
  */
 
 /** Wednesday 09:00 in Chicago: the DBQ is due Friday morning, the trig quiz tomorrow. */
@@ -577,7 +577,7 @@ describe("make_quiz", () => {
     const why =
       "This Bot hasn't been given Gmail, so your classes couldn't be read. Gmail needs to be turned on for this coach.";
     const { tool, store } = setup({ school: schoolOf(null, why).service });
-    // The DBQ's No help can't be seen, so nothing is made under the default level instead.
+    // The DBQ's On your own can't be seen, so nothing is made under the default level instead.
     expect(
       await tool(QUIZ_TOOL).execute({
         ...TRIG,
@@ -641,12 +641,12 @@ describe("make_quiz", () => {
     });
     // In the guard's words, so the Bot says the same whichever lock answered.
     expect(answer).toEndWith(
-      `} Mr. Grant set AP US History to No help while "DBQ essay: Causes of the Civil War" is open, so nothing was made. ${TEACHER_ADVICE}`,
+      `} Mr. Grant set AP US History to On your own while "DBQ essay: Causes of the Civil War" is open, so nothing was made. ${TEACHER_ADVICE}`,
     );
     expect(await store.list("jordan", "quiz")).toEqual([]);
   });
 
-  test("says a No help set on the Teacher rules screen was set there, in no teacher's name", async () => {
+  test("says a On your own set on the Teacher rules screen was set there, in no teacher's name", async () => {
     const { tool, store } = setup({
       rules: rulesOf({
         classes: {
@@ -671,7 +671,7 @@ describe("make_quiz", () => {
         className: "Chemistry",
         level: "none",
         source: "override",
-      })} Chemistry is set to No help on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
+      })} Chemistry is set to On your own on the Teacher rules screen, so nothing was made. ${SCREEN_ADVICE}`,
     );
     expect(await store.list("jordan", "deck")).toEqual([]);
   });
@@ -901,7 +901,7 @@ describe("show_progress", () => {
   });
 });
 
-describe("the teacher's No help, in front of the real tools", () => {
+describe("the teacher's On your own, in front of the real tools", () => {
   function guarded() {
     const { tools, store } = setup();
     const rows: AuditEventInput[] = [];
@@ -934,7 +934,7 @@ describe("the teacher's No help, in front of the real tools", () => {
       title: "Causes of the Civil War",
     });
     expect(quiz).toStartWith(
-      'Refused. [teacher-rule]{"classId":"apush1","className":"AP US History","level":"none","assignment":"DBQ essay: Causes of the Civil War","teacher":"Mr. Grant","source":"notice"} Mr. Grant set AP US History to No help while "DBQ essay: Causes of the Civil War" is open, so nothing was made.',
+      'Refused. [teacher-rule]{"classId":"apush1","className":"AP US History","level":"none","assignment":"DBQ essay: Causes of the Civil War","teacher":"Mr. Grant","source":"notice"} Mr. Grant set AP US History to On your own while "DBQ essay: Causes of the Civil War" is open, so nothing was made.',
     );
     const deck = await tool(FLASHCARDS_TOOL).execute({
       ...VOCAB,

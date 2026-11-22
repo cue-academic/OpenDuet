@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { createHash, randomUUID } from "node:crypto";
 import { PAGE_THEMES, type PageTheme } from "@openbot/shared/page-look";
 import {
@@ -640,7 +641,7 @@ export function pageTools(options: {
 }
 
 /**
- * A no-help class gets no saved guide, quiz, or worked solution from the model.
+ * An On your own or Test class gets no saved guide, quiz, or worked solution from the model.
  * Planning a time for that class is still allowed.
  */
 function noHelpPageRefusal(value: {
@@ -653,7 +654,7 @@ function noHelpPageRefusal(value: {
   const text =
     `${value.title ?? ""}\n${JSON.stringify(value.blocks ?? value.slides ?? "")}`.toLowerCase();
   for (const row of pack.classes) {
-    if (row.help !== "none") continue;
+    if (!noStudyHelp(row.help)) continue;
     const names = [row.name, row.shortName ?? ""]
       .map((name) => name.toLowerCase())
       .filter((name) => name.length > 3);

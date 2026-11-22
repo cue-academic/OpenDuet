@@ -137,7 +137,7 @@ describe("do next", () => {
       "Due tomorrow",
       "about 1h left",
       "9 pts",
-      "No help: on your own",
+      "On your own: Cue only plans the time",
     ]);
   });
 
@@ -249,8 +249,8 @@ describe("catch-up mode", () => {
     ]);
     const text = catchUpInstruction(state, NOW);
     expect(text).toContain("Bio (Ms. Lee): Lab 4");
-    expect(text).toContain("AI help: No help");
-    expect(text).toContain("AI help: Hints only");
+    expect(text).toContain("AI help: On your own");
+    expect(text).toContain("AI help: Guided help");
     expect(text).toContain("don't send it until I approve");
   });
 });

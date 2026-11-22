@@ -1,4 +1,9 @@
-import type { SchoolSnapshot, TonightSample } from "@openbot/shared/study";
+import { cueIsOff, noStudyHelp } from "@openbot/shared/study";
+import type {
+  HelpLevel,
+  SchoolSnapshot,
+  TonightSample,
+} from "@openbot/shared/study";
 import { studyModels } from "../model-env";
 import type { PageBlock } from "../page-content";
 import {
@@ -38,7 +43,7 @@ export type GuideInput = {
   classId: string;
   className: string;
   /** none: recall from the notes only. No essay, no worked solution. */
-  help: "full" | "hints" | "none";
+  help: HelpLevel;
   focus: string;
   due: string | null;
   notes: string;
@@ -153,7 +158,7 @@ export function craftGuide(
       })),
     });
   }
-  if (questions.length > 0 && input.help !== "none") {
+  if (questions.length > 0 && !noStudyHelp(input.help)) {
     blocks.push({ type: "heading", text: "Practice" });
     blocks.push({
       type: "bullets",
@@ -168,7 +173,7 @@ export function craftGuide(
         clip(item.answer, 240),
       ]),
     });
-  } else if (input.help === "none") {
+  } else if (noStudyHelp(input.help)) {
     blocks.push({
       type: "text",
       text: "This class does not allow AI on graded work. The notes above are for review. They are not an answer to turn in.",
@@ -187,7 +192,7 @@ export function craftGuide(
 export function craftQuiz(
   input: GuideInput,
 ): CraftedQuiz | { refused: string } {
-  if (input.help === "none") {
+  if (noStudyHelp(input.help)) {
     return { refused: noHelpRefusal(input.className, "quiz") };
   }
   const source =
@@ -259,7 +264,7 @@ export type WrittenGrade = {
 export function craftWritten(
   input: GuideInput,
 ): { questions: WrittenQuestion[] } | { refused: string } {
-  if (input.help === "none") {
+  if (noStudyHelp(input.help)) {
     return { refused: noHelpRefusal(input.className, "quiz") };
   }
   const source =
@@ -325,7 +330,7 @@ export function craftTutor(
   input: GuideInput,
   topic: string,
 ): TutorStep | { refused: string } {
-  if (input.help === "none") {
+  if (noStudyHelp(input.help)) {
     return { refused: noHelpRefusal(input.className, "tutor") };
   }
   const primary = pickFile(input.files, topic || input.focus) ?? input.files[0];
@@ -402,11 +407,12 @@ export function planTonight(
   const soon = addDays(today, 2);
   const done = new Set(options.skip ?? []);
   const names = new Map(pack.classes.map((row) => [row.id, row]));
-  const open = pack.assignments.filter((item) => {
+  const due = pack.assignments.filter((item) => {
     if (done.has(item.id) || item.completed) return false;
     if (item.due < today || item.due > soon) return false;
     return !(item.due === today && clockMinute(item.dueTime) <= parts.minute);
   });
+  const open = due.filter((item) => !cueIsOff(item.help));
   const ordered = [...open].sort(
     (a, b) =>
       eveningTier(a.due, a.kind !== "assignment" || inClassEssay(a), today) -
@@ -431,12 +437,30 @@ export function planTonight(
     end: event.end,
     kind: "commitment" as const,
   }));
-  return scheduleTonight(
-    parts,
-    tasks,
-    [...busy, ...(options.busy ?? [])],
-    options.minutes,
+  return withLeftOut(
+    scheduleTonight(
+      parts,
+      tasks,
+      [...busy, ...(options.busy ?? [])],
+      options.minutes,
+    ),
+    due.filter((item) => cueIsOff(item.help)).map((item) => item.title),
   );
+}
+
+/** Test turns Cue off for an item, planning included: it is left out, and the plan says so. */
+function withLeftOut(plan: PlanDraft, titles: string[]): PlanDraft {
+  if (titles.length === 0) return plan;
+  return {
+    ...plan,
+    warnings: [
+      ...plan.warnings,
+      ...titles.map(
+        (title) =>
+          `${title} is set to Test, so Cue is off for it and it is not in this plan.`,
+      ),
+    ],
+  };
 }
 
 export function planSampleTonight(
@@ -447,13 +471,18 @@ export function planSampleTonight(
   const parts = zonedParts(now, sample.timeZone);
   const soon = addDays(parts.date, 2);
   const skipped = new Set(options.skip);
+  const leftOut: string[] = [];
   const tasks = sample.assignments
-    .flatMap(({ dueAt, ...assignment }) => {
+    .flatMap(({ dueAt, help, ...assignment }) => {
       if (skipped.has(assignment.id) || assignment.minutes <= 0) return [];
       const instant = new Date(dueAt);
       if (instant <= now) return [];
       const due = zonedParts(instant, sample.timeZone);
       if (due.date > soon) return [];
+      if (cueIsOff(help)) {
+        leftOut.push(assignment.title);
+        return [];
+      }
       return [
         {
           ...assignment,
@@ -469,7 +498,10 @@ export function planSampleTonight(
         a.due.localeCompare(b.due) ||
         a.dueTime.localeCompare(b.dueTime),
     );
-  return scheduleTonight(parts, tasks, [], options.minutes);
+  return withLeftOut(
+    scheduleTonight(parts, tasks, [], options.minutes),
+    leftOut,
+  );
 }
 
 function scheduleTonight(
@@ -576,7 +608,7 @@ export async function polishGuide(
   fetchImpl: typeof fetch = fetch,
   input?: GuideInput,
 ): Promise<CraftedGuide> {
-  if (input?.help === "none") return guide;
+  if (noStudyHelp(input?.help)) return guide;
   if (input) {
     const written = await writeGuideFromNotes(input, env, fetchImpl);
     if (written) return written;
@@ -889,7 +921,7 @@ function recallQuestions(
     prompt: `What should you remember about ${term.term}?`,
     answer: term.remember,
   }));
-  if (input.help === "none" || !/history|apush|calc/i.test(input.className))
+  if (noStudyHelp(input.help) || !/history|apush|calc/i.test(input.className))
     return prompts;
   const style = /calc/i.test(input.className)
     ? `State the rule from the notes for ${input.focus}.`
@@ -1173,12 +1205,11 @@ function shuffle(choices: string[], seed: string): string[] {
 
 function intro(input: GuideInput): string {
   const when = input.due ? ` Due ${input.due}.` : "";
-  const rule =
-    input.help === "none"
-      ? " AI help is not allowed on graded work for this class."
-      : input.help === "hints"
-        ? " Hints only: this is for studying, not for work you will turn in."
-        : "";
+  const rule = noStudyHelp(input.help)
+    ? " AI help is not allowed on graded work for this class."
+    : input.help === "hints"
+      ? " Guided help: this is for studying, not for work you will turn in."
+      : "";
   return clip(
     `${input.focus}.${when}${rule} Taken from your class notes.`,
     2000,

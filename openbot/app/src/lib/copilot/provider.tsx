@@ -102,8 +102,8 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
         {/* What the Bot made, drawn as a card that opens it. See page-card-tool.tsx. */}
         <PageCardTool />
         {/*
-          Academic OS's study cards: a quiz, flashcards, practice so far and a study plan, each
-          under the Bot's words like a page, and a teacher's No help drawn as whose rule it is.
+          Cue's study cards: a quiz, flashcards, practice so far and a study plan, each
+          under the Bot's words like a page, and a teacher's On your own drawn as whose rule it is.
         */}
         <QuizCardTool />
         <PracticeCardTool />

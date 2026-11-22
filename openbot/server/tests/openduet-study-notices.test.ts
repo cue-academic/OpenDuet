@@ -50,7 +50,7 @@ const LAB6 = [
   "Due: Thu, Nov 5, 2026, 11:59 PM",
   "Points: 40",
   "Estimated time: 90 min",
-  "AI help: Hints only",
+  "AI help: Guided help",
   "",
   "Include a data table, a rate graph and a conclusion. You may ask an AI to explain concepts, but every sentence must be yours.",
   "",
@@ -95,7 +95,7 @@ describe("parseClassroomNotice", () => {
     const html = [
       "<html><head><style>p { color: #333 }</style></head><body>",
       "<p>Chemistry &middot; Period&nbsp;2 &middot; Dr. Okoro<br>New assignment<br><b>Lab 6 report: Reaction\nRates</b><br>",
-      "Due: Thu, Nov 5, 2026, 11:59&nbsp;PM<br>Points: 40<br>Estimated time: 90 min<br>AI help: Hints only</p>",
+      "Due: Thu, Nov 5, 2026, 11:59&nbsp;PM<br>Points: 40<br>Estimated time: 90 min<br>AI help: Guided help</p>",
       "<p>Include a data table, a rate graph and a conclusion. You may ask an AI to explain concepts, but every sentence must be yours.</p>",
       '<p>Open: <a href="https://classroom.google.com/c/chem2/a/lab6">https://classroom.google.com/c/chem2/a/lab6</a></p>',
       "</body></html>",
@@ -134,7 +134,7 @@ describe("parseClassroomNotice", () => {
         "Missing",
         "Section 4.3 homework",
         "Due: Tue, Nov 3, 2026, 11:59 PM",
-        "AI help: Full help",
+        "AI help: Study",
         "",
         "Open: https://classroom.google.com/c/precalc4/a/hw43",
       ],
@@ -152,9 +152,9 @@ describe("parseClassroomNotice", () => {
   test("reads every level from the AI help line, and only from it", () => {
     const level = (line: string) =>
       parse([...LAB6.slice(0, 6), line, ...LAB6.slice(7)]).help;
-    expect(level("AI help: Full help")).toBe("full");
-    expect(level("AI help: Hints only")).toBe("hints");
-    expect(level("AI help: No help")).toBe("none");
+    expect(level("AI help: Study")).toBe("full");
+    expect(level("AI help: Guided help")).toBe("hints");
+    expect(level("AI help: On your own")).toBe("none");
     expect(level("AI help: No AI help on this assignment.")).toBe("none");
     expect(level("AI help: Ask me in class")).toBeNull();
 
@@ -162,12 +162,14 @@ describe("parseClassroomNotice", () => {
     const noLine = parse([
       ...LAB6.slice(0, 6),
       "",
-      "No help from friends or AI on the conclusion.",
+      "On your own from friends or AI on the conclusion.",
       "",
       "Open: https://classroom.google.com/c/chem2/a/lab6",
     ]);
     expect(noLine.help).toBeNull();
-    expect(noLine.text).toBe("No help from friends or AI on the conclusion.");
+    expect(noLine.text).toBe(
+      "On your own from friends or AI on the conclusion.",
+    );
   });
 
   test("leaves out what a notice leaves out, and fills the teacher from the sender", () => {
@@ -793,7 +795,7 @@ describe("carriedNotices", () => {
   const AT = { at: new Date("2026-11-04T15:00:00.000Z"), limit: 100 };
   const ids = (notices: ParsedNotice[]) =>
     notices.map((entry) => entry.noticeId).sort();
-  /** One item's first notice, with the teacher's No help. */
+  /** One item's first notice, with the teacher's On your own. */
   const posted = (name: string, overrides: Partial<ParsedNotice> = {}) =>
     notice({
       noticeId: name,
@@ -839,7 +841,7 @@ describe("carriedNotices", () => {
   });
 
   test("a notice about work still listed stands however late it is, and the listed notices still win", () => {
-    // Long past due, but Classroom's Missing notice about it is still listed: the No help stays.
+    // Long past due, but Classroom's Missing notice about it is still listed: the On your own stays.
     const rule = posted("dbq", {
       due: "2026-10-20T04:59:00.000Z",
       receivedAt: "2026-10-10T12:00:00.000Z",

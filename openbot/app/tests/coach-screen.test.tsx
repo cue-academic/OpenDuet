@@ -94,7 +94,7 @@ function draw(account: { name?: string } = {}) {
   client.setQueryData(agentKeys.list(), [
     {
       id: "openduet",
-      name: "Academic OS",
+      name: "Cue",
       title: "Your study coach",
       roleDescription: "",
       visibility: "public",
@@ -178,13 +178,24 @@ test("Plan tonight sends the sample's unfinished work and shows the returned pla
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           assignments: getCoachState()
             .assignments.filter((assignment) => assignment.status !== "done")
-            .map(({ id, classId, title, dueAt, estimateMin, spentMin }) => ({
-              id,
-              classId,
-              title,
-              dueAt,
-              minutes: estimateMin - spentMin,
-            })),
+            .map(
+              ({
+                id,
+                classId,
+                title,
+                dueAt,
+                estimateMin,
+                spentMin,
+                helpLevel,
+              }) => ({
+                id,
+                classId,
+                title,
+                dueAt,
+                minutes: estimateMin - spentMin,
+                help: helpLevel,
+              }),
+            ),
         },
       },
     },
@@ -282,7 +293,7 @@ test("focus mode covers the screen and shows the teacher's rule; finishing close
   const view = draw();
   await user.click(await view.findByRole("button", { name: /Focus 25 min/ }));
   const focus = await view.findByRole("dialog", { name: "Focus mode" });
-  expect(focus.textContent).toMatch(/AI help: (Full help|Hints only|No help)/);
+  expect(focus.textContent).toMatch(/AI help: (Study|Guided help|On your own)/);
   expect(focus.textContent).toMatch(/2[45]:\d\d/);
   await user.click(within(focus).getByRole("button", { name: "Pause" }));
   expect(within(focus).getByText("Paused")).toBeTruthy();
@@ -329,7 +340,7 @@ test("handing work to the coach starts a task with the teacher's rule in it", as
   )) as HTMLTextAreaElement;
   // The written-out request is folded away until the student opens it.
   expect(field.closest("details")?.open).toBe(false);
-  expect(field.value).toMatch(/AI help: (Full help|Hints only|No help)\./);
+  expect(field.value).toMatch(/AI help: (Study|Guided help|On your own)\./);
   await user.click(view.getByRole("button", { name: "Start" }));
   await waitFor(() => expect(posted).toHaveLength(1));
   expect(posted[0]).toMatchObject({

@@ -147,7 +147,7 @@ export function createTaskIntake(deps: {
   };
 }
 
-/** Academic OS's study records, the classes read from Classroom notices, and the teacher's rules. */
+/** Cue's study records, the classes read from Classroom notices, and the teacher's rules. */
 export type Study = {
   store: StudyStore;
   school: SchoolService;

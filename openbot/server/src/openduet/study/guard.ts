@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import {
   HELP_LEVEL_LABEL,
   RULED_STUDY_TOOLS,
@@ -15,7 +16,7 @@ import type {
 } from "./contracts";
 
 /*
- * A teacher's "No help" kept in code. make_quiz and make_flashcards are checked against the class's
+ * A teacher's "On your own" kept in code. make_quiz and make_flashcards are checked against the class's
  * rule each time they run, never when the tools are built: tools are made per request before the
  * conversation is known, and a teacher's notice can arrive mid-conversation. The level comes from
  * the student's Classroom notices and the Teacher rules screen (rules.ts), never from the call's
@@ -100,8 +101,15 @@ function teacherRuleBlockOf(target: Resolved): TeacherRuleBlock {
  * told, which says where the rule came from: a teacher's notice, or the Teacher rules screen.
  */
 export function teacherRuleRefusal(target: Resolved): string {
-  const advice =
-    target.source === "override" ? SCREEN_RULE_ADVICE : TEACHER_RULE_ADVICE;
+  const advice = (
+    target.source === "override" ? SCREEN_RULE_ADVICE : TEACHER_RULE_ADVICE
+  ).replace(
+    "offer to plan their time or help",
+    // Test turns Cue off for the item, planning included.
+    target.level === "test"
+      ? "offer to help"
+      : "offer to plan their time or help",
+  );
   return `${REFUSAL_MARKER} ${teacherRuleText(
     teacherRuleBlockOf(target),
     `${pausedBecause(target)} ${advice}`,
@@ -196,7 +204,7 @@ export function guardTeacherRules(
             }
             // A class that is not the student's: the model is told which ones are, and calls again.
             if (!target.ok) return `${REFUSAL_MARKER} ${target.reason}`;
-            if (target.level !== "none") return tool.execute(args);
+            if (!noStudyHelp(target.level)) return tool.execute(args);
             await recordRefusal(tool, target, teacherRuleBlockOf(target));
             return teacherRuleRefusal(target);
           },

@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { studyModels } from "../model-env";
 import type { PageBlock } from "../page-content";
 import { pageBlockSchema } from "../page-content";
@@ -223,7 +224,7 @@ function inventedAttribution(sentence: string, source: string): boolean {
 
 function subjectHint(input: GuideInput): string {
   const name = `${input.className} ${input.focus}`.toLowerCase();
-  if (input.help === "none") {
+  if (noStudyHelp(input.help)) {
     const math = /chem|calc|math|statistic/.test(name)
       ? " Write equations and scientific notation in LaTeX between dollar signs."
       : "";
@@ -267,7 +268,7 @@ export async function writeGuideFromNotes(
   env: Record<string, string | undefined>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<CraftedGuide | null> {
-  if (input.help === "none") return null;
+  if (noStudyHelp(input.help)) return null;
   const key = env.OPENAI_API_KEY?.trim();
   if (!key) return null;
   const notes = notesForGuide(input);
@@ -409,7 +410,7 @@ export function guideFromModelText(
       })),
     });
   }
-  if (input.help === "none") {
+  if (noStudyHelp(input.help)) {
     blocks.push({
       type: "text",
       text: "This class does not allow AI on graded work. The notes above are for review. They are not an answer to turn in.",

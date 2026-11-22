@@ -1027,8 +1027,8 @@ test("each option asks for a page of its own kind, so what is made lands under i
   expect(steer("dashboard")).toContain("not as a plan card");
   // A page checks no teacher's rule in code, so the coach is told to; planning is never paused.
   for (const id of ["doc", "page", "slides"])
-    expect(steer(id)).toContain("set this class to No help, make nothing");
-  expect(steer("dashboard")).not.toContain("No help");
+    expect(steer(id)).toContain("set this class to On your own, make nothing");
+  expect(steer("dashboard")).not.toContain("On your own");
 });
 
 test("a task started here stops being drawn once a page arrives for it or it stops", () => {

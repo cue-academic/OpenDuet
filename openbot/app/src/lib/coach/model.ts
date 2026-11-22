@@ -6,12 +6,13 @@
  * other than store.ts is pure: it takes the state and a `now`, which keeps it simple to test.
  */
 
-export type HelpLevel = "full" | "hints" | "none";
+export type HelpLevel = "full" | "hints" | "none" | "test";
 
 export const HELP_LABEL: Record<HelpLevel, string> = {
-  full: "Full help",
-  hints: "Hints only",
-  none: "No help",
+  full: "Study",
+  hints: "Guided help",
+  none: "On your own",
+  test: "Test",
 };
 
 /** A colour name the tab knows how to draw, one per class. */

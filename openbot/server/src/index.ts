@@ -1429,7 +1429,7 @@ const wakeUpStore = createWakeUpStore(database, { auditStore: bootAuditStore });
 
 /**
  * OpenDuet's own tools: the morning brief, read through the plugin store as the person, reply chips,
- * the pages it makes, the tasks it starts, and Academic OS's study tools. See openduet/wiring.ts.
+ * the pages it makes, the tasks it starts, and Cue's study tools. See openduet/wiring.ts.
  */
 const openDuetPages = createPageStore(database);
 const openDuetStudyMemory = createStudyMemoryStore(database);

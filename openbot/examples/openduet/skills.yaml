@@ -37,7 +37,7 @@ skills:
       - google-workspace/gmail_search_messages
       - google-workspace/calendar_list_events
 
-  # Academic OS's study skills. They read the student's Classroom notices and calendar through the
+  # Cue's study skills. They read the student's Classroom notices and calendar through the
   # same Gmail and Calendar grants as the brief, and the teacher's AI help level comes from the
   # notice itself (see the TEACHER RULES part of the Bot's prompt).
   - slug: work-on-now
@@ -157,8 +157,8 @@ skills:
       then one quick question that checks they understood. If they get it wrong, explain it a simpler
       way and ask again. Keep it short enough to read on a phone,
       and use make_page only if they ask for notes to keep. If the concept is tied to an assignment,
-      follow that assignment's AI help level: under Hints only explain the concept with a different
-      example than the assignment's own problems, and under No help explain nothing about that
+      follow that assignment's AI help level: under Guided help explain the concept with a different
+      example than the assignment's own problems, and under On your own or Test explain nothing about that
       assignment's questions. If you are not sure of a fact, say so instead of guessing.
     tools:
       - google-workspace/gmail_search_messages
@@ -442,7 +442,7 @@ skills:
       person and nothing is created unless they press the button.
     tools: []
 
-  # Academic OS's learning skills. They share one study memory (server/src/openduet/study-memory.ts):
+  # Cue's learning skills. They share one study memory (server/src/openduet/study-memory.ts):
   # `record_study` saves how each topic went after any practice, and `study_memory` reads it back, so
   # review is spaced, mistakes are revisited and the Learn tab fills in. Both are held by every Bot,
   # like make_page, so they are not named under `tools:`. Each skill follows the assignment's teacher
@@ -490,11 +490,11 @@ skills:
       make_notes_quiz on that topic when they want a quiz. Get the problem: what they typed or
       attached, or ask for it in one short question. Work out
       which assignment it belongs to and use class_help for its AI help level, not mail.
-      No help: do not touch it; say so in a sentence and offer to tutor them on a similar practice
-      problem you make up for the same skill. Hints only, and whenever you cannot tell: never solve any
+      On your own or Test: do not touch it; say so in a sentence and offer to tutor them on a similar practice
+      problem you make up for the same skill. Guided help, and whenever you cannot tell: never solve any
       step of their problem; ask what they know and what the question wants, then give one hint or one
       guiding question at a time, and when they make a mistake point at where it is and ask what they
-      notice, never fix it for them. Full help: still go one step at a time, asking them to try each
+      notice, never fix it for them. Study: still go one step at a time, asking them to try each
       step first; show a step only after they have tried twice, then have them do the next one. In
       every case, keep each message to one step, check their thinking before moving on, and when they
       reach the answer ask them to say in one sentence why it works. Then call record_study once for
@@ -519,7 +519,7 @@ skills:
       temperature." Call record_study once with one entry per key idea (activity "teach-back"):
       correct if they explained it, partly if it was vague, missed if absent or wrong, with the
       misconception for anything wrong. Teach-back on a test topic is studying and always allowed, but
-      if the topic is the subject of an assignment set to No help, do not discuss that assignment's
+      if the topic is the subject of an assignment set to On your own or Test, do not discuss that assignment's
       questions.
     tools:
       - google-workspace/gmail_search_messages
@@ -531,8 +531,8 @@ skills:
     summary: Find the first place your solution goes wrong, without fixing it for you.
     instructions: >-
       Get their work: typed steps or an attached photo or file. Find which assignment it is for and
-      that assignment's AI help level in their Classroom mail. No help: do not check, mark or comment on
-      any of it; say plainly that the teacher set it to no AI help, and offer to make a similar practice
+      that assignment's AI help level in their Classroom mail. On your own or Test: do not check, mark or comment on
+      any of it; say plainly that the teacher set it to that level, and offer to make a similar practice
       problem to check instead. Otherwise read every step and find the first one that goes wrong.
       Say which step it is and what kind of error it is (a sign, a formula, a unit, a misread question,
       a reasoning gap), and ask them to look at that step again. Never write the corrected step or the
@@ -549,10 +549,10 @@ skills:
     summary: Rubric-style feedback on an essay or lab report draft, with your three biggest fixes.
     instructions: >-
       Get the draft: pasted or attached. Find the assignment and its AI help level in their Classroom
-      mail, and read the notice for what the teacher asked for and how it is graded. No help: do not
-      read, comment on or edit any of it; say plainly that the teacher set it to no AI help, and offer
-      only to plan their time. Hints only: give feedback but never write, rewrite or suggest wording
-      for any sentence they will turn in. Full help: you may show what a stronger sentence does by
+      mail, and read the notice for what the teacher asked for and how it is graded. On your own or Test: do not
+      read, comment on or edit any of it; say plainly that the teacher set it to that level, and offer
+      only to plan their time (not under Test). Guided help: give feedback but never write, rewrite or suggest wording
+      for any sentence they will turn in. Study: you may show what a stronger sentence does by
       writing one about a different topic, never a replacement for theirs. Make the feedback with
       make_page as a page titled with the class and assignment. It holds a table with the columns
       Area, Rating and Why, covering what the assignment asks for (for an essay: thesis, evidence,
@@ -582,7 +582,7 @@ skills:
       common traps, including any open mistakes study memory has for this class; and a list of five
       practice questions from easy to hard, followed by a heading "Answers (cover these first)" and a
       list of short answers. In Chat say one sentence about the guide and offer to quiz them on the
-      weakest topic. If the test belongs to an assignment set to No help, say so and do not make it.
+      weakest topic. If the test belongs to an assignment set to On your own or Test, say so and do not make it.
     tools:
       - google-workspace/gmail_search_messages
       - google-workspace/gmail_read_message
@@ -599,7 +599,7 @@ skills:
       to today or to their own life. After each answer, say what they got right in a few words and add
       the one detail that makes it stronger. Never summarize the reading for them before they answer,
       and if they have not read it yet, say so kindly and offer to check in after. If the reading is
-      tied to a written assignment set to Hints only or No help, discuss the reading itself but never
+      tied to a written assignment set to Guided help, On your own or Test, discuss the reading itself but never
       draft, outline or suggest a thesis for that assignment. End with one sentence naming the idea
       worth remembering for class, then call record_study once with one entry per question (activity
       "reading"), the subject the class and the topic the reading and what the question was about,

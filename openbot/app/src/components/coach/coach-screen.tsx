@@ -65,11 +65,13 @@ export function assignmentInstruction(
 ): string {
   const c = classOf(state, a);
   const what =
-    a.helpLevel === "none"
-      ? "The teacher set this to No help, so do not help with the work itself. Only help me plan my time for it: a schedule of sessions before it's due, as a page."
-      : a.helpLevel === "hints"
-        ? "The teacher set this to Hints only: coach me with guiding questions and one hint at a time, and never write any part I will turn in. Start by asking where I'm stuck."
-        : "The teacher allows Full help: teach me, quiz me and give feedback, but don't hand me finished work to submit. Start with a quick check of what I already know.";
+    a.helpLevel === "test"
+      ? "The teacher set this to Test, so Cue is off for it: do not help with it or plan it. Tell me when it is and that the teacher set it to Test, and nothing more."
+      : a.helpLevel === "none"
+        ? "The teacher set this to On your own, so do not help with the work itself. Only help me plan my time for it: a schedule of sessions before it's due, as a page."
+        : a.helpLevel === "hints"
+          ? "The teacher set this to Guided help: coach me with guiding questions and one hint at a time, and never write any part I will turn in. Start by asking where I'm stuck."
+          : "The teacher set this to Study: teach me, quiz me and give feedback, but don't hand me finished work to submit. Start with a quick check of what I already know.";
   return [
     `Help me with ${c.name}${c.teacher ? ` (${c.teacher})` : ""}: ${a.title}.`,
     `It's due ${formatDue(a.dueAt, now)} (${new Date(a.dueAt).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" })})${a.points != null && a.points > 0 ? `, worth ${a.points} points` : ""}, and I have about ${formatMinutes(remainingMin(a))} of work left.`,

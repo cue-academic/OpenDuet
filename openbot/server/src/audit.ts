@@ -545,7 +545,7 @@ export const auditEventTypes = [
   "approval.settings_changed",
   /*
    * One of OpenDuet's own tools refused before it ran, which no approval was ever asked about: a
-   * teacher's No help pausing make_quiz or make_flashcards for a class (`payload.refusal:
+   * teacher's On your own pausing make_quiz or make_flashcards for a class (`payload.refusal:
    * "teacher_rule"`, with the level, the class, the assignment and where the rule came from). Its
    * own type, not `approval.evaluated`, which the audit page draws as allowed.
    */
