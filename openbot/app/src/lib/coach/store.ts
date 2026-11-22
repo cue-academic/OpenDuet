@@ -15,6 +15,7 @@ import { blankState, demoState } from "./seed";
 
 export const COACH_STORAGE_KEY = "academic-os.coach.v1";
 export const COACH_SYNC_KEY = "academic-os.coach.sync.v1";
+export const COACH_BASE_KEY = "academic-os.coach.base.v1";
 export const TIMER_STORAGE_KEY = "academic-os.coach.timer.v1";
 
 type Listener = () => void;
@@ -72,6 +73,34 @@ function setCoachSync(next: CoachSync): void {
   }
 }
 
+let baseCached: CoachState | null | undefined;
+
+/**
+ * The copy this browser was last level with the account on. When another device saves first, it is
+ * what tells this browser's own changes apart from the other device's (merge.ts).
+ */
+export function getCoachBase(): CoachState | null {
+  if (baseCached !== undefined) return baseCached;
+  try {
+    const raw = window.localStorage.getItem(COACH_BASE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as CoachState) : null;
+    baseCached = parsed?.version === 1 ? parsed : null;
+  } catch {
+    baseCached = null;
+  }
+  return baseCached;
+}
+
+function setCoachBase(next: CoachState | null): void {
+  baseCached = next;
+  try {
+    if (next) window.localStorage.setItem(COACH_BASE_KEY, JSON.stringify(next));
+    else window.localStorage.removeItem(COACH_BASE_KEY);
+  } catch {
+    // Kept in memory for this visit.
+  }
+}
+
 function store(next: CoachState): void {
   cached = next;
   try {
@@ -95,7 +124,24 @@ export function adoptServerCoach(
   revision: number,
 ): void {
   store(state);
+  setCoachBase(state);
   setCoachSync({ owner, revision, dirty: false });
+  for (const listener of listeners) listener();
+}
+
+/**
+ * Another device saved first: `merged` holds both devices' changes, `theirs` is what the account
+ * has at `revision`. The merged copy is shown and is still to be saved on top of that revision.
+ */
+export function rebaseCoach(
+  owner: string,
+  revision: number,
+  theirs: CoachState,
+  merged: CoachState,
+): void {
+  store(merged);
+  setCoachBase(theirs);
+  setCoachSync({ owner, revision, dirty: true });
   for (const listener of listeners) listener();
 }
 
@@ -106,6 +152,7 @@ export function claimCoach(
   state?: CoachState,
 ): void {
   if (state) store(state);
+  if (revision === null) setCoachBase(null);
   setCoachSync({ owner, revision, dirty: true });
   if (state) for (const listener of listeners) listener();
 }
@@ -116,6 +163,7 @@ export function markCoachSaved(
   revision: number,
   saved: CoachState,
 ): void {
+  setCoachBase(saved);
   setCoachSync({ owner, revision, dirty: read() !== saved });
 }
 
@@ -136,6 +184,7 @@ export function getCoachState(): CoachState {
 export function resetCoachCache(): void {
   cached = null;
   syncCached = undefined;
+  baseCached = undefined;
   timerCached = undefined;
 }
 

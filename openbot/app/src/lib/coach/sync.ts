@@ -1,14 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { mergeCoach } from "./merge";
+import type { CoachState } from "./model";
 import { saveCoachMutationOptions } from "./mutations";
 import { type CoachRecord, coachKeys, coachQueryOptions } from "./queries";
 import { demoState } from "./seed";
 import {
   adoptServerCoach,
+  getCoachBase,
   claimCoach,
   getCoachState,
   getCoachSync,
   markCoachSaved,
+  rebaseCoach,
   subscribeCoach,
   syncAchievements,
 } from "./store";
@@ -25,7 +29,8 @@ import {
  * - A school pack (source "private") stays on this machine and is never sent.
  *
  * A save names the revision it was made on. If another device saved first, the server keeps its copy
- * and sends it back, and that copy is taken here.
+ * and sends it back. This browser's unsaved changes are merged into that copy (merge.ts) and the
+ * result is saved, so neither device's edit is lost.
  */
 
 const SAVE_AFTER_MS = 400;
@@ -37,15 +42,44 @@ export function reconcileCoach(owner: string, remote: CoachRecord): boolean {
   const sync = getCoachSync();
   const foreign = sync !== null && sync.owner !== owner;
   if (remote.state && remote.revision !== null) {
-    if (!sync || foreign || sync.revision !== remote.revision) {
-      adoptServerCoach(owner, remote.state, remote.revision);
-      return false;
-    }
+    // A read that was already on its way when this browser saved is older than what is here.
+    const stale =
+      sync !== null &&
+      !foreign &&
+      sync.revision !== null &&
+      sync.revision > remote.revision;
+    if (stale) return sync.dirty;
+    if (!sync || foreign || sync.revision !== remote.revision)
+      return takeTheirs(owner, remote.state, remote.revision);
     return sync.dirty;
   }
   if (foreign) startOver(owner);
   else claimCoach(owner, null);
   return true;
+}
+
+/**
+ * The account's copy has moved past this browser's. Changes made here that were never saved are
+ * merged into it rather than dropped. True when the result is still to be saved.
+ */
+function takeTheirs(
+  owner: string,
+  theirs: CoachState,
+  revision: number,
+): boolean {
+  const sync = getCoachSync();
+  const base = getCoachBase();
+  const mine = getCoachState();
+  if (sync?.owner === owner && sync.dirty && base) {
+    const merged = mergeCoach(base, mine, theirs);
+    if (JSON.stringify(merged) !== JSON.stringify(theirs)) {
+      rebaseCoach(owner, revision, theirs, merged);
+      syncAchievements();
+      return true;
+    }
+  }
+  adoptServerCoach(owner, theirs, revision);
+  return false;
 }
 
 /** The sample week, as this person's, with the badges it has already earned. */
@@ -96,7 +130,7 @@ export function useCoachSync(owner: string | undefined): void {
         markCoachSaved(owner, coach.revision, state);
         again = getCoachSync()?.dirty === true;
       } else if (coach.state && coach.revision !== null) {
-        adoptServerCoach(owner, coach.state, coach.revision);
+        again = takeTheirs(owner, coach.state, coach.revision);
       }
       queryClient.setQueryData(coachKeys.state, coach);
     } catch {

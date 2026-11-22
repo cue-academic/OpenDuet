@@ -120,25 +120,72 @@ describe("coach sync", () => {
     await waitFor(() => expect(getCoachSync()?.dirty).toBe(false));
   });
 
-  test("when another device saved first, its copy is taken", async () => {
+  test("when another device saved first, both devices' changes are kept", async () => {
     restartWithDemo(NOW);
     mount();
     await waitFor(() => expect(server.revision).toBe(1));
-    const other = { ...demoState(NOW), demo: false };
-    other.profile = { ...other.profile, name: "From the laptop" };
+    // The laptop renamed the student and finished an assignment, and saved first.
+    const other = structuredClone(server.state as CoachState);
+    other.profile.name = "From the laptop";
+    other.assignments[0].status = "done";
+    other.assignments[0].doneAt = NOW.toISOString();
+    const doneId = other.assignments[0].id;
     server = { state: other, revision: 2 };
     act(() => {
       saveCheckIn(checkIn, NOW);
     });
+    await waitFor(() => expect(server.revision).toBe(3));
+    for (const state of [getCoachState(), server.state as CoachState]) {
+      expect(state.profile.name).toBe("From the laptop");
+      expect(state.assignments.find((a) => a.id === doneId)?.status).toBe(
+        "done",
+      );
+      expect(state.checkIns.at(-1)).toEqual({ date: "2026-11-04", ...checkIn });
+    }
+    await waitFor(() =>
+      expect(getCoachSync()).toEqual({
+        owner: "jordan",
+        revision: 3,
+        dirty: false,
+      }),
+    );
+  });
+
+  test("changes made while offline are merged in on the next visit", async () => {
+    restartWithDemo(NOW);
+    const first = mount();
+    await waitFor(() => expect(server.revision).toBe(1));
+    failSaves = true;
+    act(() => {
+      saveCheckIn(checkIn, NOW);
+    });
+    await waitFor(() => expect(puts.length).toBeGreaterThan(1));
+    first.unmount();
+    failSaves = false;
+    const other = structuredClone(server.state as CoachState);
+    other.profile.dailyGoalMin = 90;
+    server = { state: other, revision: 2 };
+    mount();
+    await waitFor(() => expect(server.revision).toBe(3));
+    expect(server.state?.profile.dailyGoalMin).toBe(90);
+    expect(server.state?.checkIns.at(-1)?.date).toBe("2026-11-04");
+    expect(getCoachState()).toEqual(server.state as CoachState);
+  });
+
+  test("a browser with nothing unsaved just takes the other device's copy", async () => {
+    restartWithDemo(NOW);
+    const first = mount();
+    await waitFor(() => expect(server.revision).toBe(1));
+    first.unmount();
+    const other = structuredClone(server.state as CoachState);
+    other.profile.name = "From the laptop";
+    server = { state: other, revision: 2 };
+    puts = [];
+    mount();
     await waitFor(() =>
       expect(getCoachState().profile.name).toBe("From the laptop"),
     );
-    expect(server.revision).toBe(2);
-    expect(getCoachSync()).toEqual({
-      owner: "jordan",
-      revision: 2,
-      dirty: false,
-    });
+    expect(puts).toHaveLength(0);
   });
 
   test("a failed save stays marked and goes out on the next visit", async () => {
