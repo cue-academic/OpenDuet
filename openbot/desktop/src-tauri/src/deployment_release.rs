@@ -8,15 +8,52 @@ use crate::deployment;
 
 const LATEST_RELEASE: &str = "https://api.github.com/repos/CopilotKit/OpenBot/releases/latest";
 
+/// The public release page redirects to the latest tag and is not subject to the API's rate limit.
+const LATEST_RELEASE_PAGE: &str = "https://github.com/CopilotKit/OpenBot/releases/latest";
+const RELEASE_TAG_PAGE: &str = "https://github.com/CopilotKit/OpenBot/releases/tag/";
+
 /// Only new deployments consult GitHub. The fetcher records the exact tag after the source and
 /// image manifest have both downloaded successfully; restarts and repairs retain that pin.
 /// Uses blocking HTTP, so callers in an async runtime must use a blocking task.
 pub fn resolve_version(root: &Path) -> Result<String, String> {
     resolve_version_with(root, || {
-        let body = deployment::get(LATEST_RELEASE)
-            .map_err(|error| format!("could not find the latest OpenBot release: {error}"))?;
-        release_tag(&body)
+        latest_with(
+            || release_tag(&deployment::get(LATEST_RELEASE)?),
+            || release_page_tag(&deployment::final_url(LATEST_RELEASE_PAGE)?),
+        )
     })
+}
+
+/// Ask the API first; when it fails (an unauthenticated rate limit answers 403), read the same
+/// latest tag from the release page's redirect.
+fn latest_with(
+    api: impl FnOnce() -> Result<String, String>,
+    page: impl FnOnce() -> Result<String, String>,
+) -> Result<String, String> {
+    api().or_else(|api_error| {
+        page().map_err(|page_error| {
+            format!(
+                "could not find the latest OpenBot release: {api_error}; \
+                 the release page did not help either: {page_error}"
+            )
+        })
+    })
+}
+
+fn release_page_tag(url: &str) -> Result<String, String> {
+    let tag = url
+        .strip_prefix(RELEASE_TAG_PAGE)
+        .map(|rest| rest.split(['?', '#']).next().unwrap_or_default())
+        .unwrap_or_default();
+    let plain = tag
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '+'));
+    if tag.is_empty() || !plain {
+        return Err(format!(
+            "{LATEST_RELEASE_PAGE} led to {url}, which names no release"
+        ));
+    }
+    Ok(tag.to_string())
 }
 
 fn resolve_version_with(
@@ -93,6 +130,53 @@ mod tests {
         assert!(error.contains("403"));
         assert!(deployment::installed(&root).is_none());
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_rate_limited_api_falls_back_to_the_release_page() {
+        let version = latest_with(
+            || Err("api.github.com answered 403 Forbidden".into()),
+            || release_page_tag("https://github.com/CopilotKit/OpenBot/releases/tag/v1.1.2"),
+        )
+        .unwrap();
+        assert_eq!(version, "v1.1.2");
+    }
+
+    #[test]
+    fn a_working_api_does_not_load_the_release_page() {
+        let version = latest_with(
+            || Ok("v0.0.9".into()),
+            || panic!("the API already answered"),
+        )
+        .unwrap();
+        assert_eq!(version, "v0.0.9");
+    }
+
+    #[test]
+    fn both_lookups_failing_reports_both_reasons() {
+        let error = latest_with(|| Err("answered 403".into()), || Err("offline".into()))
+            .expect_err("no release was found");
+        assert!(
+            error.contains("403") && error.contains("offline"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn only_a_release_tag_page_names_a_version() {
+        for url in [
+            "https://github.com/CopilotKit/OpenBot/releases",
+            "https://github.com/CopilotKit/OpenBot/releases/tag/",
+            "https://github.com/CopilotKit/OpenBot/releases/tag/v1/../x",
+            "https://github.com/login?return_to=/CopilotKit/OpenBot/releases/tag/v1.1.2",
+        ] {
+            assert!(release_page_tag(url).is_err(), "{url}");
+        }
+        assert_eq!(
+            release_page_tag("https://github.com/CopilotKit/OpenBot/releases/tag/v1.1.2?x=1")
+                .unwrap(),
+            "v1.1.2"
+        );
     }
 
     #[test]
