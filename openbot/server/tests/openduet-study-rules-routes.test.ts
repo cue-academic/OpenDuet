@@ -362,7 +362,7 @@ describe("PUT /rules", () => {
       source: "override",
       override: "none",
     });
-    // Lab 6's own Hints only is under the class's No help now.
+    // Lab 6's own Guided help is under the class's On your own now.
     expect(
       chemistry.assignments.map((row) => [row.assignmentId, row.level]),
     ).toEqual([
@@ -456,7 +456,7 @@ describe("PUT /rules", () => {
   test("clears an override when that loosens nothing, and refuses a student when it would", async () => {
     const { as } = setup();
     const jordan = as("jordan");
-    // Hints only is what Chemistry's notices say already, so clearing it changes nothing.
+    // Guided help is what Chemistry's notices say already, so clearing it changes nothing.
     await jordan("PUT", "/rules", { classes: { chem2: "hints" } });
     const cleared = await jordan("PUT", "/rules", { classes: { chem2: null } });
     expect(cleared.status).toBe(200);
@@ -465,7 +465,7 @@ describe("PUT /rules", () => {
       source: "notice",
       override: null,
     });
-    // No help is stricter than the notices, so clearing it would loosen the class.
+    // On your own is stricter than the notices, so clearing it would loosen the class.
     await jordan("PUT", "/rules", { classes: { spanish5: "none" } });
     expect(
       await jordan("PUT", "/rules", { classes: { spanish5: null } }),
@@ -484,7 +484,7 @@ describe("PUT /rules", () => {
     const { as, reader } = setup();
     const jordan = as("jordan");
     const CANT_READ =
-      "Choose Full help, Hints only or No help for each class or assignment you change.";
+      "Choose Study, Guided help, On your own or Test for each class or assignment you change.";
     for (const body of [
       "not json",
       "null",

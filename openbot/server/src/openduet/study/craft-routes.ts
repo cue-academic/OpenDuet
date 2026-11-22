@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
@@ -95,10 +96,9 @@ export function craftRoutes(deps: StudyRouteDeps) {
       guideInput(pack, body?.classId, body?.focus),
     );
     const drafted = craftGuide(input);
-    const guide =
-      input.help === "none"
-        ? drafted
-        : await polishGuide(drafted, joined(input), process.env, fetch, input);
+    const guide = noStudyHelp(input.help)
+      ? drafted
+      : await polishGuide(drafted, joined(input), process.env, fetch, input);
     if (!deps.pages) {
       return context.json({
         title: guide.title,
@@ -434,7 +434,7 @@ export function craftRoutes(deps: StudyRouteDeps) {
         focus: body.topic,
       }),
     );
-    if (input.help === "none") {
+    if (noStudyHelp(input.help)) {
       throw new StudyForbiddenError(
         `${input.className} doesn't allow AI help. Review your own notes, and don't ask for the graded work.`,
       );

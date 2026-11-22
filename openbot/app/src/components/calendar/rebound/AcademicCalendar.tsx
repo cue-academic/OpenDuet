@@ -53,7 +53,7 @@ const LANE_PAD_PX = 6;
 const WEEK_CHIPS = 2;
 
 /**
- * Rebound's timeline (components/calendar-timeline.tsx), drawing Academic OS's calendar. It is
+ * Rebound's timeline (components/calendar-timeline.tsx), drawing Cue's calendar. It is
  * read-only three ways: it is given no move, create or double-click handler, its `movable` needs a
  * move handler, and its store refuses every write (lib/store.ts). Blocks change when a plan is
  * applied in Chat, never here.

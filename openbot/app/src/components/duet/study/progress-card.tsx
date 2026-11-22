@@ -134,7 +134,12 @@ const STAT_TONE: Record<string, string> = {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     // The term comes first for a screen reader ("Quizzes, 3"); the number reads first by eye.
-    <div className={cn("flex min-w-0 flex-col-reverse rounded-[14px] px-3 py-2.5", STAT_TONE[label] ?? "bg-duet-tile")}>
+    <div
+      className={cn(
+        "flex min-w-0 flex-col-reverse rounded-[14px] px-3 py-2.5",
+        STAT_TONE[label] ?? "bg-duet-tile",
+      )}
+    >
       <dt className="type-caption truncate opacity-80">{label}</dt>
       <dd className="type-display font-bold tabular-nums">{value}</dd>
     </div>

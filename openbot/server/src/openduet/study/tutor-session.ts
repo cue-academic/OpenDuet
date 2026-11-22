@@ -9,7 +9,7 @@ import { completeJson, sharedWords } from "./model-json";
  *
  * The opening explains simply, gives one example from the notes, and asks a
  * check. A wrong answer gets a simpler explanation and a new question. A
- * right answer moves to teach-back. Chemistry and any no-help class are refused.
+ * right answer moves to teach-back. Chemistry and any On your own or Test class are refused.
  */
 
 export type TutorOpening = TutorStep & { example: string };

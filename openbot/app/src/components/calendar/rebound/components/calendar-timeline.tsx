@@ -67,7 +67,7 @@ const SEMANTIC_ICONS: Partial<Record<string, Icon>> = {
   "at-risk": IconAlertTriangle,
   locked: IconLock,
   rebounded: IconRotate,
-  // Academic OS change: no glyph on fixed time. Rebound's later blocks dropped the lock, and in a
+  // Cue change: no glyph on fixed time. Rebound's later blocks dropped the lock, and in a
   // calendar where nothing moves it marked every class.
 };
 
@@ -91,7 +91,7 @@ function visibleOverlayRects(): OverlayRect[] {
     });
 }
 
-/** Academic OS change: an item's end as the timeline writes it. An event that
+/** Cue change: an item's end as the timeline writes it. An event that
  * runs to midnight ends at "24:00" (minute 1440), which formatTime reads as
  * "12 PM" and minToTime stops at 11:59 PM, so it is written "12 AM", as the
  * details card and the plan card write it. */
@@ -101,7 +101,7 @@ function formatEnd(end: string | number): string {
   return formatTime(typeof end === "number" ? minToTime(end) : end);
 }
 
-/** Academic OS change, after Rebound's later timeline: an hour in the hours column as "8am",
+/** Cue change, after Rebound's later timeline: an hour in the hours column as "8am",
  * "12pm" or, at the end of the day, "12am". */
 function hourLabel(hour: number): string {
   return formatEnd(hour * 60)
@@ -169,13 +169,13 @@ export interface CalendarTimelineProps {
   sleepMinute: number;
   today: string;
   nowMinute: number;
-  /** Academic OS change: true while the items drawn stand in for ones still
+  /** Cue change: true while the items drawn stand in for ones still
    * loading. A jump to now made for them runs again once the real ones land. */
   provisional?: boolean;
   selectedItemId?: string | null;
   atRiskTaskIds?: ReadonlySet<string>;
   singleDay?: boolean;
-  /** Academic OS change: a row under the day headings for what owns no hours
+  /** Cue change: a row under the day headings for what owns no hours
    * (all-day events and what is due), one cell per date in `dates`, held
    * under the headings while the hours scroll. Absent, nothing is drawn. */
   allDayLane?: { height: number; cells: readonly React.ReactNode[] };
@@ -243,7 +243,7 @@ export function CalendarTimeline({
   const gridTop = Math.floor(wakeMinute / 60) * 60;
   const gridBottom = Math.ceil(sleepMinute / 60) * 60;
   const visibleHours = Math.max(1, (gridBottom - gridTop) / 60);
-  // Academic OS change: one day draws no heading row (the toolbar's title says the day), as
+  // Cue change: one day draws no heading row (the toolbar's title says the day), as
   // Rebound's later day view collapses it; what sits under the headings is then at the very top.
   const headerHeight = singleDay ? 0 : CALENDAR_STICKY_HEADER_HEIGHT_PX;
   const stickyChrome = headerHeight + (allDayLane?.height ?? 0);
@@ -881,7 +881,7 @@ export function CalendarTimeline({
     return () => window.cancelAnimationFrame(frame);
   }, [drag?.active, updateDragTarget]);
 
-  // Academic OS change: the jump to now runs once for each set of days and grid, not again each
+  // Cue change: the jump to now runs once for each set of days and grid, not again each
   // time the now line moves or the page re-renders, which pulled the timeline back mid-read. One
   // made while the items were only standing in runs once more when the real ones land.
   const scrolledForRef = React.useRef("");
@@ -894,7 +894,7 @@ export function CalendarTimeline({
     const todayColumn = scrollport.querySelector<HTMLElement>(
       "[data-calendar-today='true']",
     );
-    // Academic OS change: sideways only when part of today is out of view, and then to just right
+    // Cue change: sideways only when part of today is out of view, and then to just right
     // of the hours column (the row's first child), rather than centred with half-days either side.
     if (todayColumn && scrollport.scrollWidth > scrollport.clientWidth) {
       const viewport = scrollport.getBoundingClientRect();
@@ -986,7 +986,7 @@ export function CalendarTimeline({
       )}
       style={
         {
-          // Academic OS change: how much of the top the day headings (and the all-day row) hold,
+          // Cue change: how much of the top the day headings (and the all-day row) hold,
           // for what has to stay clear of them (calendar.css).
           "--calendar-sticky-chrome": `${stickyChrome}px`,
         } as React.CSSProperties
@@ -1120,7 +1120,7 @@ export function CalendarTimeline({
                   </span>
                 </button>
               )}
-              {/* Academic OS change: the cell's width comes from its day, never from its chips, so a
+              {/* Cue change: the cell's width comes from its day, never from its chips, so a
                   long title wraps inside the chip instead of widening every day of the week. */}
               {allDayLane ? (
                 <div
@@ -1131,7 +1131,7 @@ export function CalendarTimeline({
                   {allDayLane.cells[dayIndex]}
                 </div>
               ) : null}
-              {/* Academic OS change, after Rebound's later timeline: a block that began before the
+              {/* Cue change, after Rebound's later timeline: a block that began before the
                   hours in view is cut by the headings; this zero-height wash under them dissolves
                   whatever crosses the edge (calendar.css) instead of leaving a hard bar of colour. */}
               <div

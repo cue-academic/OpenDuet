@@ -923,7 +923,7 @@ describe("the calendar", () => {
     const id = await propose();
     const applied = (await send("POST", `/plans/${id}/apply`)).body
       .plan as StudyPlan;
-    // A stricter rule for Precalculus, set on the Teacher rules screen, beats the notices' Full help.
+    // A stricter rule for Precalculus, set on the Teacher rules screen, beats the notices' Study.
     await rules.change(
       "jordan",
       { classes: { precalc4: "hints" } },

@@ -185,7 +185,7 @@ export const openduetChannels = pgTable(
 );
 
 /**
- * Academic OS's study records, every kind in one table: the student's classes as read from their
+ * Cue's study records, every kind in one table: the student's classes as read from their
  * Classroom notices, their teacher-rule overrides, quizzes and the attempts that answer them,
  * flashcard decks and study plans (openduet/study/contracts.ts names the kinds, store.ts reads and
  * writes them). One table rather than one per kind, because each kind is a small JSON document read

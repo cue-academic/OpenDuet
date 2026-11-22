@@ -21,7 +21,7 @@
  * handful of events. The eval's own labels (`label`, `why`) are never served: they are the answers.
  *
  * Or, with `--persona student` (FAKE_GOOGLE_PERSONA=student, or `persona: "student"` from a test),
- * Academic OS's demo student, Jordan Rivera, a high school junior in Chicago: the Google Classroom
+ * Cue's demo student, Jordan Rivera, a high school junior in Chicago: the Google Classroom
  * notices of five classes and the rest of a student's mail in `student-mailbox.jsonl`, and a school
  * week on the calendar. The mailbox writes its deadlines as `{{due:+1 23:59}}` and `{{date:+2}}`,
  * written out against the student's today when the fake starts or resets, so the demo's work is
@@ -54,7 +54,7 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Which invented person a fake is. `studio`, Maya's, is the default, which the evals and tests use;
- * `student` is Academic OS's demo student. Chosen per fake, so one test can run both.
+ * `student` is Cue's demo student. Chosen per fake, so one test can run both.
  */
 export type PersonaName = "studio" | "student";
 
@@ -1059,7 +1059,7 @@ export function startFakeGoogle(
     /** The clock. Real by default; a test may fix it. */
     now?: () => number;
     /**
-     * Who is signed in: Maya's studio, or Academic OS's demo student. The studio unless the fake
+     * Who is signed in: Maya's studio, or Cue's demo student. The studio unless the fake
      * was started with `--persona student` or FAKE_GOOGLE_PERSONA=student.
      */
     persona?: PersonaName;

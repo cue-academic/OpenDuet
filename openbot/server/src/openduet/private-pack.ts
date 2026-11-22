@@ -1,3 +1,4 @@
+import { noStudyHelp } from "@openbot/shared/study";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +15,7 @@ import { addDays, zonedInstant, zonedParts } from "./study/time";
 /**
  * A local school pack dropped in by hand (see data/private/README.md).
  *
- * It is never committed. Academic OS reads it only when ACADEMIC_OS_PRIVATE_DEMO
+ * It is never committed. Cue reads it only when ACADEMIC_OS_PRIVATE_DEMO
  * is on, so a checkout that happens to contain the files does not change tests
  * or a deployment that did not ask for them.
  *
@@ -345,7 +346,7 @@ export type StudyGuideDraft = {
 };
 
 /**
- * A short study guide for the next quiz or test that is not set to No help.
+ * A short study guide for the next quiz or test that is not set to On your own.
  * Built from headings in the student's own notes. Chemistry's red-light rule
  * is skipped here.
  */
@@ -354,7 +355,7 @@ export function studyGuideFromPack(
   read: (relativePath: string) => string,
   today: string,
 ): StudyGuideDraft | null {
-  const eligible = pack.assignments.filter((row) => row.help !== "none");
+  const eligible = pack.assignments.filter((row) => !noStudyHelp(row.help));
   const assessed = eligible.filter(
     (row) => row.kind === "quiz" || row.kind === "test",
   );

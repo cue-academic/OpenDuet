@@ -364,10 +364,12 @@ function AssignmentSheet({
         <ChipChoice
           label="Teacher's AI rule"
           onChange={setHelp}
-          options={(["full", "hints", "none"] as HelpLevel[]).map((v) => ({
-            value: v,
-            label: HELP_LABEL[v],
-          }))}
+          options={(["full", "hints", "none", "test"] as HelpLevel[]).map(
+            (v) => ({
+              value: v,
+              label: HELP_LABEL[v],
+            }),
+          )}
           value={help}
         />
         <ChipChoice

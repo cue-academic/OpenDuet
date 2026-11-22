@@ -149,7 +149,7 @@ function serving(study: StudyOverview) {
         agents: [
           {
             id: "openduet",
-            name: "Academic OS",
+            name: "Cue",
             title: "Your study coach",
             roleDescription: "",
             visibility: "public",
@@ -175,7 +175,7 @@ function draw() {
   client.setQueryData(agentKeys.list(), [
     {
       id: "openduet",
-      name: "Academic OS",
+      name: "Cue",
       title: "Your study coach",
       roleDescription: "",
       visibility: "public",

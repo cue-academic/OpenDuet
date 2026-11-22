@@ -161,7 +161,9 @@ export function FocusOverlay({
           <p className="type-title mt-2 font-semibold">{assignment.title}</p>
           <p className="type-sub mt-1 opacity-70">
             AI help: {HELP_LABEL[assignment.helpLevel]}
-            {assignment.helpLevel === "none" ? ". This one is all you." : ""}
+            {assignment.helpLevel === "none" || assignment.helpLevel === "test"
+              ? ". This one is all you."
+              : ""}
           </p>
         </div>
       ) : focus ? (

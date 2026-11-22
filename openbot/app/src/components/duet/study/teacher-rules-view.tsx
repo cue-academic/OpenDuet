@@ -272,7 +272,8 @@ export function TeacherRulesView({
     <>
       <div className="mt-6 flex max-w-prose flex-col gap-2">
         <p className="type-sub text-pretty text-duet-ink-2">
-          No help turns off AI quizzes and flashcards for that assignment.
+          On your own turns off AI quizzes and flashcards for that assignment;
+          Cue can still plan the time. Test turns Cue off for it.
           {rules.canLoosen ? "" : " Only a teacher can loosen a rule."}
         </p>
       </div>
@@ -725,7 +726,7 @@ function RuleControl({
 }
 
 /**
- * Full help, Hints only, No help, side by side: the kit's Segmented, with choices this person can't
+ * Study, Guided help, On your own, Test, side by side: the kit's Segmented, with choices this person can't
  * make drawn and announced as unavailable, and arrow keys that skip them and keep focus on the
  * choice they move to. A radio group to assistive technology.
  */
@@ -762,7 +763,7 @@ function LevelChoice({
       aria-describedby={describedBy}
       aria-label={label}
       // Wraps onto a second line at a large text size rather than running off the screen. Each
-      // choice starts narrower than the kit's 7rem, so all three fit one line inside a phone's card.
+      // choice starts narrower than the kit's 7rem, so they wrap evenly inside a phone's card.
       className="duet-face mt-3 flex w-full flex-wrap gap-1 rounded-[26px] bg-duet-tile p-1"
       ref={group}
       role="radiogroup"

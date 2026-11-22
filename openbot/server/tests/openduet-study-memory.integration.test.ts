@@ -57,7 +57,7 @@ beforeAll(async () => {
   ]);
   await database.insert(agents).values({
     id: bot,
-    name: "Academic OS",
+    name: "Cue",
     type: "built_in",
     configuration: {},
   });

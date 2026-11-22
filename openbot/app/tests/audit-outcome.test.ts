@@ -31,7 +31,7 @@ describe("what the trail says a row was", () => {
     expect(outcomeOf("agent.dial_refused")).toBe("refused");
   });
 
-  test("names a study tool a teacher's No help paused as a refusal", () => {
+  test("names a study tool a teacher's On your own paused as a refusal", () => {
     // Written by server/src/openduet/study/guard.ts: nothing was made, so "Allowed" would be wrong.
     expect(outcomeOf("openduet.tool_refused")).toBe("refused");
     // And the Blocked view asks for it.

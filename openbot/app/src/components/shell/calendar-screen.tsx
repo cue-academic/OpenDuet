@@ -1,4 +1,5 @@
 import {
+  noStudyHelp,
   HELP_LEVEL_LABEL,
   type HelpLevel,
   type SchoolClass,
@@ -693,7 +694,9 @@ function CouldNotRead({ lines }: { lines: readonly string[] }) {
 function HelpLabel({ level }: { level: HelpLevel }) {
   return (
     <span className="type-caption inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
-      {level === "none" ? <DuetIcon name="lock" size={12} stroke={2} /> : null}
+      {noStudyHelp(level) ? (
+        <DuetIcon name="lock" size={12} stroke={2} />
+      ) : null}
       AI help: {HELP_LEVEL_LABEL[level]}
     </span>
   );

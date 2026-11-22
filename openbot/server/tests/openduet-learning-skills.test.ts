@@ -73,7 +73,7 @@ test("skills that touch an assignment follow the teacher's No help rule", () => 
     "study-guide",
     "reading-check",
   ])
-    expect(skill(slug).instructions).toContain("No help");
+    expect(skill(slug).instructions).toContain("On your own or Test");
 });
 
 test("checking and feedback never hand over the fix", () => {

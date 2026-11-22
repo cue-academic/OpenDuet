@@ -14,7 +14,7 @@ import {
 /*
  * Study memory: what the student has practiced, how it went, and when each topic should come back.
  *
- * Academic OS's learning loop is know the work, practice it, learn from the results and adjust. The
+ * Cue's learning loop is know the work, practice it, learn from the results and adjust. The
  * skills already quiz, tutor and explain, but every conversation forgot how it went. This keeps one
  * row per class and topic, moved through five Leitner boxes: a right answer sends the topic up a box
  * and further out, a partly right one keeps it where it is, and a miss puts it back in box 1 for

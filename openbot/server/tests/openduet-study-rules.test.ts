@@ -32,9 +32,9 @@ import {
  * The teacher's AI-help level for a class, worked out from Classroom notices and the Teacher rules
  * screen: which class a tool means, which notice decides its level, and who may loosen it.
  *
- * The snapshot is shaped like the demo student's inbox: a Hints only lab in Chemistry, a No help DBQ
- * in AP US History, a Full help quiz and a missing homework in Precalculus, a Full help test in
- * Spanish III, a Hints only essay in English 11, and a Chemistry lab already returned.
+ * The snapshot is shaped like the demo student's inbox: a Guided help lab in Chemistry, a On your own DBQ
+ * in AP US History, a Study quiz and a missing homework in Precalculus, a Study test in
+ * Spanish III, a Guided help essay in English 11, and a Chemistry lab already returned.
  */
 
 const NOW = new Date("2026-11-04T15:00:00.000Z");
@@ -461,7 +461,7 @@ describe("the level a class's notices give it", () => {
     });
   });
 
-  test("falls back to Hints only once nothing with a notice is still to do", () => {
+  test("falls back to Guided help once nothing with a notice is still to do", () => {
     const later = new Date("2026-12-01T12:00:00.000Z");
     for (const named of ["APUSH", "Chemistry", "Precalculus"])
       expect(rule(resolve(named, { now: later }))).toMatchObject({
@@ -536,7 +536,7 @@ describe("the level a class's notices give it", () => {
       source: "default",
       decidedBy: null,
     });
-    // Named, each keeps its own No help, whatever the day.
+    // Named, each keeps its own On your own, whatever the day.
     expect(
       rule(
         resolve("APUSH", { snapshot, assignment: "DBQ documents", now: later }),
@@ -640,7 +640,7 @@ describe("the assignment a study tool names", () => {
       source: "notice",
       decidedBy: "DBQ essay",
     });
-    // Missing and past due, but its own Full help still stands for it.
+    // Missing and past due, but its own Study still stands for it.
     expect(rule(resolve("Precalculus", { assignment: "4.3" }))).toEqual({
       classId: "precalc4",
       assignmentId: "hw43",
@@ -717,7 +717,7 @@ describe("overrides from the Teacher rules screen", () => {
     });
   });
 
-  test("a tightening override is the stricter of it and the notices, so a No help posted later still wins", () => {
+  test("a tightening override is the stricter of it and the notices, so a On your own posted later still wins", () => {
     const overrides: RuleOverrides = {
       classes: { spanish5: override("hints", false) },
       assignments: { gatsby: override("none", false) },
@@ -808,7 +808,7 @@ describe("overrides from the Teacher rules screen", () => {
       expect(rule(resolve(named, { assignment, overrides: old }))).toEqual(
         rule(resolve(named, { assignment, overrides: flagged })),
       );
-    // So it never hides the teacher's No help, and still makes a class stricter.
+    // So it never hides the teacher's On your own, and still makes a class stricter.
     expect(rule(resolve("APUSH", { overrides: old }))).toMatchObject({
       level: "none",
       source: "notice",
@@ -897,7 +897,7 @@ describe("the rules service", () => {
       // Clearing a stricter override loosens the class too.
       { classes: { precalc4: null } },
       { assignments: { gatsby: "full" } },
-      // Hidden today behind the class's own No help, and looser the day that rule lifts.
+      // Hidden today behind the class's own On your own, and looser the day that rule lifts.
       { assignments: { dbq3: "full" } },
     ];
     for (const change of loosening) {
@@ -922,7 +922,7 @@ describe("the rules service", () => {
       { classes: { apush1: "full", chem2: "none" } },
       { canLoosen: true, snapshot: SNAPSHOT },
     );
-    // Full help is looser than the DBQ's No help, so it replaces the notices; No help only adds.
+    // Study is looser than the DBQ's On your own, so it replaces the notices; On your own only adds.
     const { classes } = await rules.overrides("jordan");
     expect([classes.apush1?.loosens, classes.chem2?.loosens]).toEqual([
       true,
@@ -980,7 +980,7 @@ describe("the rules service", () => {
       ],
       [
         await attempt({ classes: { chem2: "some" as HelpLevel } }),
-        "Choose Full help, Hints only or No help.",
+        "Choose Study, Guided help, On your own or Test.",
       ],
       [
         await attempt({ classes: { chem2: "none" } }, null),
@@ -1110,7 +1110,7 @@ describe("the rules service", () => {
         help: "none",
       }),
     );
-    // Past the DBQ, AP US History is at the default, so Hints only is no looser for it.
+    // Past the DBQ, AP US History is at the default, so Guided help is no looser for it.
     const later = new Date("2026-11-10T12:00:00.000Z");
     const rules = createRulesService({
       store: memoryStore(),
@@ -1187,7 +1187,7 @@ describe("tightening and loosening as the notices move", () => {
   const ADMIN_LOOSENED =
     "An admin loosened this rule, so only an admin can change it.";
 
-  test("a student who makes Chemistry No help pauses its quizzes", async () => {
+  test("a student who makes Chemistry On your own pauses its quizzes", async () => {
     const store = memoryStore();
     const rules = createRulesService({ store, now: () => NOW });
     await rules.change(
@@ -1208,7 +1208,7 @@ describe("tightening and loosening as the notices move", () => {
       },
       assignments: {},
     });
-    // Lab 6's own Hints only is under the class's No help now.
+    // Lab 6's own Guided help is under the class's On your own now.
     expect(
       rule(
         await rules.target("jordan", SNAPSHOT, {
@@ -1233,14 +1233,14 @@ describe("tightening and loosening as the notices move", () => {
       source: "override",
     });
     expect(answer).toContain(
-      "Chemistry is set to No help on the Teacher rules screen, so nothing was made. Tell the student in one short sentence that it was set there,",
+      "Chemistry is set to On your own on the Teacher rules screen, so nothing was made. Tell the student in one short sentence that it was set there,",
     );
     expect(answer).not.toContain("Dr. Okoro");
     expect(answer).not.toContain("teacher's rule");
     expect(made).toEqual([]);
   });
 
-  test("a student's Hints only gives way to a No help a teacher posts later", async () => {
+  test("a student's Guided help gives way to a On your own a teacher posts later", async () => {
     const rules = createRulesService({ store: memoryStore(), now: () => NOW });
     await rules.change(
       "jordan",
@@ -1294,7 +1294,7 @@ describe("tightening and loosening as the notices move", () => {
     expect(
       await quiz.execute({ class: "APUSH", topic: "Reconstruction" }),
     ).toBe(JSON.stringify({ kind: "quiz", id: "quiz-1" }));
-    // Naming the DBQ itself still meets its own No help.
+    // Naming the DBQ itself still meets its own On your own.
     expect(
       readTeacherRuleBlock(
         await quiz.execute({ class: "APUSH", assignment: "DBQ" }),
@@ -1356,9 +1356,9 @@ describe("tightening and loosening as the notices move", () => {
     });
   });
 
-  test("whether an override loosens is judged when it is set, so an admin's tightening still yields to a later No help", async () => {
+  test("whether an override loosens is judged when it is set, so an admin's tightening still yields to a later On your own", async () => {
     const rules = createRulesService({ store: memoryStore(), now: () => NOW });
-    // The notices give Chemistry Hints only today, so the admin's Hints only loosens nothing.
+    // The notices give Chemistry Guided help today, so the admin's Guided help loosens nothing.
     await rules.change(
       "jordan",
       { classes: { chem2: "hints" } },

@@ -235,7 +235,7 @@ describe("this deployment's own tools", () => {
   });
 });
 
-describe("Academic OS's study tools", () => {
+describe("Cue's study tools", () => {
   const STUDY = [QUIZ_TOOL, FLASHCARDS_TOOL, PROGRESS_TOOL, PLAN_TOOL];
 
   test("are named for what they do for the student, while they run and after", () => {

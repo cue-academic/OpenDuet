@@ -12,9 +12,9 @@ include, not as a third-party package.
 | --- | --- | --- |
 | `components/calendar-timeline.tsx` | Rebound | The timeline renderer |
 | `lib/*.ts` except `store.ts` | Rebound | What the timeline imports: layout, placement, drag, helpers, types |
-| `lib/store.ts` | Academic OS | A typed stand-in for Rebound's store: reads only, every write throws |
-| `calendar-data.ts` | Academic OS | Turns `CalendarView` (shared/study.ts) into the timeline's shapes |
-| `AcademicCalendar.tsx` | Academic OS | Renders the timeline over that data, read-only, with all-day events and what is due as chips in the row under the day headings |
+| `lib/store.ts` | Cue | A typed stand-in for Rebound's store: reads only, every write throws |
+| `calendar-data.ts` | Cue | Turns `CalendarView` (shared/study.ts) into the timeline's shapes |
+| `AcademicCalendar.tsx` | Cue | Renders the timeline over that data, read-only, with all-day events and what is due as chips in the row under the day headings |
 | `calendar.css` | Both | Rebound's calendar rules (its `app/globals.css`, lines 361 to 607), scoped to `.academic-calendar`, plus its tokens mapped onto OpenDuet's (on `.academic-calendar-screen` too, so the toolbar matches), the flat blocks of its product skin (`calendar-clone-shell.module.css`), its later grid fade, the chips, the dashed look of a proposed block, and the hours column kept over the days when a week scrolls sideways |
 
 ## What was changed in Rebound's files

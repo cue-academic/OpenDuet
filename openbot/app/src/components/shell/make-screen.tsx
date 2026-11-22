@@ -36,7 +36,7 @@ import { ScreenScroll, ScreenTitle } from "./screen";
  * Teacher rules screen reaches the coach through a refused make_quiz or make_flashcards, not here.
  */
 const FOLLOW_THE_RULE =
-  "If my teacher set this class to No help, make nothing and tell me why.";
+  "If my teacher set this class to On your own or Test, make nothing and tell me why.";
 
 /**
  * What the + offers, top to bottom: study things, one per stored kind. Each has the line the sheet

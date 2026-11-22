@@ -29,7 +29,7 @@ const MAX_ID = 128;
 const TOO_MANY = `Change at most ${MAX_CHANGES} classes and ${MAX_CHANGES} assignments at a time.`;
 
 const CANT_READ =
-  "Choose Full help, Hints only or No help for each class or assignment you change.";
+  "Choose Study, Guided help, On your own or Test for each class or assignment you change.";
 
 const UNKNOWN = {
   classes:
@@ -107,7 +107,7 @@ export function rulesRoutes(deps: StudyRouteDeps) {
     // A body that can't be a change is answered before anything is read from Gmail.
     const change = changeOf(await context.req.json().catch(() => null));
     const read = await school(context);
-    // Checked against the notices as they are now, so a student can't loosen past a new No help.
+    // Checked against the notices as they are now, so a student can't loosen past a new On your own.
     await deps.rules.change(context.var.actor.id, change, {
       canLoosen: canLoosen(context),
       snapshot: read.snapshot,
