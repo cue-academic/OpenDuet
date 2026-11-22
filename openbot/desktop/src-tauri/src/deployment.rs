@@ -332,6 +332,18 @@ fn fetch_images(root: &Path, version: &str) -> Result<(), String> {
 /// Shared with `install.rs`, which fetches the engine's installers through it and then checks their
 /// digests. One client, one user agent, one set of TLS defaults.
 pub fn get(url: &str) -> Result<Vec<u8>, String> {
+    send(url)?
+        .bytes()
+        .map(|body| body.to_vec())
+        .map_err(|error| format!("the download did not finish: {error}"))
+}
+
+/// Follow a URL's redirects and report where it ends, without keeping the body.
+pub fn final_url(url: &str) -> Result<String, String> {
+    Ok(send(url)?.url().to_string())
+}
+
+fn send(url: &str) -> Result<reqwest::blocking::Response, String> {
     let response = reqwest::blocking::Client::builder()
         .user_agent("openbot-desktop")
         .build()
@@ -342,10 +354,7 @@ pub fn get(url: &str) -> Result<Vec<u8>, String> {
     if !response.status().is_success() {
         return Err(format!("{url} answered {}", response.status()));
     }
-    response
-        .bytes()
-        .map(|body| body.to_vec())
-        .map_err(|error| format!("the download did not finish: {error}"))
+    Ok(response)
 }
 
 #[cfg(test)]
