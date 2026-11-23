@@ -1,3 +1,5 @@
+import { coachFormat, coachInstant, coachParts } from "./clock";
+
 /*
  * The Coach tab's data: the student's classes, assignments, focus sessions and check-ins.
  *
@@ -92,6 +94,7 @@ export type Profile = {
 };
 
 export type CoachState = {
+  timeZone?: string;
   version: 1;
   /** True while the state is the seeded demo week. */
   demo: boolean;
@@ -114,24 +117,40 @@ export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
 /** The local calendar date of a time, YYYY-MM-DD. */
-export function localDate(time: Date | string | number): string {
-  const d = new Date(time);
+export function localDate(
+  time: Date | string | number,
+  timeZone?: string,
+): string {
+  const d = coachParts(new Date(time), timeZone);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.year}-${pad(d.month)}-${pad(d.day)}`;
 }
 
 /** Midnight at the start of a time's local day. */
-export function startOfDay(time: Date | number): Date {
-  const d = new Date(time);
-  d.setHours(0, 0, 0, 0);
-  return d;
+export function startOfDay(time: Date | number, timeZone?: string): Date {
+  return coachInstant(
+    { ...coachParts(new Date(time), timeZone), hour: 0, minute: 0, second: 0 },
+    timeZone,
+  );
 }
 
 /** The same local date moved by whole days. */
-export function addDays(time: Date | number, days: number): Date {
-  const d = new Date(time);
-  d.setDate(d.getDate() + days);
-  return d;
+export function addDays(
+  time: Date | number,
+  days: number,
+  timeZone?: string,
+): Date {
+  const parts = coachParts(new Date(time), timeZone);
+  const day = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+  return coachInstant(
+    {
+      ...parts,
+      year: day.getUTCFullYear(),
+      month: day.getUTCMonth() + 1,
+      day: day.getUTCDate(),
+    },
+    timeZone,
+  );
 }
 
 /** Minutes of work still left on an assignment, never below zero. */
@@ -165,18 +184,24 @@ export function formatMinutes(min: number): string {
 }
 
 /** "today", "tomorrow", "Fri", "yesterday", "3 days ago", relative to now's local day. */
-export function formatDue(dueAt: string, now: Date): string {
+export function formatDue(dueAt: string, now: Date, timeZone?: string): string {
   const days = Math.round(
-    (startOfDay(new Date(dueAt)).getTime() - startOfDay(now).getTime()) / DAY,
+    (startOfDay(new Date(dueAt), timeZone).getTime() -
+      startOfDay(now, timeZone).getTime()) /
+      DAY,
   );
   if (days === 0) return "today";
   if (days === 1) return "tomorrow";
   if (days === -1) return "yesterday";
   if (days < 0) return `${-days} days ago`;
   if (days < 7)
-    return new Date(dueAt).toLocaleDateString("en-US", { weekday: "short" });
-  return new Date(dueAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+    return coachFormat(new Date(dueAt), { weekday: "short" }, timeZone);
+  return coachFormat(
+    new Date(dueAt),
+    {
+      month: "short",
+      day: "numeric",
+    },
+    timeZone,
+  );
 }

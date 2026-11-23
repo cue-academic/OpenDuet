@@ -71,7 +71,7 @@
   --duet-surface: #f1f2ec;
   --duet-card: #fbfcf7;
   --duet-bubble: #e3e7da;
-  --duet-user: #e2f3b4;
+  --duet-user: #e7e7e7;
   --duet-ink: #111a16;
   --duet-ink-2: #36423c;
   --duet-ink-3: #515d57;
@@ -219,7 +219,7 @@
   --duet-surface: #0c1310;
   --duet-card: #151e1a;
   --duet-bubble: #1f2a25;
-  --duet-user: #2a3a14;
+  --duet-user: #242424;
   --duet-ink: #eef2e8;
   --duet-ink-2: #c9d1c6;
   --duet-ink-3: #a9b4a8;
@@ -496,38 +496,14 @@ body {
     backdrop-filter: blur(28px) saturate(160%);
   }
 }
-/*
- * Cue's two marks. `cue-label` is the small mono caps line over a group (a date, a section, a
- * count): the one place the mono face appears outside code. `cue-mark` is the highlighter, a lime
- * stroke behind a few words, drawn under the ink so the words keep their own contrast.
- */
 @utility cue-label {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
   line-height: 1rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-@utility cue-mark {
-  background-image: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--duet-highlight) 80%, transparent) 0,
-    color-mix(in srgb, var(--duet-highlight) 80%, transparent) 42%,
-    transparent 42%
-  );
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  padding-inline: 0.12em;
-  margin-inline: -0.12em;
-}
-.dark .cue-mark {
-  background-image: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--duet-highlight) 34%, transparent) 0,
-    color-mix(in srgb, var(--duet-highlight) 34%, transparent) 42%,
-    transparent 42%
-  );
+  color: var(--duet-ink-3);
+  letter-spacing: 0;
+  text-transform: none;
 }
 @utility duet-face {
   font-feature-settings: "cv11", "ss03";
@@ -1055,25 +1031,8 @@ div[style*="z-index: 99999"]:has(a[href="https://copilotkit.ai/pricing"]) {
   display: none !important;
 }
 
-/*
- * The desk. Cool paper with a faint highlighter wash in one corner: one ink-green accent, the
- * display grotesque on greetings, and short motion (transform and opacity only). Interaction motion stays
- * inside 200–320ms. The skeleton sweep is a loop, so it runs a little longer than a tap.
- */
 .study-desk {
-  background:
-    radial-gradient(
-      1100px 420px at 8% -10%,
-      rgb(214 242 74 / 26%),
-      transparent 58%
-    ),
-    radial-gradient(800px 360px at 100% 0%, rgb(7 86 79 / 7%), transparent 52%),
-    var(--duet-surface);
-}
-.dark .study-desk {
-  background:
-    radial-gradient(900px 380px at 0% 0%, rgb(214 242 74 / 7%), transparent 56%),
-    var(--duet-surface);
+  background: var(--duet-surface);
 }
 .study-display {
   font-family: var(--font-heading);

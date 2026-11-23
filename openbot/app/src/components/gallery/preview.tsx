@@ -63,7 +63,7 @@ export function GalleryPreview({
   if (shown.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        This Bot can't use any components yet. It answers in text.
+        Cue can't use any components yet. It answers in text.
       </p>
     );
   }

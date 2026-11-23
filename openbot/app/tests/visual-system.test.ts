@@ -45,6 +45,17 @@ function block(selector: string): Map<string, string> {
 const light = block(":root");
 const dark = block(".dark");
 
+test("section labels use quiet sans text and the desk is flat paper", () => {
+  const label = styles.match(/@utility cue-label\s*\{([^}]+)\}/)?.[1];
+  expect(label).toContain("font-family: var(--font-sans)");
+  expect(label).toContain("text-transform: none");
+  expect(label).toContain("letter-spacing: 0");
+  expect(label).toContain("color: var(--duet-ink-3)");
+  const desk = styles.match(/\.study-desk\s*\{([^}]+)\}/)?.[1];
+  expect(desk?.trim()).toBe("background: var(--duet-surface);");
+  expect(styles).not.toContain("cue-mark");
+});
+
 /** A token's value, following `var(--duet-x)` within the same theme. */
 function resolve(theme: Map<string, string>, name: string): string {
   const fallback = theme === dark ? light : undefined;
@@ -75,6 +86,19 @@ function contrast(a: string, b: string): number {
 }
 
 describe("light and dark", () => {
+  for (const [name, theme] of [
+    ["light", light],
+    ["dark", dark],
+  ] as const) {
+    test(`user messages use an achromatic surface with readable ink, ${name}`, () => {
+      const surface = resolve(theme, "--duet-user");
+      expect(surface.slice(1, 3)).toBe(surface.slice(3, 5));
+      expect(surface.slice(3, 5)).toBe(surface.slice(5, 7));
+      expect(
+        contrast(resolve(theme, "--duet-ink"), surface),
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+  }
   test("every token the light theme defines has a dark value, glass and veil included", () => {
     const aliases = [...light.entries()]
       .filter(([, value]) => value.startsWith("var(--duet-"))

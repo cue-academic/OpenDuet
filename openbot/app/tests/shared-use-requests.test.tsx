@@ -88,7 +88,7 @@ describe("Shared account requests", () => {
     expect(view.getByText("Asked: Everyone, and outside input")).toBeTruthy();
     expect(
       view.getByText(
-        "An action was blocked. This Bot reaches more people than approved.",
+        "An action was blocked. Cue reaches more people than approved.",
       ),
     ).toBeTruthy();
   });

@@ -217,7 +217,7 @@ export function UpNextView({
         </motion.p>
       ) : null}
       {researchOff && bot && open.length > 0 ? (
-        <DuetCard>
+        <DuetCard flat>
           <ResearchOptIn bot={bot} setting={setting} />
         </DuetCard>
       ) : null}
@@ -283,7 +283,7 @@ function UpNextCard({
       onHide={(comeBack) => onAnswer("dismiss", comeBack)}
       onStart={(comeBack) => onAnswer("start", comeBack)}
     >
-      <DuetCard className="px-4 py-3">
+      <DuetCard flat className="py-3">
         <p className="type-row font-semibold text-duet-ink [overflow-wrap:anywhere]">
           {suggestion.title}
         </p>
@@ -458,7 +458,7 @@ function TakeOffYourPlate({ bot }: { bot: AgentProfile }) {
           </p>
         ) : (
           <button
-            className="type-row inline-flex h-[46px] items-center gap-2 rounded-[10px] bg-duet-black px-6 font-semibold text-duet-on-black transition-[filter,transform,opacity] hover:brightness-125 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50"
+            className="type-row inline-flex h-[46px] items-center gap-2 rounded-lg bg-duet-black px-6 font-semibold text-duet-on-black transition-[filter,transform,opacity] hover:brightness-125 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50"
             disabled={busy}
             onClick={showMe}
             type="button"

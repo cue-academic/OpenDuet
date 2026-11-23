@@ -1,4 +1,6 @@
+import { IconFlame } from "@tabler/icons-react";
 import { useState } from "react";
+import { coachFormat } from "@/lib/coach/clock";
 import {
   CLASS_COLORS,
   type CoachClass,
@@ -57,13 +59,15 @@ export function WeeklyReportSheet({
         {[
           [formatMinutes(report.totalMin), "focused"],
           [`${report.completed.length}`, "finished"],
-          [`${report.streakDays}🔥`, "day streak"],
+          [`${report.streakDays}`, "day streak"],
         ].map(([big, small]) => (
-          <div
-            className="rounded-[var(--duet-radius-card)] bg-duet-card px-2 py-3"
-            key={small}
-          >
-            <p className="type-title font-semibold tabular-nums">{big}</p>
+          <div className="border-duet-hair border-b px-2 py-3" key={small}>
+            <p className="type-title flex items-center justify-center gap-1 font-semibold tabular-nums">
+              {small === "day streak" ? (
+                <IconFlame aria-hidden size={18} stroke={1.8} />
+              ) : null}
+              {big}
+            </p>
             <p className="type-caption text-duet-ink-2">{small}</p>
           </div>
         ))}
@@ -96,7 +100,7 @@ export function WeeklyReportSheet({
               }}
             />
             <span className="type-caption mt-1 text-duet-ink-2">
-              {d.date.toLocaleDateString("en-US", { weekday: "narrow" })}
+              {coachFormat(d.date, { weekday: "narrow" }, state.timeZone)}
             </span>
           </li>
         ))}
@@ -123,7 +127,7 @@ export function WeeklyReportSheet({
         Share with a parent or advisor
       </p>
       <pre
-        className="type-sub mb-2 whitespace-pre-wrap rounded-[var(--duet-radius-card)] bg-duet-card p-3 font-sans"
+        className="type-sub mb-2 whitespace-pre-wrap border-duet-hair border-y py-3 font-sans"
         data-testid="report-text"
       >
         {text}

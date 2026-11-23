@@ -4,6 +4,8 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { cleanup, render } from "@testing-library/react";
 import { ConversationView } from "@/components/channels/conversation-view";
 import { ChatPresenceProvider } from "@/components/shell/chat-presence";
+import { StudyDock } from "@/components/shell/study-dock";
+import { firstDayGreeting } from "@/lib/channels/first-day";
 import { settleReactWork } from "./settle-react-work";
 
 /**
@@ -14,7 +16,8 @@ import { settleReactWork } from "./settle-react-work";
 beforeAll(() => {
   GlobalRegistrator.register({ url: "http://localhost/" });
   // The composer asks what this install can do (dictation); nothing here is on.
-  global.fetch = (async () => Response.json({})) as unknown as typeof fetch;
+  global.fetch = (async () =>
+    Response.json({ user: null })) as unknown as typeof fetch;
 });
 afterEach(() => cleanup());
 afterAll(async () => {
@@ -25,14 +28,21 @@ afterAll(async () => {
 const FAILED =
   "Couldn't reach your coach. Check your connection and try again.";
 
-function Chat({ messages = [] }: { messages?: Message[] }) {
+function Chat({
+  messages = [],
+  stopped = FAILED,
+}: {
+  messages?: Message[];
+  stopped?: string;
+}) {
   return (
     <ChatPresenceProvider>
       <ConversationView
         inShell
         messages={messages}
+        notice={<StudyDock />}
         onSubmit={() => {}}
-        stopped={FAILED}
+        stopped={stopped}
       />
     </ChatPresenceProvider>
   );
@@ -53,6 +63,47 @@ test("in an empty Chat, a failure is said under the question, just over the box"
   ).toBeTruthy();
   expect(
     alert.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+});
+
+test("the empty hub has one heading, tabs, and composer", () => {
+  const view = render(<Chat stopped="" />);
+  expect(view.getAllByRole("heading")).toHaveLength(1);
+  const heading = view.getByRole("heading", {
+    name: "What are we working on?",
+  });
+  const tabs = view.getByRole("navigation", { name: "Study tools" });
+  const composer = view.getByRole("textbox", { name: "Message" });
+  expect(view.queryByRole("alert")).toBeNull();
+  expect(
+    heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    tabs.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+});
+
+test("welcome messages replace the empty heading and precede the tabs and composer", () => {
+  const view = render(
+    <Chat
+      stopped=""
+      messages={[
+        { id: "welcome", role: "user", content: firstDayGreeting("with_mail") },
+      ]}
+    />,
+  );
+  expect(
+    view.queryByRole("heading", { name: "What are we working on?" }),
+  ).toBeNull();
+  const welcome = view.getByText(/It's our first day together/);
+  expect(view.getByText(/I'm going to check your recent mail/)).toBeTruthy();
+  const tabs = view.getByRole("navigation", { name: "Study tools" });
+  const composer = view.getByRole("textbox", { name: "Message" });
+  expect(
+    welcome.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    tabs.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
 });
 

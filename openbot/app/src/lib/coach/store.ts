@@ -199,9 +199,10 @@ export function useCoachState(): CoachState {
 export function updateCoach(
   change: (state: CoachState) => CoachState,
   now = new Date(),
+  timeZone?: string,
 ) {
   const changed = change(read());
-  const earned = newlyEarned(changed, now);
+  const earned = newlyEarned({ ...changed, timeZone }, now);
   if (!earned.length) {
     write(changed);
     return [];
@@ -216,9 +217,10 @@ export function updateCoach(
  * Stamp what the state has already earned without celebrating it, for the first open of a seeded
  * week or one saved before a badge existed.
  */
-export function syncAchievements(now = new Date()): void {
+export function syncAchievements(now = new Date(), timeZone?: string): void {
   const state = read();
-  if (newlyEarned(state, now).length) updateCoach((s) => s, now);
+  if (newlyEarned({ ...state, timeZone }, now).length)
+    updateCoach((s) => s, now, timeZone);
 }
 
 /* ---------------------------------------------------------------- Actions ---------------------- */
@@ -228,6 +230,7 @@ export function logSession(
   minutes: number,
   startedAt: Date,
   now = new Date(),
+  timeZone?: string,
 ) {
   return updateCoach(
     (s) => ({
@@ -252,10 +255,16 @@ export function logSession(
       ),
     }),
     now,
+    timeZone,
   );
 }
 
-export function setDone(id: string, done: boolean, now = new Date()) {
+export function setDone(
+  id: string,
+  done: boolean,
+  now = new Date(),
+  timeZone?: string,
+) {
   return updateCoach(
     (s) => ({
       ...s,
@@ -270,6 +279,7 @@ export function setDone(id: string, done: boolean, now = new Date()) {
       ),
     }),
     now,
+    timeZone,
   );
 }
 
@@ -308,8 +318,12 @@ export function removeAssignment(id: string) {
   }));
 }
 
-export function saveCheckIn(checkIn: Omit<CheckIn, "date">, now = new Date()) {
-  const date = localDate(now);
+export function saveCheckIn(
+  checkIn: Omit<CheckIn, "date">,
+  now = new Date(),
+  timeZone?: string,
+) {
+  const date = localDate(now, timeZone);
   return updateCoach(
     (s) => ({
       ...s,
@@ -319,6 +333,7 @@ export function saveCheckIn(checkIn: Omit<CheckIn, "date">, now = new Date()) {
       ],
     }),
     now,
+    timeZone,
   );
 }
 

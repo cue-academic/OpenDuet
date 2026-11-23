@@ -375,7 +375,7 @@ test("a team account the vendor lost: says an admin has to reconnect it, with no
 
 test.each([
   ["disabled", "enable", /Gmail isn't turned on yet/],
-  ["not_granted", "grant", /This Bot hasn't been given Gmail/],
+  ["not_granted", "grant", /Cue hasn't been given Gmail/],
 ] as const)(
   "the Bot asked about an app that is %s: Request access",
   async (state, kind, sentence) => {
@@ -414,7 +414,7 @@ test("an account lost on somebody else's Team Bot that runs on its owner's: only
   const drawn = await card(view);
   expect(drawn.getAttribute("data-state")).toBe("reconnect");
   expect(drawn.textContent).toContain(
-    "This Bot uses its owner's Gmail account, which needs reconnecting. Only the Bot's owner can reconnect it.",
+    "Cue uses its owner's Gmail account, which needs reconnecting. Only the Bot's owner can reconnect it.",
   );
   expect(view.queryByRole("button")).toBeNull();
   expect(view.queryByRole("link")).toBeNull();

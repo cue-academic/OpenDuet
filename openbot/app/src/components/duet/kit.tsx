@@ -19,18 +19,28 @@ export function DuetCard({
   className,
   raised = false,
   glass = false,
+  flat = false,
   ...props
-}: ComponentProps<"div"> & { raised?: boolean; glass?: boolean }) {
+}: ComponentProps<"div"> & {
+  raised?: boolean;
+  glass?: boolean;
+  flat?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "duet-face w-full overflow-hidden rounded-[var(--duet-radius-card)] text-duet-ink",
-        glass
-          ? "duet-glass shadow-duet-glass"
-          : [
-              "bg-duet-card",
-              raised ? "shadow-duet-raised" : "shadow-duet-card",
-            ],
+        "duet-face w-full overflow-hidden text-duet-ink",
+        flat
+          ? "border-duet-hair border-t"
+          : "rounded-[var(--duet-radius-card)]",
+        flat
+          ? null
+          : glass
+            ? "duet-glass shadow-duet-glass"
+            : [
+                "bg-duet-card",
+                raised ? "shadow-duet-raised" : "shadow-duet-card",
+              ],
         className,
       )}
       {...props}

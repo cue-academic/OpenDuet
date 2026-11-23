@@ -135,7 +135,7 @@ const COPY: [string, Partial<AppAccess>, RegExp][] = [
   [
     "ready, on the owner's account",
     { accountHolder: "owner" },
-    /^Ready to use\. This Bot uses its owner's Gmail account\.$/,
+    /^Ready to use\. Cue uses its owner's Gmail account\.$/,
   ],
   [
     "ready, asking first",
@@ -155,7 +155,7 @@ const COPY: [string, Partial<AppAccess>, RegExp][] = [
   [
     "reconnect, on the owner's account",
     { state: "reconnect", accountHolder: "owner" },
-    /^This Bot uses its owner's Gmail account, which needs reconnecting\. Only the Bot's owner can reconnect it\.$/,
+    /^Cue uses its owner's Gmail account, which needs reconnecting\. Only the Bot's owner can reconnect it\.$/,
   ],
   [
     "shared_not_connected",
@@ -165,7 +165,7 @@ const COPY: [string, Partial<AppAccess>, RegExp][] = [
   [
     "shared_not_approved",
     { state: "shared_not_approved" },
-    /^This Bot reaches more people than an admin approved for your organisation's Gmail account\. Only an admin can approve it\.$/,
+    /^Cue reaches more people than an admin approved for your organisation's Gmail account\. Only an admin can approve it\.$/,
   ],
   [
     "disabled, never switched on",
@@ -192,7 +192,7 @@ const COPY: [string, Partial<AppAccess>, RegExp][] = [
   [
     "not_granted",
     { state: "not_granted" },
-    /This Bot hasn't been given Gmail\. Only an admin can give it\./,
+    /Cue hasn't been given Gmail\. Only an admin can give it\./,
   ],
 ];
 

@@ -446,7 +446,7 @@ function RouteComponent() {
           {ungranted.length > 0 ? (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
               <p className="text-muted-foreground text-xs">
-                {`This Bot would then have ${wouldHold} ${
+                {`Cue would then have ${wouldHold} ${
                   wouldHold === 1 ? "tool" : "tools"
                 } from this app.`}
               </p>

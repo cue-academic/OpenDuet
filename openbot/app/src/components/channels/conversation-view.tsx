@@ -183,30 +183,9 @@ export function ConversationView({
     return () => document.removeEventListener("focusin", elsewhere);
   }, [inShell]);
 
-  /*
-   * In the shell the composer floats over the conversation, frosted, rather than below it, so the
-   * thread can scroll under it. The transcript then has to end by the dock's height, or the last
-   * message would stop behind the composer. The dock grows and shrinks (a suggestion arrives, the
-   * draft wraps), so its height is measured and handed to CSS as `--duet-dock`: written straight on
-   * the element, because re-rendering the whole conversation to move a padding is the wrong price.
-   * Measured before the first paint, because an empty chat centres its dock by half this height.
-   */
   const root = useRef<HTMLDivElement>(null);
-  const dock = useRef<HTMLDivElement>(null);
   // Opened from a task on Tasks: show that task's own message, not the conversation's end.
   useFocusMessage(root);
-  useLayoutEffect(() => {
-    const frame = root.current;
-    const docked = dock.current;
-    if (!inShell || !frame || !docked || typeof ResizeObserver === "undefined")
-      return;
-    const measure = () =>
-      frame.style.setProperty("--duet-dock", `${docked.offsetHeight}px`);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(docked);
-    return () => observer.disconnect();
-  }, [inShell]);
 
   /**
    * Files the queue left behind AND the reason it did, forwarded to the composer so it can say so
@@ -256,7 +235,7 @@ export function ConversationView({
   const working = (busy || inFlight) && !restoring;
   /*
    * Chat with nothing in it yet, as School Chat opens: one question and the box to answer it, in
-   * the middle of the screen. The first message sends the box to the foot, where it stays.
+   * the hub. The first message sends the box to the foot, where it stays.
    */
   const empty =
     inShell &&
@@ -609,12 +588,22 @@ export function ConversationView({
     <div
       className={
         inShell
-          ? "relative flex min-h-0 flex-1 flex-col"
+          ? empty
+            ? "relative min-h-0 flex-1 overflow-y-auto"
+            : "relative flex min-h-0 flex-1 flex-col overflow-hidden"
           : "flex flex-col flex-1 min-h-0"
       }
       ref={root}
     >
-      <div className="flex flex-1 min-h-0">
+      <div
+        className={
+          inShell
+            ? empty
+              ? "hidden"
+              : "flex min-h-0 flex-1 lg:flex-initial"
+            : "flex flex-1 min-h-0"
+        }
+      >
         {/* What the transcript draws can send as the person. See `conversation-send.tsx`. */}
         <ConversationSendContext.Provider value={conversationSend}>
           {/*
@@ -624,23 +613,14 @@ export function ConversationView({
            * begin with a slash, and its message rows are memoised on primitives — handing them an
            * array would give every message a new prop identity on each refetch and re-render the
            * whole conversation to change nothing.
-           *
-           * The dock floats over the column, so this wrapper stops the scrollport above it. A long
-           * reply then ends in the open area. Padding inside the scroller left the last lines under
-           * the composer until somebody scrolled.
            */}
-          <div
-            className={cn(
-              "flex min-h-0 min-w-0 flex-1",
-              inShell && !empty && "pb-[var(--duet-dock,0px)]",
-            )}
-          >
+          <div className="flex min-h-0 min-w-0 flex-1">
             <ChatTranscript
               busy={busy}
               {...(inShell
                 ? {
                     contentClassName:
-                      "max-w-none gap-[14px] px-4 pt-[100px] pb-6 lg:mx-auto lg:max-w-4xl lg:px-8 lg:pt-10",
+                      "min-h-0 max-w-none gap-[14px] px-4 pt-[120px] pb-6 lg:mx-auto lg:max-w-4xl lg:px-8 lg:pt-10",
                   }
                 : {})}
               folded={folded}
@@ -678,25 +658,18 @@ export function ConversationView({
           </div>
         </ConversationSendContext.Provider>
       </div>
-      {/*
-       * An empty chat's dock is centred with a margin, not a transform: a transform would make it the
-       * containing block of the `/` menu, which is fixed to the caret's place on the screen.
-       */}
       <div
         className={
           inShell
             ? cn(
-                "absolute inset-x-0 z-10 mx-auto px-4 lg:max-w-4xl lg:px-8",
-                empty
-                  ? "top-1/2 -mt-[calc(var(--duet-dock,0px)/2)]"
-                  : "bottom-0 pb-[calc(var(--duet-tab-space,0px)+10px)] lg:pb-6",
+                "z-10 mx-auto w-full shrink-0 px-4 pb-[calc(var(--duet-tab-space,0px)+10px)] lg:max-w-4xl lg:px-8 lg:pb-6",
+                empty ? "relative pt-[100px] lg:pt-[18vh]" : "relative",
               )
             : "max-w-2xl mx-auto w-full px-0 pb-4 shrink-0"
         }
-        ref={dock}
       >
         {empty ? (
-          <h2 className="type-display mb-5 text-balance text-center font-semibold text-duet-ink">
+          <h2 className="type-display mb-5 text-balance text-left font-semibold text-duet-ink">
             What are we working on?
           </h2>
         ) : null}

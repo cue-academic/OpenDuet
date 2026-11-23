@@ -1,3 +1,4 @@
+import { IconPencil } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -122,7 +123,7 @@ export function SkillTools({
                           className="ml-1 opacity-60"
                           role="img"
                         >
-                          ✎
+                          <IconPencil aria-hidden size={14} />
                         </span>
                       ) : null}
                     </Button>

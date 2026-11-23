@@ -89,8 +89,8 @@ export function HandoffPanel({ agentId }: { agentId: string }) {
 
       {grantable ? null : (
         <PageEmpty>
-          This Bot can't hand work to other Bots. Other Bots can still hand work
-          to it.
+          Cue can't hand work to other Bots. Other Bots can still hand work to
+          it.
         </PageEmpty>
       )}
 
@@ -102,8 +102,7 @@ export function HandoffPanel({ agentId }: { agentId: string }) {
 
       {grantable && total === 0 ? (
         <PageEmpty>
-          No other Bots yet. When there are more, you can let this Bot ask them
-          here.
+          No other Bots yet. When there are more, you can let Cue ask them here.
         </PageEmpty>
       ) : null}
       {candidates.length > 0 ? (
@@ -135,7 +134,7 @@ export function HandoffPanel({ agentId }: { agentId: string }) {
                 </ItemContent>
                 <ItemActions>
                   <Switch
-                    aria-label={`Let this Bot ask ${candidate.name}`}
+                    aria-label={`Let Cue ask ${candidate.name}`}
                     checked={reachable.includes(candidate.id)}
                     disabled={!canGrant || setGrant.isPending}
                     onCheckedChange={(next: boolean) =>

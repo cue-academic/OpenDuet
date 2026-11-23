@@ -1,3 +1,8 @@
+import {
+  IconArrowUp,
+  IconArrowDown,
+  IconArrowsSort,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { z } from "zod";
 import type { GalleryComponent } from "@/lib/copilot/gallery-registry";
@@ -115,11 +120,15 @@ export function DataTable(props: Record<string, unknown>) {
                       aria-hidden="true"
                       className="text-muted-foreground/70"
                     >
-                      {sort?.column === index
-                        ? sort.ascending
-                          ? "↑"
-                          : "↓"
-                        : "↕"}
+                      {sort?.column === index ? (
+                        sort.ascending ? (
+                          <IconArrowUp size={14} />
+                        ) : (
+                          <IconArrowDown size={14} />
+                        )
+                      ) : (
+                        <IconArrowsSort size={14} />
+                      )}
                     </span>
                   </button>
                 </th>

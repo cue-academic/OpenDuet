@@ -145,7 +145,7 @@ export function SectionHeading({
 }) {
   return (
     <div className="flex min-h-6 items-center justify-between gap-2 px-1">
-      <h2 className="font-normal text-[15px] text-duet-ink-2 leading-5">
+      <h2 className="study-display text-[20px] font-semibold text-duet-ink">
         {title}
         {count === undefined ? null : ` ${count}`}
       </h2>
@@ -165,7 +165,7 @@ export function TaskSection({
   return (
     <section aria-label={title} className="flex flex-col gap-2">
       <SectionHeading count={items.length} title={title} />
-      <DuetCard>
+      <DuetCard flat>
         <ul>
           {items.map((item, index) => (
             <Fragment key={item.key}>
@@ -275,7 +275,7 @@ export function RowButton({
     <button
       aria-label={label}
       className={cn(
-        "type-label h-8 shrink-0 rounded-[10px] px-3 font-semibold transition-[filter,background-color] disabled:opacity-50",
+        "type-label h-8 shrink-0 rounded-lg px-3 font-semibold transition-[filter,background-color] disabled:opacity-50",
         primary
           ? "bg-duet-black text-duet-on-black hover:brightness-125"
           : "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile",

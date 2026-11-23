@@ -135,16 +135,23 @@ describe("ClassesView", () => {
     expect(
       within(homework).getByText(/Missing · was due Tue, Nov 3, 11:59/),
     ).toBeTruthy();
-    expect(within(homework).getByText("Full help")).toBeTruthy();
+    expect(homework.querySelector("[data-help-level]")).toBeNull();
     expect(
       within(homework).getByRole("link", { name: "Section 4.3 homework" }),
     ).toBeTruthy();
     expect(within(quiz).getByText(/Due tomorrow, 10:45/)).toBeTruthy();
-    expect(within(quiz).getByText("Hints only")).toBeTruthy();
+    expect(within(quiz).getByText("Guided help")).toBeTruthy();
     expect(within(quiz).getByText(/Quiz · About 1.h/)).toBeTruthy();
 
     const apush = within(view.getByLabelText("AP US History assignments"));
-    expect(apush.getByText("No help")).toBeTruthy();
+    expect(apush.queryByText("On your own")).toBeNull();
+    const headerRule = within(
+      view.getByRole("region", { name: "AP US History" }),
+    ).getByText("On your own");
+    expect(headerRule.className).not.toMatch(/rounded|bg-/);
+    expect(
+      view.getByRole("heading", { name: "AP US History" }).className,
+    ).toContain("study-display");
     expect(apush.getByText(/50 points/)).toBeTruthy();
   });
 

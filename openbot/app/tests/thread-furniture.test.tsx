@@ -59,6 +59,22 @@ const asked: Message = {
   role: "user",
   content: "Anything from Priya?",
 };
+
+test("user messages have a neutral surface and assistant text has no bubble fill", () => {
+  const view = draw([
+    asked,
+    { id: "plain-reply", role: "assistant", content: "Let's work through it." },
+  ]);
+  const user = view
+    .getByText("Anything from Priya?")
+    .closest('[data-slot="bubble"]');
+  const assistant = view
+    .getByText("Let's work through it.")
+    .closest('[data-slot="bubble"]');
+  expect(user?.className).toContain("bg-duet-user");
+  expect(assistant?.className).toContain("bg-transparent");
+  expect(assistant?.className).not.toContain("bg-duet-bubble");
+});
 const searching: Message = {
   id: "a1",
   role: "assistant",

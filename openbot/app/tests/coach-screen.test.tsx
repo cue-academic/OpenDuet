@@ -4,6 +4,7 @@ import {
   beforeAll,
   beforeEach,
   expect,
+  setSystemTime,
   test,
 } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
@@ -19,6 +20,8 @@ import userEvent from "@testing-library/user-event";
 import { CoachScreen } from "@/components/coach/coach-screen";
 import { agentKeys } from "@/lib/agents/queries";
 import { authKeys } from "@/lib/auth/queries";
+import { studyKeys } from "@/lib/study/keys";
+import { localDate } from "@/lib/coach/model";
 import {
   COACH_STORAGE_KEY,
   getCoachState,
@@ -82,15 +85,20 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  setSystemTime();
   setTimer(null);
   global.fetch = originalFetch;
 });
 
 /** The Coach screen, signed in as an account with no name unless one is given. */
-function draw(account: { name?: string } = {}) {
+function draw(account: { name?: string } = {}, timeZone?: string) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
+  if (timeZone) {
+    const day = localDate(new Date());
+    client.setQueryData(studyKeys.calendar(day, day), { timeZone });
+  }
   client.setQueryData(agentKeys.list(), [
     {
       id: "openduet",
@@ -140,6 +148,37 @@ test("first open shows the demo week: goal, streak, do next, catch-up, load, ass
     expect(getCoachState().unlocked["first-focus"]).toBeTruthy(),
   );
   expect(view.queryByTestId("celebration")).toBeNull();
+});
+
+test("Coach uses the calendar zone for its label, greeting and saved check-in date", async () => {
+  setSystemTime(new Date("2026-11-23T04:35:00Z"));
+  restartWithDemo();
+  updateCoach((state) => ({ ...state, checkIns: [], sessions: [] }));
+  const user = userEvent.setup({ document });
+  const view = draw({ name: "Jordan Rivera" }, "America/Chicago");
+  expect(await view.findByText("Sunday, November 22")).toBeTruthy();
+  expect(await view.findByText("Good evening, Jordan.")).toBeTruthy();
+  const card = within(view.getByLabelText("Daily check-in"));
+  expect(
+    card.getAllByRole("button").map((button) => button.textContent),
+  ).toEqual(["Rough", "Low", "Okay", "Good", "Great"]);
+  await user.click(card.getByRole("button", { name: "Okay" }));
+  expect(
+    card.getByRole("button", { name: "Okay" }).getAttribute("aria-pressed"),
+  ).toBe("true");
+  await user.click(
+    within(view.getByRole("group", { name: "Energy" })).getByRole("button", {
+      name: "Good",
+    }),
+  );
+  await user.click(view.getByRole("button", { name: "7-8h" }));
+  await user.click(view.getByRole("button", { name: "Set my pace" }));
+  expect(getCoachState().checkIns.at(-1)?.date).toBe("2026-11-22");
+  expect(
+    view
+      .getByRole("progressbar", { name: "Today's focus goal" })
+      .querySelector("svg"),
+  ).toBeNull();
 });
 
 test("the sample week greets the signed-in student by their first name", async () => {
@@ -252,12 +291,17 @@ test("the check-in sets today's pace", async () => {
   const card = await view.findByLabelText("Daily check-in");
   // Energy and sleep appear once a mood is picked, so the card starts small.
   expect(within(card).queryByText("Energy")).toBeNull();
-  await user.click(within(card).getByRole("button", { name: "🙂" }));
+  await user.click(within(card).getByRole("button", { name: "Good" }));
   const button = within(card).getByRole("button", {
     name: "Set my pace",
   }) as HTMLButtonElement;
   expect(button.disabled).toBe(true);
-  await user.click(within(card).getByRole("button", { name: "Low" }));
+  await user.click(
+    within(within(card).getByRole("group", { name: "Energy" })).getByRole(
+      "button",
+      { name: "Low" },
+    ),
+  );
   await user.click(within(card).getByRole("button", { name: "<6h" }));
   await user.click(button);
   const pace = await view.findByLabelText("Today's check-in");

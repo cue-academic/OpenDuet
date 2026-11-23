@@ -97,7 +97,8 @@ function rowsOf(blocks: StudyBlock[]): Row[] {
 
 function sampleWeek(state: CoachState): TonightSample {
   return {
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZone:
+      state.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     assignments: state.assignments.flatMap((assignment) => {
       const minutes = remainingMin(assignment);
       if (minutes <= 0) return [];
@@ -241,7 +242,7 @@ function TonightPlanCard({
     return (
       <section
         aria-label="Tonight"
-        className="mb-3 rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-3 shadow-duet-card"
+        className="mb-5 border-duet-hair border-t py-5"
       >
         <button
           className="type-sub font-semibold text-duet-ink"
@@ -257,19 +258,18 @@ function TonightPlanCard({
   return (
     <section
       aria-label="Tonight"
-      className="study-rise relative mb-3 rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-4 shadow-duet-card"
+      className="relative mb-5 border-duet-hair border-t py-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="study-display type-nav font-semibold">Tonight</h2>
+          <h2 className="study-display text-[20px] font-semibold text-duet-ink">
+            Tonight
+          </h2>
           <p className="type-caption mt-0.5 text-duet-ink-2 [overflow-wrap:anywhere]">
             {summary || "A short plan from what's actually due."}
           </p>
           {cheer ? (
-            <p
-              className="study-bounce type-sub mt-2 inline-flex rounded-[10px] bg-duet-status-done-soft px-3 py-1.5 font-semibold text-duet-status-done"
-              role="status"
-            >
+            <p className="type-sub mt-2 text-duet-status-done" role="status">
               {cheer}
             </p>
           ) : null}
@@ -278,7 +278,7 @@ function TonightPlanCard({
           <label className="type-caption text-duet-ink-2">
             <span className="sr-only">Minutes</span>
             <input
-              className="w-16 rounded-full bg-duet-tile px-2 py-2 text-center text-duet-ink"
+              className="w-16 rounded-lg border border-duet-hair px-2 py-2 text-center text-duet-ink"
               min={15}
               max={600}
               type="number"
@@ -292,7 +292,7 @@ function TonightPlanCard({
             />
           </label>
           <button
-            className="type-caption min-h-11 rounded-[10px] bg-duet-black px-4 font-semibold text-duet-on-black transition-transform active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100"
+            className="type-caption min-h-11 rounded-lg bg-duet-black px-4 font-semibold text-duet-on-black transition-transform active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100"
             disabled={busy !== ""}
             onClick={() => void load(skip, false)}
             type="button"
@@ -325,7 +325,7 @@ function TonightPlanCard({
               {burst === row.id ? <ConfettiBurst /> : null}
               <label
                 className={cn(
-                  "flex min-h-11 cursor-pointer items-start gap-3 rounded-xl bg-duet-tile px-3 py-2.5",
+                  "flex min-h-11 cursor-pointer items-start gap-3 border-duet-hair border-b py-2.5",
                   burst === row.id && "study-bounce",
                 )}
               >
@@ -380,7 +380,7 @@ function TonightPlanCard({
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {canSave ? (
             <button
-              className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-[10px] bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
+              className="type-caption inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-duet-accent-soft px-4 font-semibold text-duet-accent disabled:opacity-50"
               disabled={busy !== ""}
               onClick={() => void load(skip, true)}
               type="button"
@@ -395,7 +395,7 @@ function TonightPlanCard({
           ) : null}
           {canSave && planId ? (
             <a
-              className="type-caption inline-flex min-h-11 items-center rounded-[10px] px-3 font-semibold text-duet-ink"
+              className="type-caption inline-flex min-h-11 items-center rounded-lg px-3 font-semibold text-duet-ink"
               href="/calendar"
               onClick={(event) => {
                 if (
@@ -417,7 +417,7 @@ function TonightPlanCard({
           ) : null}
           {skip.length > 0 ? (
             <button
-              className="type-caption min-h-11 rounded-[10px] px-3 font-semibold text-duet-ink-2"
+              className="type-caption min-h-11 rounded-lg px-3 font-semibold text-duet-ink-2"
               onClick={startOver}
               type="button"
             >
@@ -425,7 +425,7 @@ function TonightPlanCard({
             </button>
           ) : null}
           <button
-            className="type-caption min-h-11 rounded-[10px] px-3 font-semibold text-duet-ink-2"
+            className="type-caption min-h-11 rounded-lg px-3 font-semibold text-duet-ink-2"
             onClick={() => setHidden(true)}
             type="button"
           >

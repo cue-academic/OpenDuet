@@ -127,10 +127,10 @@ export function ChatStep() {
     <div aria-live="polite" className="flex max-w-full justify-center">
       <p
         aria-hidden={shown ? undefined : true}
-        className="duet-glass type-caption flex h-6 max-w-full items-center rounded-full px-2.5 font-semibold text-duet-ink shadow-duet-glass transition-[opacity,translate] duration-[var(--duet-dur-swap)] data-[shown=false]:opacity-0 data-[shown=false]:ease-[var(--duet-ease-in)] data-[shown=true]:ease-[var(--duet-ease-out)] motion-safe:data-[shown=false]:-translate-y-1"
+        className="type-caption flex h-6 max-w-full items-center text-duet-ink-2 transition-opacity duration-[var(--duet-dur-swap)] data-[shown=false]:opacity-0"
         data-shown={shown}
       >
-        <span className="tool-line-running truncate">{held}</span>
+        <span className="truncate">{held}</span>
       </p>
     </div>
   );

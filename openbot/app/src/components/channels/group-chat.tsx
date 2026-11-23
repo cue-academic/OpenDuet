@@ -192,7 +192,7 @@ function GroupLine({
           )
         ) : message.status === "failed" ? (
           <p className="text-sm text-destructive" role="alert">
-            {message.text || "This Bot couldn't answer."}
+            {message.text || "Cue couldn't answer."}
           </p>
         ) : (
           <Bubble

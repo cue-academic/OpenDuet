@@ -98,7 +98,7 @@ function RouteComponent() {
            * other failure is a load that can be retried, and says so.
            */
           detailFailure?.message === AGENT_NOT_FOUND
-          ? "This Bot isn't available to you. It may be unpublished or not shared with you."
+          ? "Cue isn't available to you. It may be unpublished or not shared with you."
           : "Couldn't load that Bot. Reload the page."
         : null;
   /** Bots picked in the To: field, in the order they will answer; the URL's Bot until one is picked. */

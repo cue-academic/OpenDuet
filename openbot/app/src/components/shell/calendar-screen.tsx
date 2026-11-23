@@ -893,7 +893,7 @@ function CouldNotRead({ lines }: { lines: readonly string[] }) {
 /** The teacher's AI-help level in its own words. Grey: a rule to know, not a status. */
 function HelpLabel({ level }: { level: HelpLevel }) {
   return (
-    <span className="type-caption inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+    <span className="type-caption inline-flex items-center gap-1 whitespace-nowrap font-medium text-muted-foreground">
       {noStudyHelp(level) ? (
         <DuetIcon name="lock" size={12} stroke={2} />
       ) : null}
