@@ -1,3 +1,4 @@
+import { IconFlame } from "@tabler/icons-react";
 import { useState } from "react";
 import {
   CLASS_COLORS,
@@ -57,13 +58,18 @@ export function WeeklyReportSheet({
         {[
           [formatMinutes(report.totalMin), "focused"],
           [`${report.completed.length}`, "finished"],
-          [`${report.streakDays}🔥`, "day streak"],
+          [`${report.streakDays}`, "day streak"],
         ].map(([big, small]) => (
           <div
             className="rounded-[var(--duet-radius-card)] bg-duet-card px-2 py-3"
             key={small}
           >
-            <p className="type-title font-semibold tabular-nums">{big}</p>
+            <p className="type-title flex items-center justify-center gap-1 font-semibold tabular-nums">
+              {small === "day streak" ? (
+                <IconFlame aria-hidden size={18} stroke={1.8} />
+              ) : null}
+              {big}
+            </p>
             <p className="type-caption text-duet-ink-2">{small}</p>
           </div>
         ))}

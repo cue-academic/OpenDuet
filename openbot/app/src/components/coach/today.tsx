@@ -1,3 +1,11 @@
+import {
+  IconFlame,
+  IconMoodSad,
+  IconMoodAnnoyed,
+  IconMoodEmpty,
+  IconMoodSmile,
+  IconMoodHappy,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { DeskMark } from "@/components/duet/desk-mark";
 import { DuetIcon } from "@/components/duet/icons";
@@ -90,7 +98,7 @@ export function TodayHero({
         <div className="min-w-0 flex-1">
           <p className="study-display type-title font-semibold">
             <DeskMark className="mr-1.5 inline size-7 align-[-6px]" />
-            <span className="cue-mark">
+            <span>
               {greeting(now)}
               {state.profile.name ? `, ${state.profile.name}` : ""}.
             </span>
@@ -114,7 +122,7 @@ export function TodayHero({
             )}
             data-testid="streak"
           >
-            <span aria-hidden>🔥</span>
+            <IconFlame aria-hidden size={16} stroke={1.8} />
             {days}-day streak
           </p>
           {days > 0 && !todayDone ? (
@@ -143,11 +151,31 @@ export function TodayHero({
 }
 
 const MOODS = [
-  { value: 1, label: "😞" },
-  { value: 2, label: "😕" },
-  { value: 3, label: "😐" },
-  { value: 4, label: "🙂" },
-  { value: 5, label: "😄" },
+  {
+    value: 1,
+    label: "Very low",
+    icon: <IconMoodSad aria-hidden size={22} stroke={1.8} />,
+  },
+  {
+    value: 2,
+    label: "Low",
+    icon: <IconMoodAnnoyed aria-hidden size={22} stroke={1.8} />,
+  },
+  {
+    value: 3,
+    label: "Neutral",
+    icon: <IconMoodEmpty aria-hidden size={22} stroke={1.8} />,
+  },
+  {
+    value: 4,
+    label: "Good",
+    icon: <IconMoodSmile aria-hidden size={22} stroke={1.8} />,
+  },
+  {
+    value: 5,
+    label: "Great",
+    icon: <IconMoodHappy aria-hidden size={22} stroke={1.8} />,
+  },
 ];
 const ENERGY = [
   { value: 1, label: "Empty" },

@@ -257,14 +257,12 @@ test("on somebody else's Team Bot, an app on its owner's account says so, and an
   const view = draw();
   const gmail = await row(view, "composio-gmail");
   expect(
-    gmail.getByText(
-      /^Ready to use\. This Bot uses its owner's Gmail account\./,
-    ),
+    gmail.getByText(/^Ready to use\. Cue uses its owner's Gmail account\./),
   ).toBeTruthy();
   const notion = await row(view, "notion");
   expect(
     notion.getByText(
-      "This Bot uses its owner's Notion account, which needs reconnecting. Only the Bot's owner can reconnect it.",
+      "Cue uses its owner's Notion account, which needs reconnecting. Only the Bot's owner can reconnect it.",
     ),
   ).toBeTruthy();
   expect(notion.queryByRole("button")).toBeNull();

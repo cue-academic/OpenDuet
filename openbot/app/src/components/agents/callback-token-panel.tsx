@@ -42,8 +42,8 @@ export function CallbackTokenPanel({
 
       <p className="text-muted-foreground text-sm">
         {hasToken
-          ? "This Bot has a key, so it can use its tools. If you make a new key, the old one stops working right away."
-          : "This Bot has no key yet. It can talk but can't use tools. Generate a key and add it to your agent's configuration."}
+          ? "Cue has a key, so it can use its tools. If you make a new key, the old one stops working right away."
+          : "Cue has no key yet. It can talk but can't use tools. Generate a key and add it to your agent's configuration."}
       </p>
 
       {token ? (

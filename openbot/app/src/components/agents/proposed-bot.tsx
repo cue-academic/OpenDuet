@@ -270,7 +270,7 @@ function Unwritable({
       title="Create a Bot"
     >
       <p className="text-sm">
-        This Bot couldn't be created as written. It's being rewritten.
+        Cue couldn't be created as written. It's being rewritten.
       </p>
     </GalleryFrame>
   );

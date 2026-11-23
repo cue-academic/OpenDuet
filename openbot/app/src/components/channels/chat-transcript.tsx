@@ -1585,7 +1585,7 @@ function AttachmentLightbox({
  */
 function activityName(activityType: string): string {
   return activityType === "open-generative-ui"
-    ? "This Bot's generated interface"
+    ? "Cue's generated interface"
     : activityType;
 }
 

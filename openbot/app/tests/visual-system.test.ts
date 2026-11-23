@@ -45,6 +45,17 @@ function block(selector: string): Map<string, string> {
 const light = block(":root");
 const dark = block(".dark");
 
+test("section labels use quiet sans text and the desk is flat paper", () => {
+  const label = styles.match(/@utility cue-label\s*\{([^}]+)\}/)?.[1];
+  expect(label).toContain("font-family: var(--font-sans)");
+  expect(label).toContain("text-transform: none");
+  expect(label).toContain("letter-spacing: 0");
+  expect(label).toContain("color: var(--duet-ink-3)");
+  const desk = styles.match(/\.study-desk\s*\{([^}]+)\}/)?.[1];
+  expect(desk?.trim()).toBe("background: var(--duet-surface);");
+  expect(styles).not.toContain("cue-mark");
+});
+
 /** A token's value, following `var(--duet-x)` within the same theme. */
 function resolve(theme: Map<string, string>, name: string): string {
   const fallback = theme === dark ? light : undefined;

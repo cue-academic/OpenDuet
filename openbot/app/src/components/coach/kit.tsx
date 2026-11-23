@@ -109,7 +109,7 @@ export function ChipChoice<T extends string | number>({
   onChange,
 }: {
   label: string;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; icon?: ReactNode }[];
   value: T | null;
   onChange: (value: T) => void;
 }) {
@@ -121,6 +121,7 @@ export function ChipChoice<T extends string | number>({
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => (
           <button
+            aria-label={o.label}
             aria-pressed={value === o.value}
             className={cn(
               "type-row min-h-10 rounded-[10px] px-3 font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
@@ -132,7 +133,7 @@ export function ChipChoice<T extends string | number>({
             onClick={() => onChange(o.value)}
             type="button"
           >
-            {o.label}
+            {o.icon ?? o.label}
           </button>
         ))}
       </div>

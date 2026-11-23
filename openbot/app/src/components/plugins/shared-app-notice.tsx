@@ -33,8 +33,8 @@ export function SharedAppNotice({
       <div className="space-y-1 text-sm">
         {apps.map((app) => (
           <p key={app.serverId}>
-            Saving also lets everyone who can use this Bot use the shared{" "}
-            {app.title} account.
+            Saving also lets everyone who can use Cue use the shared {app.title}{" "}
+            account.
           </p>
         ))}
       </div>
@@ -54,7 +54,7 @@ export function SharedAppNotice({
         ) : app.covered ? null : (
           <div className="flex flex-wrap items-center gap-2" key={app.serverId}>
             <p className="text-amber-700 dark:text-amber-400">
-              This Bot can't use the shared {app.title} account until an admin
+              Cue can't use the shared {app.title} account until an admin
               approves who can use the Bot.
             </p>
             <Button

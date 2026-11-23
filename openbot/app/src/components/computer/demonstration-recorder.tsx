@@ -138,7 +138,7 @@ function ScheduleSkill({
           value={channelId}
           onChange={(event) => setChannelId(event.target.value)}
         >
-          <option value="">This Bot's only conversation</option>
+          <option value="">Cue's only conversation</option>
           {botChannels.map((channel) => (
             <option key={channel.id} value={channel.id}>
               {channel.name}
@@ -406,7 +406,7 @@ export function DemonstrationRecorder({
           <SkillFields
             key={draft.sourceRecordingId}
             defaultValues={draft}
-            submitLabel="Save and use with this Bot"
+            submitLabel="Save and use with Cue"
             error={saveError || save.error}
             onCancel={() => setDraft(null)}
             onSubmit={async (values) => {
@@ -440,8 +440,8 @@ export function DemonstrationRecorder({
       )}
       {savedSlug && (
         <p className="text-sm">
-          /{savedSlug} is ready on this Bot. Type it in the conversation with
-          your inputs, or choose Run on a schedule to make it a routine.
+          /{savedSlug} is ready on Cue. Type it in the conversation with your
+          inputs, or choose Run on a schedule to make it a routine.
         </p>
       )}
     </section>

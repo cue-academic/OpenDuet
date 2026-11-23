@@ -252,12 +252,17 @@ test("the check-in sets today's pace", async () => {
   const card = await view.findByLabelText("Daily check-in");
   // Energy and sleep appear once a mood is picked, so the card starts small.
   expect(within(card).queryByText("Energy")).toBeNull();
-  await user.click(within(card).getByRole("button", { name: "🙂" }));
+  await user.click(within(card).getByRole("button", { name: "Good" }));
   const button = within(card).getByRole("button", {
     name: "Set my pace",
   }) as HTMLButtonElement;
   expect(button.disabled).toBe(true);
-  await user.click(within(card).getByRole("button", { name: "Low" }));
+  await user.click(
+    within(within(card).getByRole("group", { name: "Energy" })).getByRole(
+      "button",
+      { name: "Low" },
+    ),
+  );
   await user.click(within(card).getByRole("button", { name: "<6h" }));
   await user.click(button);
   const pace = await view.findByLabelText("Today's check-in");

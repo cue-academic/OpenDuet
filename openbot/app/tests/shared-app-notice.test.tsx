@@ -112,7 +112,7 @@ describe("SharedAppNotice", () => {
     const view = draw();
     expect(
       await view.findByText(
-        /Saving also lets everyone who can use this Bot use the shared Team GitHub account/,
+        /Saving also lets everyone who can use Cue use the shared Team GitHub account/,
       ),
     ).toBeTruthy();
   });

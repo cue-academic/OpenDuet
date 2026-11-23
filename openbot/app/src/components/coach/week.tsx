@@ -1,3 +1,15 @@
+import {
+  IconTarget,
+  IconFlame,
+  IconTrophy,
+  IconBrain,
+  IconSunrise,
+  IconBarbell,
+  IconStar,
+  IconSeeding,
+  IconSparkles,
+  IconStopwatch,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { DuetIcon } from "@/components/duet/icons";
 import {
@@ -26,6 +38,24 @@ import {
   Field,
   SOLID,
 } from "./kit";
+
+const BADGE_ICONS = {
+  target: IconTarget,
+  flame: IconFlame,
+  trophy: IconTrophy,
+  brain: IconBrain,
+  sunrise: IconSunrise,
+  dumbbell: IconBarbell,
+  star: IconStar,
+  sprout: IconSeeding,
+  sparkles: IconSparkles,
+  timer: IconStopwatch,
+};
+
+function BadgeIcon({ achievement }: { achievement: Achievement }) {
+  const Icon = BADGE_ICONS[achievement.icon];
+  return <Icon aria-hidden size={24} stroke={1.8} />;
+}
 
 /** Seven days of work as bars: the even spread solid, the last-minute cram as a ghost behind it. */
 export function WorkloadRadar({
@@ -441,7 +471,7 @@ export function AchievementsCard({ state }: { state: CoachState }) {
                     : "bg-duet-tile opacity-40 grayscale",
                 )}
               >
-                {a.emoji}
+                <BadgeIcon achievement={a} />
               </span>
               <span
                 className={cn(
@@ -476,7 +506,7 @@ export function Celebration({
       role="status"
     >
       <span className="coach-pop text-4xl" aria-hidden>
-        {first.emoji}
+        <BadgeIcon achievement={first} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="type-label font-semibold uppercase tracking-wide opacity-70">

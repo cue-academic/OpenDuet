@@ -37,8 +37,7 @@ export function appAccessSentence(access: AppAccess): string {
   const owners = access.accountHolder === "owner";
   switch (access.state) {
     case "ready":
-      if (owners)
-        return `Ready to use. This Bot uses its owner's ${name} account.`;
+      if (owners) return `Ready to use. Cue uses its owner's ${name} account.`;
       if (access.asksFirst)
         return `Ready to use with your own ${name} account. You'll be asked to allow it the first time.`;
       return "Ready to use.";
@@ -46,16 +45,16 @@ export function appAccessSentence(access: AppAccess): string {
       return `You haven't connected your ${name} account yet.`;
     case "reconnect":
       return owners
-        ? `This Bot uses its owner's ${name} account, which needs reconnecting. Only the Bot's owner can reconnect it.`
+        ? `Cue uses its owner's ${name} account, which needs reconnecting. Only the Bot's owner can reconnect it.`
         : `Your ${name} connection needs reconnecting.`;
     case "shared_not_connected":
       return `Your organisation's ${name} account isn't connected yet. Only an admin can connect it.`;
     case "shared_not_approved":
-      return `This Bot reaches more people than an admin approved for your organisation's ${name} account. Only an admin can approve it.`;
+      return `Cue reaches more people than an admin approved for your organisation's ${name} account. Only an admin can approve it.`;
     case "disabled":
       return disabledSentence(access);
     case "not_granted":
-      return `This Bot hasn't been given ${name}. Only an admin can give it.`;
+      return `Cue hasn't been given ${name}. Only an admin can give it.`;
   }
 }
 

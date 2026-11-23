@@ -1,4 +1,5 @@
 import { WEB_HARNESSES } from "@openbot/shared/harnesses";
+import { IconArrowUpRight } from "@tabler/icons-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -456,9 +457,11 @@ function OrganizationStep() {
                     {product.line}
                   </span>
                 </span>
-                <span aria-hidden className="text-duet-ink-3">
-                  ↗
-                </span>
+                <IconArrowUpRight
+                  aria-hidden
+                  size={18}
+                  className="text-duet-ink-3"
+                />
               </a>
             </li>
           ))}

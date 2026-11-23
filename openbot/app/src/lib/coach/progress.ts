@@ -190,7 +190,17 @@ export type Achievement = {
   id: string;
   title: string;
   description: string;
-  emoji: string;
+  icon:
+    | "target"
+    | "flame"
+    | "trophy"
+    | "brain"
+    | "sunrise"
+    | "dumbbell"
+    | "star"
+    | "sprout"
+    | "sparkles"
+    | "timer";
   earned: (state: CoachState, now: Date) => boolean;
 };
 
@@ -203,42 +213,42 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: "first-focus",
     title: "First focus",
     description: "Finish a focus session.",
-    emoji: "🎯",
+    icon: "target",
     earned: (s) => s.sessions.length > 0,
   },
   {
     id: "streak-3",
     title: "On a roll",
     description: "Study three days in a row.",
-    emoji: "🔥",
+    icon: "flame",
     earned: (s) => bestStreak(s) >= 3,
   },
   {
     id: "streak-7",
     title: "Full week",
     description: "Study seven days in a row.",
-    emoji: "🏆",
+    icon: "trophy",
     earned: (s) => bestStreak(s) >= 7,
   },
   {
     id: "deep-work",
     title: "Deep work",
     description: "One session of 45 minutes or more.",
-    emoji: "🧠",
+    icon: "brain",
     earned: (s) => s.sessions.some((x) => x.minutes >= 45),
   },
   {
     id: "early-bird",
     title: "Early bird",
     description: "Finish an assignment a day or more before it's due.",
-    emoji: "🌅",
+    icon: "sunrise",
     earned: (s) => s.assignments.some(finishedEarly),
   },
   {
     id: "comeback",
     title: "Comeback",
     description: "Turn in something that was late.",
-    emoji: "💪",
+    icon: "dumbbell",
     earned: (s) =>
       s.assignments.some(
         (a) =>
@@ -250,21 +260,21 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: "goal-3",
     title: "Goal getter",
     description: "Hit your daily goal on three days.",
-    emoji: "⭐",
+    icon: "star",
     earned: (s) => goalDays(s) >= 3,
   },
   {
     id: "check-in-3",
     title: "Self-aware",
     description: "Do three daily check-ins.",
-    emoji: "🌱",
+    icon: "sprout",
     earned: (s) => s.checkIns.length >= 3,
   },
   {
     id: "clean-slate",
     title: "Clean slate",
     description: "Nothing late on your list.",
-    emoji: "✨",
+    icon: "sparkles",
     earned: (s, now) =>
       s.assignments.length > 0 &&
       s.assignments.some((a) => a.status === "done") &&
@@ -274,7 +284,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: "ten-hours",
     title: "Ten hours",
     description: "Log ten hours of focus.",
-    emoji: "⏱️",
+    icon: "timer",
     earned: (s) => s.sessions.reduce((sum, x) => sum + x.minutes, 0) >= 600,
   },
 ];
