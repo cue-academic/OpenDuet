@@ -1,6 +1,13 @@
-import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, expect, spyOn, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Composer } from "@/components/channels/composer/composer";
 import { settleReactWork } from "./settle-react-work";
 
@@ -16,19 +23,21 @@ import { settleReactWork } from "./settle-react-work";
  * They are the reason this file exists: with the rethrow gone the path is reachable, and these are
  * the two things it has to get right.
  *
- * NO `fetch` STUB AND NO CHANNEL. Neither test attaches anything, so nothing here goes near the
- * network — the failure being driven is the caller's `onSubmit` rejecting, which is the whole of
- * what a failed turn looks like from inside the composer.
- *
  * THE HARNESS IS THIS REPOSITORY'S. `GlobalRegistrator` in `beforeAll`/`afterAll` and `cleanup` in
  * `afterEach`, matching `composer-paste.test.tsx` for the reason recorded there: bun walks every
  * file into one process, and a document another file tore down mid-run fails invisibly.
  */
 
-beforeAll(() => GlobalRegistrator.register({ url: "http://localhost/" }));
+const originalFetch = globalThis.fetch;
+beforeAll(() => {
+  GlobalRegistrator.register({ url: "http://localhost/" });
+  globalThis.fetch = (async () =>
+    Response.json({ agents: [], skills: [], tools: [] })) as never;
+});
 afterEach(cleanup);
 afterAll(async () => {
   await settleReactWork();
+  globalThis.fetch = originalFetch;
   GlobalRegistrator.unregister();
 });
 
@@ -41,6 +50,83 @@ function editorOf(container: HTMLElement): HTMLElement {
 function typedText(container: HTMLElement): string {
   return editorOf(container).textContent ?? "";
 }
+
+test("an initially pending composer takes desktop focus and accepts a draft without enabling send", async () => {
+  const matchMedia = window.matchMedia.bind(window);
+  const pointer = spyOn(window, "matchMedia").mockImplementation((query) => {
+    const result = matchMedia(query);
+    Object.defineProperty(result, "matches", {
+      value: query === "(pointer: fine)",
+    });
+    return result;
+  });
+  try {
+    const view = render(<Composer autoFocus compact pending />);
+    const editor = editorOf(view.container);
+    await waitFor(() => expect(document.activeElement).toBe(editor));
+    expect(editor.getAttribute("contenteditable")).toBe("true");
+    const user = userEvent.setup({ document: editor.ownerDocument });
+    await user.click(editor);
+    await user.keyboard("A correction while you work.");
+    expect(typedText(view.container)).toBe("A correction while you work.");
+    expect(
+      (view.getByRole("button", { name: "Send message" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(view.getByRole("status").textContent).toContain(
+      "You can keep typing",
+    );
+    await user.keyboard("{Enter}");
+    expect(typedText(view.container)).toBe("A correction while you work.");
+  } finally {
+    pointer.mockRestore();
+  }
+});
+
+test.each([true, false])(
+  "clicking composer padding focuses its editor (compact=%s)",
+  (compact) => {
+    const view = render(<Composer compact={compact} />);
+    const editor = editorOf(view.container);
+    expect(document.activeElement).not.toBe(editor);
+    fireEvent.pointerDown(view.container.querySelector("form")!);
+    expect(document.activeElement).toBe(editor);
+    const send = view.getByRole("button", { name: "Send message" });
+    editor.blur();
+    fireEvent.pointerDown(send);
+    expect(document.activeElement).not.toBe(editor);
+  },
+);
+
+test("an accepted send clears immediately and keeps the next draft when it succeeds", async () => {
+  const result = Promise.withResolvers<void>();
+  const sent: string[] = [];
+  const view = render(
+    <Composer
+      compact
+      onSubmit={(draft) => {
+        sent.push(draft.text);
+        return result.promise;
+      }}
+    />,
+  );
+  const editor = editorOf(view.container);
+  const user = userEvent.setup({ document: editor.ownerDocument });
+  await user.click(editor);
+  await user.keyboard("Explain quadratic equations.{Enter}");
+  expect(sent).toEqual(["Explain quadratic equations."]);
+  expect(typedText(view.container)).toBe("");
+  expect(editor.getAttribute("contenteditable")).toBe("true");
+  await user.keyboard("A follow-up.");
+  await act(async () => {
+    result.resolve();
+    await result.promise;
+  });
+  expect(typedText(view.container)).toBe("A follow-up.");
+  await user.clear(editor);
+  await user.keyboard("{Enter}");
+  expect(sent).toHaveLength(1);
+});
 
 /**
  * A send whose answer this test hands out by hand.

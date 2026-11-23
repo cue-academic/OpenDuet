@@ -21,6 +21,7 @@ import {
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
+  type PointerEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -1318,7 +1319,7 @@ export function Composer({
     const inline = dictation.busy && !voiceSheet;
     if (wasDictating.current && !inline) wantsFocus.current = true;
     wasDictating.current = inline;
-    if (disabled || isBusy || dictation.busy) {
+    if (disabled || isSubmitting || dictation.busy) {
       return;
     }
     const owed = wantsFocus.current || (autoFocus && !claimedAutoFocus.current);
@@ -1328,7 +1329,21 @@ export function Composer({
     wantsFocus.current = false;
     claimedAutoFocus.current = true;
     promptAreaRef.current?.focus();
-  }, [autoFocus, disabled, isBusy, dictation.busy, voiceSheet]);
+  }, [autoFocus, disabled, isSubmitting, dictation.busy, voiceSheet]);
+
+  const focusFromSurface = (event: PointerEvent<HTMLFormElement>) => {
+    if (disabled || event.defaultPrevented) return;
+    const target = event.target;
+    if (
+      !(target instanceof Element) ||
+      target.closest(
+        "button, a, input, textarea, select, [contenteditable], [role=option], [role=listbox]",
+      )
+    )
+      return;
+    event.preventDefault();
+    promptAreaRef.current?.focus();
+  };
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1561,6 +1576,12 @@ export function Composer({
       {tooManyStagedReason(draft.attachments.length)}
     </p>
   ) : null;
+  const waitingToSend =
+    isBusy && !onQueue && sendable ? (
+      <p className="type-caption pb-2 text-duet-ink-2" role="status">
+        You can keep typing. Send this draft when the current reply finishes.
+      </p>
+    ) : null;
 
   if (compact) {
     return (
@@ -1584,6 +1605,7 @@ export function Composer({
         <div className="flex flex-col" ref={containerRef} {...dropZone}>
           <RejectedFiles onDismiss={dismissRejections} rejected={rejected} />
           {tooManyStagedNotice}
+          {waitingToSend}
           <form
             aria-busy={isBusy}
             className={cn(
@@ -1612,6 +1634,7 @@ export function Composer({
               className,
             )}
             onSubmit={handleFormSubmit}
+            onPointerDown={focusFromSurface}
           >
             {/*
              * THE GLASS IS A LAYER BEHIND THE FORM, NOT THE FORM. A backdrop filter makes its box
@@ -1720,10 +1743,12 @@ export function Composer({
     >
       <RejectedFiles onDismiss={dismissRejections} rejected={rejected} />
       {tooManyStagedNotice}
+      {waitingToSend}
       <form
         aria-busy={isBusy}
         className="overflow-hidden rounded-2xl border border-border bg-card"
         onSubmit={handleFormSubmit}
+        onPointerDown={focusFromSurface}
       >
         <DictationSurface
           dictation={dictation}

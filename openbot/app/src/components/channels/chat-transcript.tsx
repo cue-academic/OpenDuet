@@ -150,7 +150,7 @@ const BUBBLE_CONTENT =
 const AGENT_PROSE =
   "[&>div]:space-y-2.5 [&_ol]:list-outside [&_ol]:pl-5 [&_ul]:list-outside [&_ul]:pl-5 [&_li]:py-0.5";
 const AGENT_BUBBLE =
-  "min-w-0 max-w-[min(82%,100%)] *:data-[slot=bubble-content]:bg-duet-bubble *:data-[slot=bubble-content]:text-duet-ink";
+  "min-w-0 max-w-full *:data-[slot=bubble-content]:text-duet-ink";
 const USER_BUBBLE =
   "min-w-0 max-w-[min(85%,100%)] *:data-[slot=bubble-content]:bg-duet-user";
 
@@ -650,14 +650,14 @@ function FirstDayGreeting({
     <MessageRow align="start">
       <MessageContent>
         <Arriving delay={delay}>
-          <Bubble align="start" className={AGENT_BUBBLE} variant="secondary">
+          <Bubble align="start" className={AGENT_BUBBLE} variant="ghost">
             <BubbleContent className={BUBBLE_CONTENT}>
               {firstDayWelcome(name)}
             </BubbleContent>
           </Bubble>
         </Arriving>
         <Arriving delay={delay + FIRST_DAY_PLAN_DELAY_SECONDS}>
-          <Bubble align="start" className={AGENT_BUBBLE} variant="secondary">
+          <Bubble align="start" className={AGENT_BUBBLE} variant="ghost">
             <BubbleContent className={BUBBLE_CONTENT}>{plan}</BubbleContent>
           </Bubble>
         </Arriving>
@@ -709,7 +709,7 @@ function FirstDayAnswer({ delay, text }: { delay: number; text: string }) {
             // biome-ignore lint/suspicious/noArrayIndexKey: the parts are positions in one answer.
             key={at}
           >
-            <Bubble align="start" className={AGENT_BUBBLE} variant="secondary">
+            <Bubble align="start" className={AGENT_BUBBLE} variant="ghost">
               <BubbleContent className={cn(BUBBLE_CONTENT, AGENT_PROSE)}>
                 <Streamdown components={markdownComponents}>{part}</Streamdown>
               </BubbleContent>
@@ -954,11 +954,6 @@ const TranscriptMessage = memo(function TranscriptMessage({
     <MessageRow align={align}>
       <MessageContent>
         <Arriving delay={delay}>
-          {/*
-            The film's bubbles: the Bot's in light grey and the person's in the accent tint,
-            right-aligned, both rounded on every corner. A Bot's reply is drawn as separate bubbles,
-            one per thought and 8px apart (`splitBubbles`), the way a chat sends them.
-          */}
           {isUser ? (
             <Bubble align={align} className={USER_BUBBLE} variant="muted">
               <BubbleContent className={BUBBLE_CONTENT}>
@@ -1004,7 +999,7 @@ const TranscriptMessage = memo(function TranscriptMessage({
                     className={AGENT_BUBBLE}
                     // biome-ignore lint/suspicious/noArrayIndexKey: a reply's thoughts keep their order as it streams.
                     key={index}
-                    variant="secondary"
+                    variant="ghost"
                   >
                     <BubbleContent className={cn(BUBBLE_CONTENT, AGENT_PROSE)}>
                       {/*

@@ -86,6 +86,19 @@ function contrast(a: string, b: string): number {
 }
 
 describe("light and dark", () => {
+  for (const [name, theme] of [
+    ["light", light],
+    ["dark", dark],
+  ] as const) {
+    test(`user messages use an achromatic surface with readable ink, ${name}`, () => {
+      const surface = resolve(theme, "--duet-user");
+      expect(surface.slice(1, 3)).toBe(surface.slice(3, 5));
+      expect(surface.slice(3, 5)).toBe(surface.slice(5, 7));
+      expect(
+        contrast(resolve(theme, "--duet-ink"), surface),
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+  }
   test("every token the light theme defines has a dark value, glass and veil included", () => {
     const aliases = [...light.entries()]
       .filter(([, value]) => value.startsWith("var(--duet-"))
