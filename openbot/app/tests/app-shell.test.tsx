@@ -108,7 +108,8 @@ const pending = (id: string) => ({
 });
 
 test("the paths of the three tabs, and no tab for the pages the menu opens", () => {
-  expect(tabForPath("/")).toBe("chat");
+  expect(tabForPath("/")).toBe("today");
+  expect(tabForPath("/chat")).toBe("chat");
   expect(tabForPath("/tasks")).toBe("tasks");
   expect(tabForPath("/tasks/")).toBe("tasks");
   expect(tabForPath("/make")).toBe("make");
@@ -148,7 +149,7 @@ test("the tab bar draws Chat, Tasks, Coach and Make, the current one marked", as
     "Make",
   ]);
   expect(links.map((link) => link.getAttribute("href"))).toEqual([
-    "/",
+    "/chat",
     "/tasks",
     "/calendar",
     "/coach",
@@ -457,7 +458,7 @@ test("the drawer reads Everything, the channels, New channel, Archived folded, t
     within(dialog)
       .getByRole("link", { name: /Everything/ })
       .getAttribute("href"),
-  ).toBe("/");
+  ).toBe("/chat");
   expect(
     within(dialog)
       .getByRole("link", { name: /Kiln move/ })
@@ -885,6 +886,7 @@ test("Everything is marked current on Chat and on no other page", async () => {
   const onChat = draw(
     <MenuSheet onOpenChange={() => {}} open />,
     seedMenu("admin", true),
+    "/chat",
   );
   const dialog = await onChat.findByRole("dialog");
   expect(
@@ -892,12 +894,12 @@ test("Everything is marked current on Chat and on no other page", async () => {
   ).toBe(`Everything${EVERYTHING_LINE}`);
 
   cleanup();
-  const onInbox = draw(
+  const onToday = draw(
     <MenuSheet onOpenChange={() => {}} open />,
     seedMenu("admin", true),
-    "/inbox",
+    "/",
   );
-  const elsewhere = await onInbox.findByRole("dialog");
+  const elsewhere = await onToday.findByRole("dialog");
   expect(
     within(elsewhere)
       .getByRole("link", { name: /Everything/ })

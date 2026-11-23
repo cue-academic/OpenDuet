@@ -7,7 +7,6 @@ import { primaryBot } from "@/lib/agents/primary-bot";
 import { agentListQueryOptions } from "@/lib/agents/queries";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { coachFormat, validCoachTimeZone } from "@/lib/coach/clock";
-import { calendarQueryOptions } from "@/lib/study/calendar";
 import {
   type Assignment,
   type CoachState,
@@ -15,8 +14,8 @@ import {
   formatDue,
   formatMinutes,
   HELP_LABEL,
-  remainingMin,
   localDate,
+  remainingMin,
 } from "@/lib/coach/model";
 import { catchUpInstruction } from "@/lib/coach/plan";
 import { type Achievement, pacing, todaysCheckIn } from "@/lib/coach/progress";
@@ -26,7 +25,6 @@ import {
   withAccountName,
   withSampleColors,
 } from "@/lib/coach/seed";
-import { useCoachSync } from "@/lib/coach/sync";
 import {
   adoptPrivatePack,
   getCoachState,
@@ -35,6 +33,8 @@ import {
   updateCoach,
   useCoachState,
 } from "@/lib/coach/store";
+import { useCoachSync } from "@/lib/coach/sync";
+import { calendarQueryOptions } from "@/lib/study/calendar";
 import { FocusOverlay } from "./focus-timer";
 import { HandOffSheet } from "./hand-off";
 import { CoachButton } from "./kit";
@@ -212,8 +212,6 @@ export function CoachScreen() {
       ) : null}
 
       <TodayHero now={now} pace={pace} state={state} />
-      <TonightPlan state={state} />
-      <CheckInCard now={now} onEarned={onEarned} pace={pace} state={state} />
       <DoNextCard
         now={now}
         onHandOff={(r) =>
@@ -225,6 +223,8 @@ export function CoachScreen() {
         pace={pace}
         state={state}
       />
+      <TonightPlan state={state} />
+      <CheckInCard now={now} onEarned={onEarned} pace={pace} state={state} />
       <CatchUpCard
         now={now}
         onPlan={() =>

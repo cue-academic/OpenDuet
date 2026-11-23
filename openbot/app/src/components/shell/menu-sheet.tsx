@@ -188,7 +188,7 @@ export function MenuSheet({
             activeProps={{ className: "bg-duet-tile" }}
             className={TALL_ROW}
             onClick={close}
-            to="/"
+            to="/chat"
           >
             <span
               aria-hidden

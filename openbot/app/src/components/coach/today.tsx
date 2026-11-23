@@ -2,11 +2,11 @@ import { useState } from "react";
 import { DuetIcon } from "@/components/duet/icons";
 import { coachParts } from "@/lib/coach/clock";
 import {
+  addDays,
   type CoachState,
   classOf,
   isOverdue,
   startOfDay,
-  addDays,
 } from "@/lib/coach/model";
 import {
   catchUpPlan,
@@ -69,9 +69,9 @@ export function TodayHero({
   const nudge = bedtimeNudge(state, now);
   return (
     <>
-      <Card className="border-t-0 pt-2">
+      <Card className="rounded-3xl border border-duet-hair bg-duet-accent-soft px-5 py-5">
         <div className="min-w-0 flex-1">
-          <p className="study-display type-title font-semibold">
+          <p className="cue-editorial text-3xl leading-tight">
             <span>
               {greeting(now, state.timeZone)}
               {state.profile.name ? `, ${state.profile.name}` : ""}.

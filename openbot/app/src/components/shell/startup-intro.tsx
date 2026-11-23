@@ -106,7 +106,8 @@ function forced(): boolean {
 function shouldPlay(tab: ShellTab | null): boolean {
   if (typeof document === "undefined" || decidedThisPage) return false;
   if (document.visibilityState === "hidden") return false;
-  if (tab === null || (tab !== "chat" && !wide())) return false;
+  if (tab === null || (tab !== "chat" && tab !== "today" && !wide()))
+    return false;
   if (forced()) return true;
   if (navigator.webdriver) return false;
   return !playedThisSession();

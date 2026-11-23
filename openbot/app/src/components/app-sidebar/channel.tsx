@@ -123,7 +123,7 @@ export const Channel = memo(function Channel({
      * puts them on the roster with the channel still in it, and says why in the dialog.
      */
     if (isOpen) {
-      await navigate({ to: "/" });
+      await navigate({ to: "/chat" });
     }
     try {
       await deleteChannel.mutateAsync(channelId);

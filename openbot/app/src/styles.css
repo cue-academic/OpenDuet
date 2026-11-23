@@ -28,25 +28,25 @@
 
 :root {
   color-scheme: light;
-  --background: #f1f2ec;
-  --foreground: #111a16;
-  --card: #fbfcf7;
-  --card-foreground: #111a16;
-  --popover: #fbfcf7;
-  --popover-foreground: #111a16;
-  --primary: #07564f;
+  --background: #f7f4ed;
+  --foreground: #272238;
+  --card: #fffdf9;
+  --card-foreground: #272238;
+  --popover: #fffdf9;
+  --popover-foreground: #272238;
+  --primary: #5635a1;
   --primary-foreground: #ffffff;
-  --secondary: #e6e9df;
-  --secondary-foreground: #111a16;
-  --muted: #e6e9df;
-  --muted-foreground: #515d57;
-  --accent: #e2f3b4;
-  --accent-foreground: #07564f;
+  --secondary: #eee9e1;
+  --secondary-foreground: #272238;
+  --muted: #eee9e1;
+  --muted-foreground: #635b70;
+  --accent: #ebe2ff;
+  --accent-foreground: #5635a1;
   --destructive: oklch(0.577 0.245 27.325);
   --success: oklch(0.6 0.118 184.704);
-  --border: rgb(17 26 22 / 14%);
-  --input: rgb(17 26 22 / 18%);
-  --ring: #07564f;
+  --border: rgb(39 34 56 / 14%);
+  --input: rgb(39 34 56 / 18%);
+  --ring: #5635a1;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -63,31 +63,31 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /*
-   * OpenDuet's tokens (parity-spec Part 2). Neutral greys with a cool bias, one accent used in a few
+   * Cue's tokens. Warm paper and lilac, one accent used in a few
    * fixed places, and four status colours for how work stands. Every token here has a dark value in
    * `.dark` below; `tests/visual-system.test.ts` fails if one is missing or a colour falls under its
    * contrast floor, and `lib/theme-tokens.ts` carries the same values to the generated-UI prompt.
    */
-  --duet-surface: #f1f2ec;
-  --duet-card: #fbfcf7;
-  --duet-bubble: #e3e7da;
+  --duet-surface: #f7f4ed;
+  --duet-card: #fffdf9;
+  --duet-bubble: #ededed;
   --duet-user: #e7e7e7;
-  --duet-ink: #111a16;
-  --duet-ink-2: #36423c;
-  --duet-ink-3: #515d57;
-  --duet-hair: rgb(17 26 22 / 14%);
-  --duet-hair-2: rgb(17 26 22 / 8%);
-  --duet-tile: #e6e9df;
+  --duet-ink: #272238;
+  --duet-ink-2: #484158;
+  --duet-ink-3: #635b70;
+  --duet-hair: rgb(39 34 56 / 14%);
+  --duet-hair-2: rgb(39 34 56 / 8%);
+  --duet-tile: #eee9e1;
   /*
    * The one accent: the Tasks badge, the unread dot, the + button, a selected chip, a link to a
    * task, the focus ring, the Everything icon. Not a heading colour. `on-accent` is what sits on it.
    */
-  --duet-accent: #07564f;
-  --duet-accent-soft: #e2f3b4;
+  --duet-accent: #5635a1;
+  --duet-accent-soft: #ebe2ff;
   --duet-on-accent: #ffffff;
   /* The highlighter: Cue's mark. A fill behind ink, never a text colour. */
-  --duet-highlight: #d6f24a;
-  --duet-on-highlight: #14200a;
+  --duet-highlight: #f9de89;
+  --duet-on-highlight: #342614;
   /* Pop: the quiz's four answers and the study cards' faces. Bright, school-notebook colours. */
   --duet-pop-a: #2f6fed;
   --duet-pop-a-soft: #e6eefe;
@@ -99,22 +99,22 @@
   --duet-pop-d-soft: #fde7f0;
   --duet-face-gradient: linear-gradient(
     135deg,
-    #07564f 0%,
-    #0d6b52 55%,
-    #2f7d3a 100%
+    #5635a1 0%,
+    #714ec0 55%,
+    #8b67d2 100%
   );
   /* How work stands: ready for review, needs you, working, couldn't finish. Only on status. */
   --duet-status-done: #1a6b2a;
   --duet-status-done-soft: #e0f3dc;
   --duet-status-needs: #8f4a06;
-  --duet-status-needs-soft: #fbecc8;
+  --duet-status-needs-soft: #faecc1;
   --duet-status-working: #1d4ed8;
   --duet-status-working-soft: #e5edfc;
   --duet-status-problem: #b91c1c;
   --duet-status-problem-soft: #fde8e8;
   /* The primary button: near-black on light, warm paper on dark. */
-  --duet-black: #111a16;
-  --duet-on-black: #fbfcf7;
+  --duet-black: #272238;
+  --duet-on-black: #fffdf9;
   /*
    * The names the components were written against, kept as aliases of the roles so a screen that
    * still says `violet` or `green` draws the role's colour. New code names the role.
@@ -130,12 +130,12 @@
   --duet-red: var(--duet-status-problem);
   --duet-red-soft: var(--duet-status-problem-soft);
   --duet-shadow-float:
-    0 0 0 1px var(--duet-hair), 0 2px 0 0 rgb(17 26 22 / 10%),
-    0 10px 24px -14px rgb(17 26 22 / 30%);
+    0 0 0 1px var(--duet-hair), 0 2px 0 0 rgb(39 34 56 / 10%),
+    0 10px 24px -14px rgb(39 34 56 / 30%);
   --duet-shadow-card: 0 0 0 1px var(--duet-hair), 0 1px 0 0 var(--duet-hair);
   --duet-shadow-raised:
-    0 0 0 1px var(--duet-hair), 0 2px 0 0 rgb(17 26 22 / 12%),
-    0 14px 28px -18px rgb(17 26 22 / 28%);
+    0 0 0 1px var(--duet-hair), 0 2px 0 0 rgb(39 34 56 / 12%),
+    0 14px 28px -18px rgb(39 34 56 / 28%);
   /*
    * Glass: the chrome that floats over a screen (the tab bar, the composer, the header's discs)
    * lets what scrolls under it show through, frosted. Translucent enough to read as a layer, opaque
@@ -144,8 +144,8 @@
    * `--duet-veil` is the same material laid over a whole screen, for a sheet that the screen stays
    * visible behind.
    */
-  --duet-glass: rgb(251 252 247 / 86%);
-  --duet-veil: rgb(241 242 236 / 78%);
+  --duet-glass: rgb(255 253 249 / 86%);
+  --duet-veil: rgb(247 244 237 / 78%);
   --duet-glass-edge: inset 0 0.5px 0 rgb(255 255 255 / 80%);
   --duet-shadow-glass: var(--duet-glass-edge), var(--duet-shadow-float);
   /* Shape (parity-spec 2.4) and the smallest thing a finger can hit (2.11). */
@@ -179,25 +179,25 @@
 
 .dark {
   color-scheme: dark;
-  --background: #0c1310;
-  --foreground: #eef2e8;
-  --card: #151e1a;
-  --card-foreground: #eef2e8;
-  --popover: #151e1a;
-  --popover-foreground: #eef2e8;
-  --primary: #d6f24a;
-  --primary-foreground: #14200a;
-  --secondary: #1f2a25;
-  --secondary-foreground: #eef2e8;
-  --muted: #1f2a25;
-  --muted-foreground: #a9b4a8;
-  --accent: #2a3a14;
-  --accent-foreground: #d6f24a;
+  --background: #191624;
+  --foreground: #f4effa;
+  --card: #231e31;
+  --card-foreground: #f4effa;
+  --popover: #231e31;
+  --popover-foreground: #f4effa;
+  --primary: #cfb7ff;
+  --primary-foreground: #281944;
+  --secondary: #2f293c;
+  --secondary-foreground: #f4effa;
+  --muted: #2f293c;
+  --muted-foreground: #bdb2c8;
+  --accent: #3b2d53;
+  --accent-foreground: #cfb7ff;
   --destructive: oklch(0.704 0.191 22.216);
   --success: oklch(0.704 0.14 182.503);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: #d6f24a;
+  --ring: #cfb7ff;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -213,21 +213,20 @@
   --sidebar-ring: oklch(0.556 0 0);
 
   /*
-   * Duet's dark is near-black and neutral (it samples #0E0E0E behind, #232323 for the Bot's bubble).
-   * These keep the same roles, and the primary action turns light.
+   * Dark uses the same roles, with a pale lilac for the primary action.
    */
-  --duet-surface: #0c1310;
-  --duet-card: #151e1a;
-  --duet-bubble: #1f2a25;
-  --duet-user: #242424;
-  --duet-ink: #eef2e8;
-  --duet-ink-2: #c9d1c6;
-  --duet-ink-3: #a9b4a8;
+  --duet-surface: #191624;
+  --duet-card: #231e31;
+  --duet-bubble: #2f2f2f;
+  --duet-user: #383838;
+  --duet-ink: #f4effa;
+  --duet-ink-2: #d7cbdf;
+  --duet-ink-3: #bdb2c8;
   --duet-hair: rgb(255 255 255 / 10%);
   --duet-hair-2: rgb(255 255 255 / 7%);
-  --duet-tile: #1f2a25;
-  --duet-accent: #d6f24a;
-  --duet-accent-soft: #2a3a14;
+  --duet-tile: #2f293c;
+  --duet-accent: #cfb7ff;
+  --duet-accent-soft: #3b2d53;
   --duet-pop-a: #7faaff;
   --duet-pop-a-soft: #1b2a4a;
   --duet-pop-b: #4fd39b;
@@ -238,14 +237,14 @@
   --duet-pop-d-soft: #3f1b2a;
   --duet-face-gradient: linear-gradient(
     135deg,
-    #07564f 0%,
-    #0d6b52 55%,
-    #2f7d3a 100%
+    #5635a1 0%,
+    #714ec0 55%,
+    #8b67d2 100%
   );
-  /* Dark ink on the lamp-light accent. White on it was too faint. */
-  --duet-on-accent: #14200a;
-  --duet-highlight: #d6f24a;
-  --duet-on-highlight: #14200a;
+  /* Dark ink on the pale lilac accent. */
+  --duet-on-accent: #281944;
+  --duet-highlight: #f9de89;
+  --duet-on-highlight: #342614;
   --duet-status-done: #4ade80;
   --duet-status-done-soft: #14301f;
   --duet-status-needs: #fbbf24;
@@ -254,15 +253,15 @@
   --duet-status-working-soft: #1a2744;
   --duet-status-problem: #fca5a5;
   --duet-status-problem-soft: #3f1d1d;
-  --duet-black: #eef2e8;
-  --duet-on-black: #0c1310;
+  --duet-black: #f4effa;
+  --duet-on-black: #191624;
   --duet-shadow-float:
     0 0 0 0.5px rgb(255 255 255 / 10%), 0 4px 12px -4px rgb(0 0 0 / 50%);
   --duet-shadow-card: 0 0 0 1px var(--duet-hair);
   --duet-shadow-raised:
     0 0 0 1px var(--duet-hair), 0 10px 26px -14px rgb(0 0 0 / 60%);
-  --duet-glass: rgb(21 30 26 / 86%);
-  --duet-veil: rgb(12 19 16 / 78%);
+  --duet-glass: rgb(35 30 49 / 86%);
+  --duet-veil: rgb(25 22 36 / 78%);
   --duet-glass-edge: inset 0 0.5px 0 rgb(255 255 255 / 8%);
   --duet-shadow-glass: var(--duet-glass-edge), var(--duet-shadow-float);
   --duet-ch-berry: #d0709a;
@@ -309,6 +308,7 @@ body {
   --font-heading:
     "Bricolage Grotesque Variable", "Bricolage Grotesque", ui-sans-serif,
     system-ui, sans-serif;
+  --font-editorial: "Fraunces Variable", Georgia, ui-serif, serif;
   --font-sans:
     "Instrument Sans Variable", "Instrument Sans", ui-sans-serif, system-ui,
     sans-serif;
@@ -1034,10 +1034,10 @@ div[style*="z-index: 99999"]:has(a[href="https://copilotkit.ai/pricing"]) {
 .study-desk {
   background: var(--duet-surface);
 }
+.cue-editorial,
 .study-display {
-  font-family: var(--font-heading);
-  font-variation-settings: "opsz" 32;
-  font-weight: 650;
+  font-family: var(--font-editorial);
+  font-weight: 600;
   letter-spacing: -0.028em;
 }
 

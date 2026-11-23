@@ -145,13 +145,13 @@ describe("ClassesView", () => {
 
     const apush = within(view.getByLabelText("AP US History assignments"));
     expect(apush.queryByText("On your own")).toBeNull();
-    const headerRule = within(
+    const classSection = within(
       view.getByRole("region", { name: "AP US History" }),
-    ).getByText("On your own");
-    expect(headerRule.className).not.toMatch(/rounded|bg-/);
+    );
+    expect(classSection.getByText("On your own")).toBeTruthy();
     expect(
-      view.getByRole("heading", { name: "AP US History" }).className,
-    ).toContain("study-display");
+      classSection.getByRole("heading", { name: "AP US History", level: 2 }),
+    ).toBeTruthy();
     expect(apush.getByText(/50 points/)).toBeTruthy();
   });
 

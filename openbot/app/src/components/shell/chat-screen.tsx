@@ -16,7 +16,6 @@ import { ChatSuggestionProvider } from "@/components/shell/chat-suggestion";
 import { useCheckInNotifications } from "@/components/shell/check-in-notifier";
 import { DraftWatch, useFirstDayGreeting } from "@/components/shell/first-day";
 import { PersonWatch, useMorningBrief } from "@/components/shell/morning-brief";
-import { StudyDock } from "@/components/shell/study-dock";
 import { primaryBot } from "@/lib/agents/primary-bot";
 import { type AgentProfile, agentListQueryOptions } from "@/lib/agents/queries";
 import { botAppQueryOptions } from "@/lib/app-access/queries";
@@ -319,14 +318,11 @@ function FirstMessage({
         inShell
         messages={sent ? [sent] : []}
         notice={
-          <>
-            <StudyDock />
-            {error ? (
-              <p className="type-label pb-2 text-duet-red" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </>
+          error ? (
+            <p className="type-label pb-2 text-duet-red" role="alert">
+              {error}
+            </p>
+          ) : null
         }
         // The composer keeps the draft for another try when this throws.
         onSubmit={(draft) => start(draft.text)}

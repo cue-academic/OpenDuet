@@ -10,6 +10,7 @@ import { taskListQueryOptions } from "@/lib/tasks/queries";
 import { cn } from "@/lib/utils";
 
 export type ShellTab =
+  | "today"
   | "chat"
   | "tasks"
   | "calendar"
@@ -20,11 +21,11 @@ export type ShellTab =
 
 const TABS: {
   id: ShellTab;
-  to: "/" | "/tasks" | "/calendar" | "/coach" | "/learn" | "/make";
+  to: "/chat" | "/tasks" | "/calendar" | "/coach" | "/learn" | "/make";
   icon: DuetIconName;
   label: string;
 }[] = [
-  { id: "chat", to: "/", icon: "chat", label: "Chat" },
+  { id: "chat", to: "/chat", icon: "chat", label: "Chat" },
   { id: "tasks", to: "/tasks", icon: "tasks", label: "Tasks" },
   { id: "calendar", to: "/calendar", icon: "calendar", label: "Calendar" },
   { id: "coach", to: "/coach", icon: "activity", label: "Coach" },
@@ -41,7 +42,8 @@ const TABS: {
  */
 export function tabForPath(pathname: string): ShellTab | null {
   const path = pathname.replace(/\/+$/, "") || "/";
-  if (path === "/") return "chat";
+  if (path === "/") return "today";
+  if (path === "/chat") return "chat";
   // A channel is a conversation like Chat's, under the same header and tab bar.
   if (/^\/channels\/[^/]+$/.test(path)) return "chat";
   // A task opens over the Tasks list, so the list's tab stays current under it.
@@ -88,7 +90,7 @@ export function TabBar({ current }: { current: ShellTab }) {
             /*
              * What is announced is what is drawn: the tab `current` names carries aria-current. The
              * router sets it on its own active link too, so its matching is made to agree: exact for
-             * Chat ("/" would match every tab), and Tasks and Make also over a task or a page open on
+             * Chat, and Tasks and Make also over a task or a page open on
              * them.
              */
             activeOptions={{ exact: tab.id === "chat" }}

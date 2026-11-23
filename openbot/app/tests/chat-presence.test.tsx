@@ -28,7 +28,7 @@ import {
   useReportChatPresence,
   useReportFinish,
 } from "@/components/shell/chat-presence";
-import { ShellHeader } from "@/components/shell/header";
+import { WorkspaceHeader } from "@/components/shell/workspace-header";
 import { authKeys } from "@/lib/auth/queries";
 import { settleReactWork } from "./settle-react-work";
 
@@ -418,7 +418,7 @@ test("the header's orb is the one Chat reports to", async () => {
     routeTree: createRootRoute({
       component: () => (
         <ChatPresenceProvider>
-          <ShellHeader floating />
+          <WorkspaceHeader tab="chat" />
           <Reporter turn={{ working: true }} />
         </ChatPresenceProvider>
       ),
@@ -430,7 +430,7 @@ test("the header's orb is the one Chat reports to", async () => {
       <RouterProvider router={router as never} />
     </QueryClientProvider>,
   );
-  const link = await view.findByRole("link", { name: /chat$/ });
+  const link = await view.findByRole("link", { name: / home$/ });
   expect(link.querySelector("[data-state]")?.getAttribute("data-state")).toBe(
     "thinking",
   );

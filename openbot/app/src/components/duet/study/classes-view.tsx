@@ -265,7 +265,7 @@ function ClassSection({
     .join(" · ");
   return (
     <section
-      className="mt-8 border-duet-hair border-t pt-5"
+      className="mt-5 rounded-3xl border border-duet-hair bg-duet-surface p-4 sm:p-5"
       aria-label={schoolClass.name}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -273,7 +273,7 @@ function ClassSection({
           className="border-l-[3px] pl-3"
           style={{ borderColor: classColorVar(schoolClass.color) }}
         >
-          <h2 className="study-display text-[20px] font-semibold text-duet-ink">
+          <h2 className="cue-editorial text-2xl text-duet-ink">
             {schoolClass.name}
           </h2>
           {who ? (

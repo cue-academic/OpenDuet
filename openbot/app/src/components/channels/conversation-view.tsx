@@ -600,7 +600,7 @@ export function ConversationView({
           inShell
             ? empty
               ? "hidden"
-              : "flex min-h-0 flex-1 lg:flex-initial"
+              : "flex min-h-0 flex-1"
             : "flex flex-1 min-h-0"
         }
       >
@@ -620,7 +620,7 @@ export function ConversationView({
               {...(inShell
                 ? {
                     contentClassName:
-                      "min-h-0 max-w-none gap-[14px] px-4 pt-[120px] pb-6 lg:mx-auto lg:max-w-4xl lg:px-8 lg:pt-10",
+                      "min-h-0 max-w-none gap-[14px] px-4 pt-6 pb-6 lg:mx-auto lg:max-w-4xl lg:px-8 lg:pt-10",
                   }
                 : {})}
               folded={folded}
@@ -663,7 +663,7 @@ export function ConversationView({
           inShell
             ? cn(
                 "z-10 mx-auto w-full shrink-0 px-4 pb-[calc(var(--duet-tab-space,0px)+10px)] lg:max-w-4xl lg:px-8 lg:pb-6",
-                empty ? "relative pt-[100px] lg:pt-[18vh]" : "relative",
+                empty ? "relative pt-6 lg:pt-[18vh]" : "relative",
               )
             : "max-w-2xl mx-auto w-full px-0 pb-4 shrink-0"
         }

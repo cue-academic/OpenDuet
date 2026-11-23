@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { GENERATIVE_UI_DESIGN_SKILL } from "../src/lib/copilot/generative-ui";
 import { SANDBOX_THEME_ASK, SANDBOX_THEME_MESSAGE } from "../src/lib/theme";
-import { cn, TYPE_SCALE_CLASSES } from "../src/lib/utils";
 import {
   DARK_TOKENS,
   LIGHT_TOKENS,
   type ThemeTokens,
 } from "../src/lib/theme-tokens";
+import { cn, TYPE_SCALE_CLASSES } from "../src/lib/utils";
 
 /**
  * The visual system lives in tokens (parity-spec Part 2), so these tests read the stylesheet itself:
@@ -90,14 +90,19 @@ describe("light and dark", () => {
     ["light", light],
     ["dark", dark],
   ] as const) {
-    test(`user messages use an achromatic surface with readable ink, ${name}`, () => {
-      const surface = resolve(theme, "--duet-user");
-      expect(surface.slice(1, 3)).toBe(surface.slice(3, 5));
-      expect(surface.slice(3, 5)).toBe(surface.slice(5, 7));
-      expect(
-        contrast(resolve(theme, "--duet-ink"), surface),
-      ).toBeGreaterThanOrEqual(4.5);
-    });
+    for (const [token, ink] of [
+      ["--duet-user", "--duet-ink"],
+      ["--duet-bubble", "--duet-ink-2"],
+    ] as const) {
+      test(`${token} uses an achromatic surface with readable ink, ${name}`, () => {
+        const surface = resolve(theme, token);
+        expect(surface.slice(1, 3)).toBe(surface.slice(3, 5));
+        expect(surface.slice(3, 5)).toBe(surface.slice(5, 7));
+        expect(contrast(resolve(theme, ink), surface)).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      });
+    }
   }
   test("every token the light theme defines has a dark value, glass and veil included", () => {
     const aliases = [...light.entries()]
