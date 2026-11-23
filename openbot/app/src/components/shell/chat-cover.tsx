@@ -20,15 +20,22 @@ export function useChatCovered(): boolean {
 
 /** Around the chat: `screen` says a screen is open, and the window's width says where. */
 export function ChatCover({
+  hidden = false,
   screen,
   children,
 }: {
+  hidden?: boolean;
   screen: boolean;
   children: ReactNode;
 }) {
   const wide = useSyncExternalStore(onWidthChange, isWide);
+  const covered = hidden || (screen && !wide);
   return (
-    <Covered.Provider value={screen && !wide}>{children}</Covered.Provider>
+    <Covered.Provider value={covered}>
+      <div className="flex min-h-0 flex-1 flex-col" inert={covered}>
+        {children}
+      </div>
+    </Covered.Provider>
   );
 }
 

@@ -1,16 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import {
-  Link,
-  useCanGoBack,
-  useNavigate,
-  useRouter,
-} from "@tanstack/react-router";
+import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { type ComponentProps, useState } from "react";
 import { DuetIcon } from "@/components/duet/icons";
 import { MicOrb } from "@/components/duet/mic-orb";
 import { useAvatarColour } from "@/lib/avatar-preference";
-import { currentUserQueryOptions } from "@/lib/auth/queries";
-import { appConfig } from "@/lib/generated/application-config";
 import { cn } from "@/lib/utils";
 import {
   useChatOrb,
@@ -34,62 +26,6 @@ export function initialOf(user: { name?: string | null; email: string }) {
 }
 
 /**
- * The phone's header over the chat: OpenDuet's mic orb in the centre and the person's initial in a
- * disc on the right (their settings). There is no menu: the chat is the whole app, and the coach
- * opens anything else when asked. The orb follows Chat: it thinks while the Bot works, listens while
- * the person types, and rests otherwise. While it thinks, a pill under it says what the Bot is doing.
- *
- * `floating` lays it over the chat, which scrolls under it behind a fade. Otherwise it is a bar in
- * the page's flow. On a wide screen the desktop bar (desktop-bar.tsx) stands in for it.
- */
-export function ShellHeader({ floating }: { floating: boolean }) {
-  const { data: user } = useQuery(currentUserQueryOptions());
-  const side = SIDE;
-  const centre = floating ? 62 : 48;
-  return (
-    <header
-      className={cn(
-        "duet-face z-20 flex items-start justify-between px-4 lg:hidden",
-        floating
-          ? "pointer-events-none absolute inset-x-0 top-0 h-32 bg-[linear-gradient(var(--duet-surface)_52%,transparent)] pt-3"
-          : "relative h-16 shrink-0 items-center border-border border-b bg-background",
-      )}
-    >
-      {/* The settings disc's width on the left too, so the orb stays in the middle. */}
-      <span aria-hidden className="shrink-0" style={{ width: side }} />
-      {/* The span between the discs, so the pill under the orb can never reach under either. */}
-      <div className="flex min-w-0 flex-1 flex-col items-center gap-1 px-2">
-        <Link
-          aria-label={`${appConfig.brand.productName} chat`}
-          className="pointer-events-auto grid shrink-0 place-items-center rounded-full transition-transform focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-95"
-          style={{ width: centre, height: centre }}
-          to="/"
-        >
-          <ChatOrb size={centre - 2} />
-        </Link>
-        {floating ? <ChatStep /> : null}
-      </div>
-      <Link
-        aria-label="Your settings"
-        className={cn(
-          DISC,
-          // The press still scales; a pointer that can hover also tints it, as the desktop bar's does.
-          "pointer-events-auto transition-[scale,background-color] hover:bg-duet-tile",
-          floating && "mt-2",
-        )}
-        style={{ width: side, height: side }}
-        title="Settings"
-        to="/settings"
-      >
-        <span className="type-nav font-semibold">
-          {user ? initialOf(user) : null}
-        </span>
-      </Link>
-    </header>
-  );
-}
-
-/**
  * Its own component, so a keystroke in Chat re-renders the orb and not the whole header. It is
  * where the startup intro's orb lands (`INTRO_ORB_TARGET`).
  */
@@ -108,9 +44,7 @@ export function ChatOrb({ size }: { size: number }) {
 }
 
 /**
- * What the Bot is doing right now, in a pill under the orb: the step its line in the transcript is
- * running, or that it is thinking. Only on the floating header, which is Chat's, and its own
- * component for the orb's reason: it reads the step alone, so a keystroke does not reach it.
+ * The current step in the conversation, or that the Bot is thinking.
  *
  * Always mounted, so it can fade out as well as in, and so the live region is already there when
  * the first step arrives: a region added with its text in it is not announced. It holds the last

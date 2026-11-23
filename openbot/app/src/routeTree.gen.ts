@@ -21,6 +21,7 @@ import { Route as AuthedAppApprovalsRouteImport } from './routes/_authed/_app/ap
 import { Route as AuthedAppBotRouteImport } from './routes/_authed/_app/bot'
 import { Route as AuthedAppCalendarRouteImport } from './routes/_authed/_app/calendar'
 import { Route as AuthedAppCapabilitiesRouteImport } from './routes/_authed/_app/capabilities'
+import { Route as AuthedAppChatRouteImport } from './routes/_authed/_app/chat'
 import { Route as AuthedAppClassesRouteImport } from './routes/_authed/_app/classes'
 import { Route as AuthedAppCoachRouteImport } from './routes/_authed/_app/coach'
 import { Route as AuthedAppInboxRouteImport } from './routes/_authed/_app/inbox'
@@ -149,6 +150,11 @@ const AuthedAppCalendarRoute = AuthedAppCalendarRouteImport.update({
 const AuthedAppCapabilitiesRoute = AuthedAppCapabilitiesRouteImport.update({
   id: '/capabilities',
   path: '/capabilities',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
+const AuthedAppChatRoute = AuthedAppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => AuthedAppRoute,
 } as any)
 const AuthedAppClassesRoute = AuthedAppClassesRouteImport.update({
@@ -548,6 +554,7 @@ export interface FileRoutesByFullPath {
   '/bot': typeof AuthedAppBotRoute
   '/calendar': typeof AuthedAppCalendarRoute
   '/capabilities': typeof AuthedAppCapabilitiesRouteWithChildren
+  '/chat': typeof AuthedAppChatRoute
   '/classes': typeof AuthedAppClassesRoute
   '/coach': typeof AuthedAppCoachRoute
   '/inbox': typeof AuthedAppInboxRoute
@@ -628,6 +635,7 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthedAppApprovalsRoute
   '/bot': typeof AuthedAppBotRoute
   '/calendar': typeof AuthedAppCalendarRoute
+  '/chat': typeof AuthedAppChatRoute
   '/classes': typeof AuthedAppClassesRoute
   '/coach': typeof AuthedAppCoachRoute
   '/inbox': typeof AuthedAppInboxRoute
@@ -713,6 +721,7 @@ export interface FileRoutesById {
   '/_authed/_app/bot': typeof AuthedAppBotRoute
   '/_authed/_app/calendar': typeof AuthedAppCalendarRoute
   '/_authed/_app/capabilities': typeof AuthedAppCapabilitiesRouteWithChildren
+  '/_authed/_app/chat': typeof AuthedAppChatRoute
   '/_authed/_app/classes': typeof AuthedAppClassesRoute
   '/_authed/_app/coach': typeof AuthedAppCoachRoute
   '/_authed/_app/inbox': typeof AuthedAppInboxRoute
@@ -799,6 +808,7 @@ export interface FileRouteTypes {
     | '/bot'
     | '/calendar'
     | '/capabilities'
+    | '/chat'
     | '/classes'
     | '/coach'
     | '/inbox'
@@ -879,6 +889,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/bot'
     | '/calendar'
+    | '/chat'
     | '/classes'
     | '/coach'
     | '/inbox'
@@ -963,6 +974,7 @@ export interface FileRouteTypes {
     | '/_authed/_app/bot'
     | '/_authed/_app/calendar'
     | '/_authed/_app/capabilities'
+    | '/_authed/_app/chat'
     | '/_authed/_app/classes'
     | '/_authed/_app/coach'
     | '/_authed/_app/inbox'
@@ -1126,6 +1138,13 @@ declare module '@tanstack/react-router' {
       path: '/capabilities'
       fullPath: '/capabilities'
       preLoaderRoute: typeof AuthedAppCapabilitiesRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
+    '/_authed/_app/chat': {
+      id: '/_authed/_app/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthedAppChatRouteImport
       parentRoute: typeof AuthedAppRoute
     }
     '/_authed/_app/classes': {
@@ -1762,6 +1781,7 @@ interface AuthedAppRouteChildren {
   AuthedAppBotRoute: typeof AuthedAppBotRoute
   AuthedAppCalendarRoute: typeof AuthedAppCalendarRoute
   AuthedAppCapabilitiesRoute: typeof AuthedAppCapabilitiesRouteWithChildren
+  AuthedAppChatRoute: typeof AuthedAppChatRoute
   AuthedAppClassesRoute: typeof AuthedAppClassesRoute
   AuthedAppCoachRoute: typeof AuthedAppCoachRoute
   AuthedAppInboxRoute: typeof AuthedAppInboxRoute
@@ -1804,6 +1824,7 @@ const AuthedAppRouteChildren: AuthedAppRouteChildren = {
   AuthedAppBotRoute: AuthedAppBotRoute,
   AuthedAppCalendarRoute: AuthedAppCalendarRoute,
   AuthedAppCapabilitiesRoute: AuthedAppCapabilitiesRouteWithChildren,
+  AuthedAppChatRoute: AuthedAppChatRoute,
   AuthedAppClassesRoute: AuthedAppClassesRoute,
   AuthedAppCoachRoute: AuthedAppCoachRoute,
   AuthedAppInboxRoute: AuthedAppInboxRoute,

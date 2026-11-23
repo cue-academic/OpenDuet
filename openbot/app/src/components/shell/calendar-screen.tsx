@@ -1,8 +1,8 @@
 import {
-  noStudyHelp,
   HELP_LEVEL_LABEL,
   type HelpLevel,
   type MissedBlock,
+  noStudyHelp,
   type SchoolClass,
   type StudyBlock,
   type StudyPlan,
@@ -935,7 +935,7 @@ function NothingNote({
         : `Nothing on your calendar ${day ? `on ${day}` : when}.`}{" "}
       <Link
         className="rounded-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-        to="/"
+        to="/chat"
       >
         Plan study time in Chat
       </Link>

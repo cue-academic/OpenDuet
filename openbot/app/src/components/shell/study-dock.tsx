@@ -1,25 +1,12 @@
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 /**
- * The daily tools, opened from chat. Chat stays the home; each one is a screen
- * beside it. Plain links, so a conversation drawn without the app router
+ * Extra study tools, opened from chat. Plain links, so a conversation drawn without the app router
  * (tests, a channel on its own page) still renders. A normal click asks the
  * shell to open the screen without reloading the chat.
  */
 const TOOLS = [
-  {
-    label: "Tonight",
-    to: "/coach",
-  },
   { label: "Study", to: "/learn" },
-  {
-    label: "Classes",
-    to: "/classes",
-  },
-  {
-    label: "Calendar",
-    to: "/calendar",
-  },
   {
     label: "Tasks",
     to: "/tasks",

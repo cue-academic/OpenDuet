@@ -27,7 +27,7 @@ import {
   useChatStep,
   useReportChatPresence,
 } from "@/components/shell/chat-presence";
-import { ShellHeader } from "@/components/shell/header";
+import { WorkspaceHeader } from "@/components/shell/workspace-header";
 import type { ApprovalRequest } from "@/lib/approvals";
 import { authKeys } from "@/lib/auth/queries";
 import { settleReactWork } from "./settle-react-work";
@@ -237,7 +237,7 @@ describe("the step the pill names", () => {
  * The header over whatever `show` puts under it, in one router for the whole test, so swapping
  * Chat for another screen changes that and nothing else.
  */
-function renderHeader(first: ReactNode, floating = true) {
+function renderHeader(first: ReactNode) {
   let show: (screen: ReactNode) => void = () => {};
   function Screen() {
     const [screen, setScreen] = useState(first);
@@ -258,7 +258,7 @@ function renderHeader(first: ReactNode, floating = true) {
     routeTree: createRootRoute({
       component: () => (
         <ChatPresenceProvider>
-          <ShellHeader floating={floating} />
+          <WorkspaceHeader tab="chat" />
           <Screen />
         </ChatPresenceProvider>
       ),
@@ -306,10 +306,10 @@ const ANSWERED = [
   ...called("s", SEARCH, '"Results"'),
 ];
 
-describe("the pill under the orb", () => {
+describe("the conversation status in the workspace header", () => {
   test("names the running step while the Bot works, and fades out when the turn ends", async () => {
     const { view, show, pill } = renderHeader(<Chat busy messages={RUNNING} />);
-    await view.findByRole("link", { name: /chat$/ });
+    await view.findByRole("link", { name: / home$/ });
     expect(pill()?.textContent).toBe("Searching the web");
     expect(pill()?.getAttribute("data-shown")).toBe("true");
     expect(pill()?.getAttribute("aria-hidden")).toBeNull();
@@ -326,7 +326,7 @@ describe("the pill under the orb", () => {
 
   test("rests hidden with nobody reporting, inside a live region that is already there", async () => {
     const { view, pill } = renderHeader(null);
-    await view.findByRole("link", { name: /chat$/ });
+    await view.findByRole("link", { name: / home$/ });
     expect(view.container.querySelector("[aria-live='polite']")).not.toBeNull();
     expect(pill()?.getAttribute("data-shown")).toBe("false");
     expect(pill()?.textContent).toBe("");
@@ -334,17 +334,11 @@ describe("the pill under the orb", () => {
 
   test("is gone with Chat, mid-turn included", async () => {
     const { view, show, pill } = renderHeader(<Chat busy messages={RUNNING} />);
-    await view.findByRole("link", { name: /chat$/ });
+    await view.findByRole("link", { name: / home$/ });
     expect(pill()?.getAttribute("data-shown")).toBe("true");
 
     show(null);
     expect(pill()?.getAttribute("data-shown")).toBe("false");
-  });
-
-  test("is only on the floating header", async () => {
-    const { view } = renderHeader(<Chat busy messages={RUNNING} />, false);
-    await view.findByRole("link", { name: /chat$/ });
-    expect(view.container.querySelector("[aria-live='polite']")).toBeNull();
   });
 });
 

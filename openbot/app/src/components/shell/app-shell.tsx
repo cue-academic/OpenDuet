@@ -1,5 +1,11 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { type ReactNode, type TouchEvent, useEffect, useRef } from "react";
+import {
+  type ReactNode,
+  type TouchEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { AttentionNotifier } from "@/components/bot-profile/attention";
 import { DuetIcon } from "@/components/duet/icons";
 import { useChannelEvents } from "@/lib/channels/use-channel-events";
@@ -11,19 +17,16 @@ import {
   useServerWork,
 } from "./chat-presence";
 import { ChatScreen } from "./chat-screen";
-import { DesktopBar } from "./desktop-bar";
 import { FinishedForYou } from "./finished-for-you";
-import { PageHeader, ShellHeader, useBack } from "./header";
+import { PageHeader, useBack } from "./header";
 import { PageChromeProvider, usePageChromeState } from "./page-chrome";
 import { StartupIntro } from "./startup-intro";
 import { type ShellTab, tabForPath } from "./tab-bar";
+import { WorkspaceHeader } from "./workspace-header";
 
 /**
- * The signed-in app is one chat with the coach, as School Chat was. There are no tabs to find:
- * Tasks, Calendar, Coach, Learn and what the coach made are screens it opens when the student asks
- * (the `open_screen` tool), one at a time. On a wide screen the screen opens beside the chat; on a
- * phone it covers the chat until it is closed. The chat stays mounted under it either way, so
- * nothing typed or streaming is lost.
+ * Today is the workspace's home. Chat stays mounted once opened, so visiting Today or a tool
+ * doesn't lose a draft or stop a reply. The coach can still open one tool beside the conversation.
  *
  * Everything else (Settings, Bots, Connections) is a page pushed over the app, in one chrome
  * (parity-spec 2.9): a back disc and the page's title in a pill.
@@ -36,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // One socket for the app: it keeps the conversation list and its working dots live.
   useChannelEvents();
   // Work the server runs in Chat that this screen did not start, for the pill and the orb.
-  const chat = useChatServerBusy(tab !== null);
+  const chat = useChatServerBusy(tab !== null && tab !== "today");
   const chatServerWork = useServerWork(chat.busy, chat.threadId);
 
   return (
@@ -51,14 +54,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         <StartupIntro tab={tab} />
         <AttentionNotifier />
         <FinishedForYou />
-        <DesktopBar />
         {tab ? (
-          <ChatWithScreen
-            channel={/^\/channels\/[^/]+\/?$/.test(pathname)}
-            tab={tab}
-          >
-            {children}
-          </ChatWithScreen>
+          <>
+            <WorkspaceHeader tab={tab} />
+            <ChatWithScreen
+              channel={/^\/channels\/[^/]+\/?$/.test(pathname)}
+              tab={tab}
+            >
+              {children}
+            </ChatWithScreen>
+          </>
         ) : (
           <PageChromeProvider>
             <PageColumn>{children}</PageColumn>
@@ -70,11 +75,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 /** What each screen is called on the bar over it. */
-const SCREEN_NAMES: Record<Exclude<ShellTab, "chat">, string> = {
+const SCREEN_NAMES: Record<Exclude<ShellTab, "chat" | "today">, string> = {
   tasks: "Your tasks",
-  calendar: "Your calendar",
-  coach: "Today's plan",
-  classes: "Your classes",
+  calendar: "Calendar",
+  coach: "Coach",
+  classes: "Classes",
   learn: "What to review",
   make: "Made for you",
 };
@@ -82,7 +87,7 @@ const SCREEN_NAMES: Record<Exclude<ShellTab, "chat">, string> = {
 /**
  * The chat, and the one screen the coach opened, if any.
  *
- * The chat is Chat's own conversation, drawn here rather than by the `/` route so it keeps its
+ * The chat is Chat's own conversation, drawn here rather than by the `/chat` route so it keeps its
  * place, and everything in it, while screens open and close beside it. A channel (`/channels/<id>`)
  * is drawn by its route in the chat's place.
  *
@@ -100,7 +105,12 @@ function ChatWithScreen({
   channel: boolean;
   children: ReactNode;
 }) {
-  const screen = tab === "chat" ? null : tab;
+  const today = tab === "today";
+  const screen = tab === "chat" || today ? null : tab;
+  const [chatMounted, setChatMounted] = useState(!today);
+  useEffect(() => {
+    if (!today) setChatMounted(true);
+  }, [today]);
   const navigate = useNavigate();
   useEffect(() => {
     const onOpen = (event: Event) => {
@@ -126,62 +136,67 @@ function ChatWithScreen({
         !event.defaultPrevented &&
         !document.querySelector("[role=dialog]")
       )
-        void navigate({ to: "/" });
+        void navigate({ to: "/chat" });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [screen, navigate]);
   return (
-    <div
-      className={cn(
-        "relative flex min-h-0 flex-1",
-        screen === "calendar"
-          ? "lg:grid lg:grid-cols-[minmax(300px,0.72fr)_minmax(680px,1.4fr)]"
-          : screen === "learn" ||
-              screen === "make" ||
-              screen === "coach" ||
-              screen === "classes"
-            ? "lg:grid lg:grid-cols-[minmax(300px,0.7fr)_minmax(640px,1.3fr)]"
-            : screen
-              ? "lg:grid lg:grid-cols-[minmax(360px,1fr)_minmax(400px,520px)]"
-              : null,
-      )}
-    >
-      <section
-        aria-label="Chat"
-        className="duet-face relative mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col text-duet-ink [--duet-tab-space:max(env(safe-area-inset-bottom),12px)] lg:max-w-none"
+    <>
+      <div
+        className={cn(
+          "relative min-h-0 flex-1",
+          today ? "hidden" : "flex",
+          screen === "calendar"
+            ? "lg:grid lg:grid-cols-[minmax(300px,0.72fr)_minmax(680px,1.4fr)]"
+            : screen === "learn" ||
+                screen === "make" ||
+                screen === "coach" ||
+                screen === "classes"
+              ? "lg:grid lg:grid-cols-[minmax(300px,0.7fr)_minmax(640px,1.3fr)]"
+              : screen
+                ? "lg:grid lg:grid-cols-[minmax(360px,1fr)_minmax(400px,520px)]"
+                : null,
+        )}
       >
-        <ShellHeader floating />
-        <ChatCover screen={screen !== null}>
-          <main className="flex min-h-0 flex-1 flex-col">
-            {channel ? children : <ChatScreen />}
-          </main>
-        </ChatCover>
-      </section>
-      {screen ? (
-        <aside
-          aria-label={SCREEN_NAMES[screen]}
-          className="duet-face absolute inset-0 z-30 flex min-h-0 flex-col bg-duet-surface text-duet-ink [--duet-tab-space:max(env(safe-area-inset-bottom),12px)] [--screen-sticky:0px] [--screen-top:16px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300 lg:static lg:z-auto lg:border-duet-hair-2 lg:border-l motion-safe:lg:slide-in-from-right-4"
+        <section
+          aria-label="Chat"
+          className="duet-face relative mx-auto flex min-h-0 w-full flex-1 flex-col text-duet-ink [--duet-tab-space:max(env(safe-area-inset-bottom),12px)]"
         >
-          {/* The bar shares the content's column, and its 20px inset is the screen text's. */}
-          <div className="mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col lg:max-w-none">
-            <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-duet-hair-2 border-b px-5">
-              <p className="cue-label truncate text-duet-ink-2">
-                {SCREEN_NAMES[screen]}
-              </p>
-              <Link
-                aria-label={`Close ${SCREEN_NAMES[screen].toLowerCase()}`}
-                className="grid size-11 shrink-0 place-items-center rounded-full text-duet-ink-2 transition-colors hover:bg-duet-tile hover:text-duet-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
-                to="/"
-              >
-                <DuetIcon name="x" size={20} />
-              </Link>
+          {chatMounted || !today ? (
+            <ChatCover hidden={today} screen={screen !== null}>
+              <main className="flex min-h-0 flex-1 flex-col">
+                {channel ? children : <ChatScreen />}
+              </main>
+            </ChatCover>
+          ) : null}
+        </section>
+        {screen ? (
+          <aside
+            aria-label={SCREEN_NAMES[screen]}
+            className="duet-face absolute inset-0 z-30 flex min-h-0 flex-col bg-duet-card text-duet-ink [--duet-tab-space:max(env(safe-area-inset-bottom),12px)] [--screen-sticky:0px] [--screen-top:20px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300 lg:static lg:z-auto lg:border-duet-hair lg:border-l motion-safe:lg:slide-in-from-right-4"
+          >
+            {/* The bar shares the content's column, and its 20px inset is the screen text's. */}
+            <div className="mx-auto flex min-h-0 w-full flex-1 flex-col">
+              <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-duet-hair border-b px-5 lg:px-8">
+                <p className="cue-editorial truncate text-xl text-duet-ink">
+                  {SCREEN_NAMES[screen]}
+                </p>
+                <Link
+                  aria-label={`Close ${SCREEN_NAMES[screen].toLowerCase()}`}
+                  className="grid size-11 shrink-0 place-items-center rounded-full text-duet-ink-2 transition-colors hover:bg-duet-tile hover:text-duet-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
+                  to="/chat"
+                >
+                  <DuetIcon name="x" size={20} />
+                </Link>
+              </div>
+              {children}
             </div>
-            {children}
-          </div>
-        </aside>
-      ) : null}
-    </div>
+          </aside>
+        ) : null}
+      </div>
+      {today ? children : null}
+    </>
   );
 }
 

@@ -7,11 +7,16 @@ beforeAll(() => GlobalRegistrator.register({ url: "http://localhost:3010" }));
 afterEach(cleanup);
 afterAll(() => GlobalRegistrator.unregister());
 
-test("the hub has seven plain unselected links and no extra heading or numbers", () => {
+test("Chat links to tools outside the primary study navigation", () => {
   window.history.replaceState(null, "", "/");
   const view = render(<StudyDock />);
   const links = view.getAllByRole("link");
-  expect(links).toHaveLength(7);
+  expect(links.map((link) => link.getAttribute("href"))).toEqual([
+    "/learn",
+    "/tasks",
+    "/settings/teacher-rules",
+    "/make",
+  ]);
   expect(view.queryByRole("heading")).toBeNull();
   expect(view.container.textContent).not.toMatch(/0[1-7]|Pick up where/);
   for (const link of links) {
@@ -22,29 +27,29 @@ test("the hub has seven plain unselected links and no extra heading or numbers",
 });
 
 test("tabs select only the open screen, not an uncompleted request to open one", () => {
-  window.history.replaceState(null, "", "/classes");
+  window.history.replaceState(null, "", "/tasks");
   const view = render(<StudyDock />);
   expect(
-    view.getByRole("link", { name: "Classes" }).getAttribute("aria-current"),
+    view.getByRole("link", { name: "Tasks" }).getAttribute("aria-current"),
   ).toBe("page");
   act(() =>
     window.dispatchEvent(
-      new CustomEvent("academic-os-open", { detail: "/coach" }),
+      new CustomEvent("academic-os-open", { detail: "/learn" }),
     ),
   );
   expect(
-    view.getByRole("link", { name: "Tonight" }).hasAttribute("aria-current"),
+    view.getByRole("link", { name: "Study" }).hasAttribute("aria-current"),
   ).toBe(false);
-  window.history.replaceState(null, "", "/coach");
+  window.history.replaceState(null, "", "/learn");
   act(() => window.dispatchEvent(new Event("academic-os-navigated")));
   expect(
-    view.getByRole("link", { name: "Tonight" }).getAttribute("aria-current"),
+    view.getByRole("link", { name: "Study" }).getAttribute("aria-current"),
   ).toBe("page");
   expect(view.container.querySelectorAll('[aria-current="page"]')).toHaveLength(
     1,
   );
   expect(view.container.innerHTML).not.toContain("before:");
-  expect(view.getByRole("link", { name: "Tonight" }).className).toContain(
+  expect(view.getByRole("link", { name: "Study" }).className).toContain(
     "border-b-2",
   );
   for (const link of view.getAllByRole("link")) {
@@ -65,8 +70,8 @@ test("an unmatched route selects nothing and hub links request their screen", ()
   };
   window.addEventListener("academic-os-open", onOpen);
   try {
-    fireEvent.click(view.getByRole("link", { name: /Classes/ }));
-    expect(opened).toEqual(["/classes"]);
+    fireEvent.click(view.getByRole("link", { name: "Study" }));
+    expect(opened).toEqual(["/learn"]);
   } finally {
     window.removeEventListener("academic-os-open", onOpen);
   }

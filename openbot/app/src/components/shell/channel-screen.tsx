@@ -17,8 +17,8 @@ import {
 import type { DuetChannel } from "@/lib/duet-channels/queries";
 import { useDuetChannels } from "@/lib/duet-channels/use-channel";
 import { queryClient } from "@/query-client";
-import { ScreenNotice } from "./chat-screen";
 import { ChannelSheet } from "./channel-sheet";
+import { ScreenNotice } from "./chat-screen";
 
 /**
  * One channel, opened from the drawer: its own thread with the Bot, drawn by the same chat Chat
@@ -46,7 +46,8 @@ export function ChannelScreen({ channelId }: { channelId: string }) {
         Couldn't load this channel. Reload the page.
       </ScreenNotice>
     );
-  if (list.data?.everythingId === channelId) return <Navigate replace to="/" />;
+  if (list.data?.everythingId === channelId)
+    return <Navigate replace to="/chat" />;
   const [runtimeAgentId, ...others] = conversation.data.agentIds;
   if (!runtimeAgentId || others.length > 0)
     return <Navigate params={{ channelId }} replace to="/group/$channelId" />;
@@ -150,7 +151,7 @@ function ChannelHeader({
           onArchived={(saved) => {
             setEditing(false);
             // Put away, it leaves for Everything; the drawer lists it under Archived.
-            if (saved.archivedAt) void navigate({ to: "/" });
+            if (saved.archivedAt) void navigate({ to: "/chat" });
           }}
           onClose={() => setEditing(false)}
           onSaved={() => setEditing(false)}
