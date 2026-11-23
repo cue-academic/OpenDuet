@@ -1,5 +1,12 @@
+import { IconDots } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
 import { appConfig } from "@/lib/generated/application-config";
 import { cn } from "@/lib/utils";
@@ -13,6 +20,13 @@ const SECTIONS = [
   { tab: "classes", label: "Classes", to: "/classes" },
   { tab: "calendar", label: "Calendar", to: "/calendar" },
   { tab: "chat", label: "Chat", to: "/chat" },
+] as const;
+
+const STUDY_TOOLS = [
+  { label: "Study", to: "/learn" },
+  { label: "Tasks", to: "/tasks" },
+  { label: "Teacher rules", to: "/settings/teacher-rules" },
+  { label: "Made for you", to: "/make" },
 ] as const;
 
 export function WorkspaceHeader({ tab }: { tab: ShellTab }) {
@@ -63,14 +77,37 @@ export function WorkspaceHeader({ tab }: { tab: ShellTab }) {
             );
           })}
         </nav>
-        <Link
-          aria-label="Your settings"
-          className="grid size-11 shrink-0 place-items-center justify-self-end rounded-full bg-duet-accent-soft font-semibold text-duet-accent transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
-          title="Settings"
-          to="/settings"
-        >
-          {user ? initialOf(user) : null}
-        </Link>
+        <div className="flex items-center gap-1 justify-self-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="More study tools"
+              className="grid size-11 place-items-center rounded-full text-duet-ink-2 transition-colors hover:bg-duet-tile focus-visible:outline-2 focus-visible:outline-duet-accent"
+              title="More study tools"
+            >
+              <IconDots aria-hidden size={20} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-40">
+              {STUDY_TOOLS.map((tool) => (
+                <DropdownMenuItem
+                  className="min-h-11 px-3"
+                  key={tool.to}
+                  nativeButton={false}
+                  render={<Link to={tool.to} />}
+                >
+                  {tool.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Link
+            aria-label="Your settings"
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-duet-accent-soft font-semibold text-duet-accent transition-colors hover:bg-duet-tile focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40"
+            title="Settings"
+            to="/settings"
+          >
+            {user ? initialOf(user) : null}
+          </Link>
+        </div>
       </div>
     </header>
   );

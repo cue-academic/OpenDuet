@@ -600,7 +600,7 @@ export function ConversationView({
           inShell
             ? empty
               ? "hidden"
-              : "flex min-h-0 flex-1 lg:flex-initial"
+              : "flex min-h-0 flex-1"
             : "flex flex-1 min-h-0"
         }
       >

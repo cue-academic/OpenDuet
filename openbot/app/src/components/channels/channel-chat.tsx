@@ -26,7 +26,6 @@ import {
 import { VoiceCallWidget } from "@/components/channels/voice-call-widget";
 import { HandoffResumeNotice } from "@/components/computer/handoff-resume-notice";
 import { Topic } from "@/components/duet/kit";
-import { StudyDock } from "@/components/shell/study-dock";
 import { agentListQueryOptions } from "@/lib/agents/queries";
 import { type ApprovalInboxData, approvalInboxOptions } from "@/lib/approvals";
 import { attachmentUrl } from "@/lib/channels/attachments";
@@ -1719,7 +1718,6 @@ export function ChannelChat({
                * it — and they are independent, so neither is an `else` for the other.
                */
               <>
-                {inShell ? <StudyDock /> : null}
                 <HandoffResumeNotice
                   botId={runtimeAgentId}
                   agent={agent}

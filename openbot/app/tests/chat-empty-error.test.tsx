@@ -4,7 +4,6 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { cleanup, render } from "@testing-library/react";
 import { ConversationView } from "@/components/channels/conversation-view";
 import { ChatPresenceProvider } from "@/components/shell/chat-presence";
-import { StudyDock } from "@/components/shell/study-dock";
 import { firstDayGreeting } from "@/lib/channels/first-day";
 import { settleReactWork } from "./settle-react-work";
 
@@ -40,7 +39,6 @@ function Chat({
       <ConversationView
         inShell
         messages={messages}
-        notice={<StudyDock />}
         onSubmit={() => {}}
         stopped={stopped}
       />
@@ -66,24 +64,22 @@ test("in an empty Chat, a failure is said under the question, just over the box"
   ).toBeTruthy();
 });
 
-test("the empty hub has one heading, tabs, and composer", () => {
+test("empty Chat has one heading and composer without another navigation row", () => {
   const view = render(<Chat stopped="" />);
   expect(view.getAllByRole("heading")).toHaveLength(1);
   const heading = view.getByRole("heading", {
     name: "What are we working on?",
   });
-  const tabs = view.getByRole("navigation", { name: "Study tools" });
+  expect(view.queryByRole("navigation")).toBeNull();
   const composer = view.getByRole("textbox", { name: "Message" });
   expect(view.queryByRole("alert")).toBeNull();
   expect(
-    heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
-  expect(
-    tabs.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
+    heading.compareDocumentPosition(composer) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
 });
 
-test("welcome messages replace the empty heading and precede the tabs and composer", () => {
+test("welcome messages replace the empty heading and precede the composer", () => {
   const view = render(
     <Chat
       stopped=""
@@ -97,13 +93,10 @@ test("welcome messages replace the empty heading and precede the tabs and compos
   ).toBeNull();
   const welcome = view.getByText(/It's our first day together/);
   expect(view.getByText(/I'm going to check your recent mail/)).toBeTruthy();
-  const tabs = view.getByRole("navigation", { name: "Study tools" });
   const composer = view.getByRole("textbox", { name: "Message" });
   expect(
-    welcome.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
-  expect(
-    tabs.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
+    welcome.compareDocumentPosition(composer) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
 });
 
