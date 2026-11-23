@@ -7,7 +7,7 @@ beforeAll(() => GlobalRegistrator.register({ url: "http://localhost:3010" }));
 afterEach(cleanup);
 afterAll(() => GlobalRegistrator.unregister());
 
-test("the hub has seven unselected icon rows and no extra heading or numbers", () => {
+test("the hub has seven plain unselected links and no extra heading or numbers", () => {
   window.history.replaceState(null, "", "/");
   const view = render(<StudyDock />);
   const links = view.getAllByRole("link");
@@ -16,12 +16,12 @@ test("the hub has seven unselected icon rows and no extra heading or numbers", (
   expect(view.container.textContent).not.toMatch(/0[1-7]|Pick up where/);
   for (const link of links) {
     expect(link.hasAttribute("aria-current")).toBe(false);
-    expect(link.querySelector("svg")).not.toBeNull();
-    expect(link.className).not.toMatch(/shadow|first:|bg-duet-black/);
+    expect(link.querySelector("svg")).toBeNull();
+    expect(link.className).not.toMatch(/shadow|rounded|bg-|border|first:/);
   }
 });
 
-test("chips select only the open screen, not an uncompleted request to open one", () => {
+test("tabs select only the open screen, not an uncompleted request to open one", () => {
   window.history.replaceState(null, "", "/classes");
   const view = render(<StudyDock />);
   expect(
@@ -44,6 +44,13 @@ test("chips select only the open screen, not an uncompleted request to open one"
     1,
   );
   expect(view.container.innerHTML).not.toContain("before:");
+  expect(view.getByRole("link", { name: "Tonight" }).className).toContain(
+    "border-b-2",
+  );
+  for (const link of view.getAllByRole("link")) {
+    if (link.getAttribute("aria-current") === "page") continue;
+    expect(link.className).not.toMatch(/border|bg-|rounded|shadow/);
+  }
 });
 
 test("an unmatched route selects nothing and hub links request their screen", () => {
