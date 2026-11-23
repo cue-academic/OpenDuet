@@ -672,7 +672,7 @@ test("stepping through days reads a new week only on leaving this one, and Today
     view
       .getByRole("link", { name: "Plan study time in Chat" })
       .getAttribute("href"),
-  ).toBe("/");
+  ).toBe("/chat");
   expect(requests).toEqual([
     "GET /api/openduet/study/calendar?from=2026-11-01&to=2026-11-07",
     "GET /api/openduet/study/calendar?from=2026-10-25&to=2026-10-31",
