@@ -1,19 +1,12 @@
-import {
-  IconFlame,
-  IconMoodSad,
-  IconMoodAnnoyed,
-  IconMoodEmpty,
-  IconMoodSmile,
-  IconMoodHappy,
-} from "@tabler/icons-react";
 import { useState } from "react";
-import { DeskMark } from "@/components/duet/desk-mark";
 import { DuetIcon } from "@/components/duet/icons";
+import { coachParts } from "@/lib/coach/clock";
 import {
   type CoachState,
   classOf,
-  formatMinutes,
   isOverdue,
+  startOfDay,
+  addDays,
 } from "@/lib/coach/model";
 import {
   catchUpPlan,
@@ -30,22 +23,13 @@ import {
   todaysCheckIn,
 } from "@/lib/coach/progress";
 import { saveCheckIn } from "@/lib/coach/store";
-import { cn } from "@/lib/utils";
 import { startFocus } from "./focus-timer";
-import {
-  Card,
-  CardTitle,
-  ChipChoice,
-  ClassPill,
-  CoachButton,
-  Ring,
-} from "./kit";
+import { Card, CardTitle, ChipChoice, ClassPill, CoachButton } from "./kit";
 
 function tomorrowLine(state: CoachState, now: Date): string | null {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const next = start.getTime() + 86_400_000;
-  const end = next + 86_400_000;
+  const start = startOfDay(now, state.timeZone);
+  const next = addDays(start, 1, state.timeZone).getTime();
+  const end = addDays(start, 2, state.timeZone).getTime();
   const items = state.assignments.filter((item) => {
     if (item.status === "done") return false;
     const due = new Date(item.dueAt).getTime();
@@ -62,8 +46,8 @@ function tomorrowLine(state: CoachState, now: Date): string | null {
   return `Tomorrow: ${names.join(", ")}.`;
 }
 
-function greeting(now: Date): string {
-  const h = now.getHours();
+function greeting(now: Date, timeZone?: string): string {
+  const h = coachParts(now, timeZone).hour;
   if (h < 5) return "Up late";
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
@@ -81,25 +65,15 @@ export function TodayHero({
   pace: Pacing;
 }) {
   const today = minutesOn(state, now);
-  const { days, todayDone } = streak(state, now);
+  const { days } = streak(state, now);
   const nudge = bedtimeNudge(state, now);
-  const met = today >= pace.goalMin;
   return (
     <>
-      <Card className="flex items-center gap-4">
-        <Ring label="Today's focus goal" max={pace.goalMin} value={today}>
-          <span className="type-row block font-semibold tabular-nums">
-            {Math.round(today)}
-          </span>
-          <span className="type-caption block text-duet-ink-2">
-            /{pace.goalMin}m
-          </span>
-        </Ring>
+      <Card className="border-t-0 pt-2">
         <div className="min-w-0 flex-1">
           <p className="study-display type-title font-semibold">
-            <DeskMark className="mr-1.5 inline size-7 align-[-6px]" />
             <span>
-              {greeting(now)}
+              {greeting(now, state.timeZone)}
               {state.profile.name ? `, ${state.profile.name}` : ""}.
             </span>
           </p>
@@ -108,38 +82,32 @@ export function TodayHero({
               {tomorrowLine(state, now)}
             </p>
           ) : null}
-          <p className="type-sub text-duet-ink-2">
-            {met
-              ? "Goal met today. Anything more is a bonus."
-              : `${formatMinutes(Math.max(0, pace.goalMin - today))} to go today.`}
-          </p>
-          <p
-            className={cn(
-              "type-sub mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 font-semibold",
-              days > 0
-                ? "bg-duet-amber-soft text-duet-amber"
-                : "bg-duet-tile text-duet-ink-2",
-            )}
-            data-testid="streak"
-          >
-            <IconFlame aria-hidden size={16} stroke={1.8} />
-            {days}-day streak
-          </p>
-          {days > 0 && !todayDone ? (
-            <p className="type-caption mt-1 text-duet-ink-2">
-              15 min keeps the streak.
-            </p>
-          ) : null}
+          <div className="type-caption mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-duet-ink-2">
+            <span>
+              {Math.round(today)} of {pace.goalMin} min today
+            </span>
+            <div
+              aria-label="Today's focus goal"
+              aria-valuemax={pace.goalMin}
+              aria-valuemin={0}
+              aria-valuenow={Math.round(today)}
+              role="progressbar"
+              className="h-[3px] w-24 bg-duet-tile"
+            >
+              <div
+                className="h-full bg-duet-accent"
+                style={{
+                  width: `${pace.goalMin > 0 ? Math.min(100, (today / pace.goalMin) * 100) : 0}%`,
+                }}
+              />
+            </div>
+            <span data-testid="streak">{days}-day streak</span>
+          </div>
         </div>
       </Card>
       {nudge ? (
         <div
-          className={cn(
-            "type-sub mb-3 flex items-start gap-2 rounded-[var(--duet-radius-card)] px-4 py-3 font-medium",
-            nudge.tone === "past"
-              ? "bg-duet-violet-soft text-duet-violet"
-              : "bg-duet-amber-soft text-duet-amber",
-          )}
+          className="type-sub mb-5 flex items-start gap-2 border-duet-hair border-t py-3 text-duet-ink-2"
           role="status"
         >
           <DuetIcon name="moon" size={18} />
@@ -153,28 +121,23 @@ export function TodayHero({
 const MOODS = [
   {
     value: 1,
-    label: "Very low",
-    icon: <IconMoodSad aria-hidden size={22} stroke={1.8} />,
+    label: "Rough",
   },
   {
     value: 2,
     label: "Low",
-    icon: <IconMoodAnnoyed aria-hidden size={22} stroke={1.8} />,
   },
   {
     value: 3,
-    label: "Neutral",
-    icon: <IconMoodEmpty aria-hidden size={22} stroke={1.8} />,
+    label: "Okay",
   },
   {
     value: 4,
     label: "Good",
-    icon: <IconMoodSmile aria-hidden size={22} stroke={1.8} />,
   },
   {
     value: 5,
     label: "Great",
-    icon: <IconMoodHappy aria-hidden size={22} stroke={1.8} />,
   },
 ];
 const ENERGY = [
@@ -230,7 +193,7 @@ export function CheckInCard({
           {pace.goalMin} min.
         </p>
         {pace.support ? (
-          <p className="type-sub mt-2 rounded-[var(--duet-radius-card)] bg-duet-violet-soft px-3 py-2 text-duet-violet">
+          <p className="type-sub mt-2 text-duet-ink-2">
             If it's more than a rough day, talk to someone you trust, like your
             school counselor. In the US you can call or text 988 any time.
           </p>
@@ -264,7 +227,13 @@ export function CheckInCard({
             disabled={mood === null || energy === null || sleep === null}
             onClick={() => {
               if (mood === null || energy === null || sleep === null) return;
-              onEarned(saveCheckIn({ mood, energy, sleepHours: sleep }));
+              onEarned(
+                saveCheckIn(
+                  { mood, energy, sleepHours: sleep },
+                  now,
+                  state.timeZone,
+                ),
+              );
               setEditing(false);
             }}
             primary
@@ -294,7 +263,7 @@ export function DoNextCard({
   const top = ranked[0];
   if (!top)
     return (
-      <Card>
+      <Card primary>
         <CardTitle>Do next</CardTitle>
         <p className="type-body">
           Nothing open. Add an assignment below, or enjoy the free time.
@@ -309,7 +278,11 @@ export function DoNextCard({
     );
   const cls = classOf(state, top.assignment);
   return (
-    <Card aria-labelledby="do-next" className="relative overflow-hidden">
+    <Card
+      primary
+      aria-labelledby="do-next"
+      className="relative overflow-hidden"
+    >
       <CardTitle id="do-next">Do next</CardTitle>
       <ClassPill color={cls.color} name={cls.name} />
       <p
@@ -321,16 +294,9 @@ export function DoNextCard({
       <p className="type-sub mt-1 text-duet-ink-2">
         {whyFirst(state, top, now)}
       </p>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {top.reasons.map((r) => (
-          <span
-            className="type-caption rounded-full bg-duet-tile px-2 py-0.5 font-medium"
-            key={r}
-          >
-            {r}
-          </span>
-        ))}
-      </div>
+      <p className="type-caption mt-2 text-duet-ink-2">
+        {top.reasons.join(" · ")}
+      </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <CoachButton
           onClick={() => startFocus(top.assignment.id, pace.focusMin)}
@@ -393,7 +359,7 @@ export function CatchUpCard({
   if (!late.length) return null;
   const plan = catchUpPlan(state, now);
   return (
-    <Card aria-label="Catch-up mode" className="bg-duet-red-soft shadow-none">
+    <Card aria-label="Catch-up mode">
       <CardTitle>Catch-up mode</CardTitle>
       <p className="type-body font-semibold text-duet-ink">
         {late.length} late · {Math.round(plan.totalRecoverable)} points still on

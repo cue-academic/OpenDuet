@@ -1,4 +1,4 @@
-import { type MouseEvent, useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 /**
  * The daily tools, opened from chat. Chat stays the home; each one is a screen
@@ -66,9 +66,35 @@ function usePath(): string {
 
 export function StudyDock() {
   const path = usePath();
+  const row = useRef<HTMLElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  useEffect(() => {
+    const node = row.current;
+    if (!node) return;
+    const measure = () =>
+      setOverflow(node.scrollWidth - node.clientWidth - node.scrollLeft > 1);
+    measure();
+    node.addEventListener("scroll", measure, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(node);
+    return () => {
+      node.removeEventListener("scroll", measure);
+      observer?.disconnect();
+    };
+  }, []);
   return (
     <nav
       aria-label="Study tools"
+      ref={row}
+      data-overflow={overflow}
+      style={{
+        maskImage: overflow
+          ? "linear-gradient(to right, black calc(100% - 24px), transparent)"
+          : undefined,
+      }}
       className="mb-2 flex flex-nowrap gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {TOOLS.map((tool) => {

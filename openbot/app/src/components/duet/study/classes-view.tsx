@@ -1,15 +1,14 @@
 import type {
   AssignmentKind,
+  HelpLevel,
   HubAssignment,
   HubClass,
   SchoolHub,
 } from "@openbot/shared/study";
 import type { ReactNode } from "react";
-import { PageSection } from "@/components/layout/page-shell";
 import { agoShort } from "@/lib/relative-time";
 import { cn } from "@/lib/utils";
 import { DuetIcon } from "../icons";
-import { DuetCard, Rule } from "../kit";
 import { classColorVar, dayLabel, formatMinutes } from "./format";
 import { HelpLevelPill } from "./help-level-pill";
 
@@ -22,7 +21,7 @@ import { HelpLevelPill } from "./help-level-pill";
  */
 
 const PILL =
-  "type-caption inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
+  "type-caption inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-4 font-medium transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-accent/40 active:scale-[0.98] aria-disabled:opacity-50";
 const QUIET =
   "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile";
 const LINK =
@@ -265,24 +264,38 @@ function ClassSection({
     .filter(Boolean)
     .join(" · ");
   return (
-    <PageSection
-      action={<HelpLevelPill level={schoolClass.level} />}
-      className="mt-10"
-      description={who || undefined}
-      title={schoolClass.name}
+    <section
+      className="mt-8 border-duet-hair border-t pt-5"
+      aria-label={schoolClass.name}
     >
-      <DuetCard className="mt-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div
+          className="border-l-[3px] pl-3"
+          style={{ borderColor: classColorVar(schoolClass.color) }}
+        >
+          <h2 className="study-display text-[20px] font-semibold text-duet-ink">
+            {schoolClass.name}
+          </h2>
+          {who ? (
+            <p className="type-caption mt-1 text-duet-ink-2">{who}</p>
+          ) : null}
+        </div>
+        <HelpLevelPill level={schoolClass.level} />
+      </div>
+      <div className="mt-3">
         {schoolClass.assignments.length === 0 ? (
           <p className="type-caption px-4 py-4 text-duet-ink-2">
             Nothing posted for this class yet.
           </p>
         ) : (
-          <ul aria-label={`${schoolClass.name} assignments`}>
-            {schoolClass.assignments.map((work, index) => (
+          <ul
+            className="divide-y divide-duet-hair"
+            aria-label={`${schoolClass.name} assignments`}
+          >
+            {schoolClass.assignments.map((work) => (
               <li key={work.id}>
-                {index > 0 ? <Rule /> : null}
                 <AssignmentRow
-                  color={classColorVar(schoolClass.color)}
+                  classRule={schoolClass.level}
                   now={now}
                   timeZone={timeZone}
                   work={work}
@@ -291,29 +304,25 @@ function ClassSection({
             ))}
           </ul>
         )}
-      </DuetCard>
+      </div>
       {rules({ className: LINK, children: "Change this class's rule" })}
-    </PageSection>
+    </section>
   );
 }
 
 function AssignmentRow({
   work,
-  color,
+  classRule,
   now,
   timeZone,
 }: {
   work: HubAssignment;
-  color: string;
+  classRule: HelpLevel;
   now: Date;
   timeZone: string;
 }) {
-  const late =
-    work.status === "missing" ||
-    (work.status === "open" &&
-      work.due !== null &&
-      Date.parse(work.due) < now.getTime());
   const facts = [
+    hubDueText(work, now, timeZone),
     KIND_LABEL[work.kind],
     work.points === null ? null : `${work.points} points`,
     isToDo(work) && work.minutes > 0
@@ -321,12 +330,10 @@ function AssignmentRow({
       : null,
   ].filter(Boolean);
   return (
-    <div className="flex items-start gap-3 px-4 py-4" data-status={work.status}>
-      <span
-        aria-hidden
-        className="mt-1.5 size-2.5 shrink-0 rounded-full"
-        style={{ backgroundColor: color }}
-      />
+    <div
+      className="flex flex-wrap items-start gap-3 py-4"
+      data-status={work.status}
+    >
       <div className="min-w-0 flex-1">
         <h3 className="type-sub font-medium text-duet-ink [overflow-wrap:anywhere]">
           {work.link ? (
@@ -342,19 +349,11 @@ function AssignmentRow({
             work.title
           )}
         </h3>
-        <p
-          className={cn(
-            "type-caption mt-0.5",
-            late ? "text-duet-status-problem" : "text-duet-ink-2",
-          )}
-        >
-          {hubDueText(work, now, timeZone)}
-        </p>
         <p className="type-caption mt-0.5 text-duet-ink-2">
           {facts.join(" · ")}
         </p>
       </div>
-      <HelpLevelPill level={work.level} />
+      {work.level !== classRule ? <HelpLevelPill level={work.level} /> : null}
     </div>
   );
 }

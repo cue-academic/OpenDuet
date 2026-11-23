@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 
 /** Class colours as literal classes, so each class keeps its own hue. */
 export const SOFT: Record<ClassColor | string, string> = {
-  violet: "study-class-violet",
-  blue: "study-class-blue",
-  green: "study-class-green",
-  amber: "study-class-amber",
-  red: "study-class-red",
-  accent: "study-class-accent",
+  violet: "text-duet-violet",
+  blue: "text-duet-blue",
+  green: "text-duet-green",
+  amber: "text-duet-amber",
+  red: "text-duet-red",
+  accent: "text-duet-accent",
 };
 
 export const SOLID: Record<ClassColor | string, string> = {
@@ -29,12 +29,16 @@ export const SOLID: Record<ClassColor | string, string> = {
 export function Card({
   children,
   className,
+  primary = false,
   ...props
-}: ComponentProps<"section">) {
+}: ComponentProps<"section"> & { primary?: boolean }) {
   return (
     <section
       className={cn(
-        "study-rise mb-3 rounded-[var(--duet-radius-card)] bg-duet-card p-4 shadow-duet-card",
+        "mb-5 py-5 text-duet-ink",
+        primary
+          ? "rounded-xl bg-duet-card px-4 shadow-sm ring-1 ring-duet-hair"
+          : "border-duet-hair border-t",
         className,
       )}
       {...props}
@@ -55,7 +59,10 @@ export function CardTitle({
 }) {
   return (
     <div className="mb-2 flex items-center justify-between gap-2">
-      <h2 className="cue-label text-duet-ink-3" id={id}>
+      <h2
+        className="study-display text-[20px] font-semibold text-duet-ink"
+        id={id}
+      >
         {children}
       </h2>
       {action}
@@ -68,10 +75,11 @@ export function ClassPill({ name, color }: { name: string; color: string }) {
   return (
     <span
       className={cn(
-        "cue-label inline-flex items-center rounded-[6px] px-1.5 py-0.5",
+        "type-caption inline-flex items-center gap-1.5 font-medium",
         SOFT[color] ?? SOFT.accent,
       )}
     >
+      <span aria-hidden className="size-1.5 bg-current" />
       {name}
     </span>
   );
@@ -87,7 +95,7 @@ export function CoachButton({
   return (
     <button
       className={cn(
-        "type-row inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 font-semibold transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50",
+        "type-row inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-4 py-2 font-semibold transition-[filter,transform,background-color] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40 active:scale-[0.98] disabled:opacity-50",
         primary
           ? "bg-duet-black text-duet-on-black hover:brightness-125"
           : "text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile",
@@ -124,10 +132,10 @@ export function ChipChoice<T extends string | number>({
             aria-label={o.label}
             aria-pressed={value === o.value}
             className={cn(
-              "type-row min-h-10 rounded-[10px] px-3 font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
+              "type-sub min-h-11 rounded-lg px-2.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
               value === o.value
                 ? "bg-duet-black text-duet-on-black"
-                : "bg-duet-tile text-duet-ink hover:brightness-95",
+                : "text-duet-ink-2 hover:text-duet-ink",
             )}
             key={String(o.value)}
             onClick={() => onChange(o.value)}

@@ -6,6 +6,8 @@ import { ScreenScroll } from "@/components/shell/screen";
 import { primaryBot } from "@/lib/agents/primary-bot";
 import { agentListQueryOptions } from "@/lib/agents/queries";
 import { currentUserQueryOptions } from "@/lib/auth/queries";
+import { coachFormat, validCoachTimeZone } from "@/lib/coach/clock";
+import { calendarQueryOptions } from "@/lib/study/calendar";
 import {
   type Assignment,
   type CoachState,
@@ -14,6 +16,7 @@ import {
   formatMinutes,
   HELP_LABEL,
   remainingMin,
+  localDate,
 } from "@/lib/coach/model";
 import { catchUpInstruction } from "@/lib/coach/plan";
 import { type Achievement, pacing, todaysCheckIn } from "@/lib/coach/progress";
@@ -75,7 +78,7 @@ export function assignmentInstruction(
           : "The teacher set this to Study: teach me, quiz me and give feedback, but don't hand me finished work to submit. Start with a quick check of what I already know.";
   return [
     `Help me with ${c.name}${c.teacher ? ` (${c.teacher})` : ""}: ${a.title}.`,
-    `It's due ${formatDue(a.dueAt, now)} (${new Date(a.dueAt).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" })})${a.points != null && a.points > 0 ? `, worth ${a.points} points` : ""}, and I have about ${formatMinutes(remainingMin(a))} of work left.`,
+    `It's due ${formatDue(a.dueAt, now, state.timeZone)} (${new Date(a.dueAt).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit", timeZone: state.timeZone })})${a.points != null && a.points > 0 ? `, worth ${a.points} points` : ""}, and I have about ${formatMinutes(remainingMin(a))} of work left.`,
     `AI help: ${HELP_LABEL[a.helpLevel]}. ${what}`,
     a.source ? `Classroom link: ${a.source}` : "",
   ]
@@ -91,8 +94,12 @@ type HandOff = { title: string; instruction: string };
  * every assignment, the badges, and the weekly report. Focus mode covers the screen while it runs.
  */
 export function CoachScreen() {
-  const state = useCoachState();
+  const savedState = useCoachState();
   const now = useNow();
+  const day = localDate(now);
+  const calendar = useQuery(calendarQueryOptions(day, day));
+  const timeZone = validCoachTimeZone(calendar.data?.timeZone);
+  const state = { ...savedState, timeZone };
   const navigate = useNavigate();
   const agents = useQuery(agentListQueryOptions());
   const bot = primaryBot(agents.data);
@@ -108,7 +115,7 @@ export function CoachScreen() {
     if (list.length) setEarned(list);
   }, []);
 
-  useEffect(() => syncAchievements(), []);
+  useEffect(() => syncAchievements(new Date(), timeZone), [timeZone]);
 
   // Once per tab, and only while Today's plan is still the generic sample week.
   // The flag is set after the read finishes. Setting it first lets React's
@@ -146,8 +153,8 @@ export function CoachScreen() {
   useEffect(() => {
     const sample = (s: CoachState) =>
       withSampleColors(withAccountName(s, accountName));
-    if (sample(state) !== state) updateCoach(sample);
-  }, [state, accountName]);
+    if (sample(savedState) !== savedState) updateCoach(sample);
+  }, [savedState, accountName]);
 
   useEffect(() => {
     if (!earned.length) return;
@@ -162,17 +169,21 @@ export function CoachScreen() {
         <div>
           <h1 className="sr-only">Coach</h1>
           <p className="cue-label text-duet-ink-2">
-            {now.toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
+            {coachFormat(
+              now,
+              {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              },
+              timeZone,
+            )}
           </p>
         </div>
         <div className="flex gap-1">
           <button
             aria-label="Weekly report"
-            className="grid size-11 place-items-center rounded-full bg-duet-card text-duet-ink shadow-duet-card hover:bg-duet-tile"
+            className="grid size-11 place-items-center rounded-lg text-duet-ink hover:bg-duet-tile"
             onClick={() => setReport(true)}
             type="button"
           >
@@ -180,7 +191,7 @@ export function CoachScreen() {
           </button>
           <button
             aria-label="Coach settings"
-            className="grid size-11 place-items-center rounded-full bg-duet-card text-duet-ink shadow-duet-card hover:bg-duet-tile"
+            className="grid size-11 place-items-center rounded-lg text-duet-ink hover:bg-duet-tile"
             onClick={() => setSetup(true)}
             type="button"
           >
@@ -190,7 +201,7 @@ export function CoachScreen() {
       </header>
 
       {!state.profile.setupDone ? (
-        <div className="mb-3 flex items-center gap-3 rounded-[var(--duet-radius-card)] bg-duet-card px-4 py-3 shadow-duet-card">
+        <div className="mb-5 flex items-center gap-3 border-duet-hair border-b py-3">
           <p className="type-sub min-w-0 flex-1 text-duet-ink-2">
             {state.source === "private"
               ? "These are your classes this term. Last spring stays off the plan."
@@ -200,8 +211,8 @@ export function CoachScreen() {
         </div>
       ) : null}
 
-      <TonightPlan state={state} />
       <TodayHero now={now} pace={pace} state={state} />
+      <TonightPlan state={state} />
       <CheckInCard now={now} onEarned={onEarned} pace={pace} state={state} />
       <DoNextCard
         now={now}
@@ -253,7 +264,11 @@ export function CoachScreen() {
       {setup ? (
         <SetupSheet onClose={() => setSetup(false)} state={state} />
       ) : null}
-      <FocusOverlay breakMin={pace.breakMin} onEarned={onEarned} />
+      <FocusOverlay
+        breakMin={pace.breakMin}
+        onEarned={onEarned}
+        timeZone={timeZone}
+      />
       <Celebration achievements={earned} onDone={() => setEarned([])} />
     </ScreenScroll>
   );

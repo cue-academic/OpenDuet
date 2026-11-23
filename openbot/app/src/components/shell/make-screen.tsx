@@ -344,7 +344,7 @@ export function MakeScreen() {
           Couldn't load what was made. Reload the page.
         </p>
       ) : pages.data.length === 0 && making.length === 0 ? (
-        <DuetCard className="px-4 py-4">
+        <DuetCard flat className="py-4">
           <p className="type-row font-semibold">Nothing made yet.</p>
           <p className="type-sub mt-0.5 text-duet-ink-2">
             Use + to ask for a study guide, a practice quiz, slides or a study
@@ -448,7 +448,7 @@ function MakeFilters({
           <button
             aria-pressed={on}
             className={cn(
-              "type-label flex min-h-11 shrink-0 items-center rounded-[10px] px-3.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
+              "type-label flex min-h-11 shrink-0 items-center rounded-lg px-3.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-duet-violet/40",
               on
                 ? "bg-duet-black text-duet-on-black"
                 : "bg-duet-card text-duet-ink shadow-[inset_0_0_0_1px_var(--duet-hair)] hover:bg-duet-tile",
@@ -484,7 +484,10 @@ function MakingCard({
       params={{ taskId }}
       to="/tasks/$taskId"
     >
-      <DuetCard className="rounded-[var(--duet-radius-card)] transition-transform motion-safe:group-active:scale-[0.985]">
+      <DuetCard
+        flat
+        className="transition-transform motion-safe:group-active:scale-[0.985]"
+      >
         <div
           aria-hidden
           className="relative grid place-items-center overflow-hidden bg-duet-tile"

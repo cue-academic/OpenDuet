@@ -1,3 +1,4 @@
+import { coachFormat, coachParts } from "./clock";
 import {
   type Assignment,
   type CoachState,
@@ -52,7 +53,11 @@ export function priorityScore(
   return pressure * 60 + soon + morning + Math.min(15, worth / 8);
 }
 
-export function reasonsFor(a: Assignment, now: Date): string[] {
+export function reasonsFor(
+  a: Assignment,
+  now: Date,
+  timeZone?: string,
+): string[] {
   const reasons: string[] = [];
   const left = remainingMin(a);
   if (isOverdue(a, now)) {
@@ -62,7 +67,7 @@ export function reasonsFor(a: Assignment, now: Date): string[] {
         : `Late, still worth ${Math.round(a.lateCredit * 100)}%`,
     );
   } else {
-    reasons.push(`Due ${formatDue(a.dueAt, now)}`);
+    reasons.push(`Due ${formatDue(a.dueAt, now, timeZone)}`);
   }
   if (left > 0) reasons.push(`about ${formatMinutes(left)} left`);
   if (a.points != null && a.points > 0) reasons.push(`${a.points} pts`);
@@ -79,7 +84,7 @@ export function rankAssignments(state: CoachState, now: Date): Ranked[] {
     .map((assignment) => ({
       assignment,
       score: priorityScore(assignment, now, state.profile.dailyCapacityMin),
-      reasons: reasonsFor(assignment, now),
+      reasons: reasonsFor(assignment, now, state.timeZone),
     }))
     .sort((x, y) => y.score - x.score);
 }
@@ -91,7 +96,7 @@ export function whyFirst(state: CoachState, top: Ranked, now: Date): string {
   if (isOverdue(a, now) && a.lateCredit !== null)
     return `${name} is late but still worth ${Math.round(a.lateCredit * 100)}% credit, and it's quick points.`;
   const left = remainingMin(a);
-  const due = formatDue(a.dueAt, now);
+  const due = formatDue(a.dueAt, now, state.timeZone);
   return `${name} is due ${due} and has about ${formatMinutes(left)} of work left.`;
 }
 
@@ -109,10 +114,11 @@ export type DayLoad = {
 };
 
 /** The last day work can happen on: the day before if it is due before noon, otherwise the day. */
-function lastWorkDay(a: Assignment, today: Date): Date {
+function lastWorkDay(a: Assignment, today: Date, timeZone?: string): Date {
   const due = new Date(a.dueAt);
-  const day = startOfDay(due);
-  const last = due.getHours() < 12 ? addDays(day, -1) : day;
+  const day = startOfDay(due, timeZone);
+  const last =
+    coachParts(due, timeZone).hour < 12 ? addDays(day, -1, timeZone) : day;
   return last.getTime() < today.getTime() ? today : last;
 }
 
@@ -122,23 +128,25 @@ function lastWorkDay(a: Assignment, today: Date): Date {
  * on that last day). A day is over when even the spread is more than the student's daily capacity.
  */
 export function workload(state: CoachState, now: Date): DayLoad[] {
-  const today = startOfDay(now);
+  const today = startOfDay(now, state.timeZone);
   const days: DayLoad[] = Array.from({ length: 7 }, (_, i) => ({
-    date: addDays(today, i),
+    date: addDays(today, i, state.timeZone),
     spreadMin: 0,
     crammedMin: 0,
     due: [],
     over: false,
   }));
   const index = (d: Date) =>
-    Math.round((startOfDay(d).getTime() - today.getTime()) / DAY);
+    Math.round(
+      (startOfDay(d, state.timeZone).getTime() - today.getTime()) / DAY,
+    );
   for (const a of state.assignments) {
     if (a.status === "done") continue;
     const dueIndex = index(new Date(a.dueAt));
     if (dueIndex >= 0 && dueIndex < 7) days[dueIndex]?.due.push(a);
     const left = remainingMin(a);
     if (!left) continue;
-    const last = Math.min(6, index(lastWorkDay(a, today)));
+    const last = Math.min(6, index(lastWorkDay(a, today, state.timeZone)));
     const lastDay = days[last];
     if (lastDay) lastDay.crammedMin += left;
     const share = left / (last + 1);
@@ -163,7 +171,7 @@ export function workloadAdvice(
     const i = days.findIndex((x) => x.date.getTime() === d.getTime());
     if (i === 0) return "Today";
     if (i === 1) return "Tomorrow";
-    return d.toLocaleDateString("en-US", { weekday: "long" });
+    return coachFormat(d, { weekday: "long" }, state.timeZone);
   };
   if (over)
     return `${dayName(over.date)} has ${formatMinutes(over.spreadMin)} of work even spread out, more than your ${formatMinutes(cap)}. Do the top pick first, and ask the coach to help plan the rest.`;
@@ -224,7 +232,7 @@ export function catchUpInstruction(state: CoachState, now: Date): string {
   const line = (a: Assignment) => {
     const c = classOf(state, a);
     const points = a.points != null && a.points > 0 ? `${a.points} pts, ` : "";
-    return `- ${c.name} (${c.teacher}): ${a.title}, due ${formatDue(a.dueAt, now)}, ${points}about ${formatMinutes(remainingMin(a))} left, AI help: ${HELP_LABEL[a.helpLevel]}${a.lateCredit !== null ? `, late credit ${Math.round(a.lateCredit * 100)}%` : ", no late credit"}.`;
+    return `- ${c.name} (${c.teacher}): ${a.title}, due ${formatDue(a.dueAt, now, state.timeZone)}, ${points}about ${formatMinutes(remainingMin(a))} left, AI help: ${HELP_LABEL[a.helpLevel]}${a.lateCredit !== null ? `, late credit ${Math.round(a.lateCredit * 100)}%` : ", no late credit"}.`;
   };
   const upcoming = rankAssignments(state, now)
     .filter((r) => !isOverdue(r.assignment, now))

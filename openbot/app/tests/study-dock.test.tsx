@@ -71,3 +71,20 @@ test("an unmatched route selects nothing and hub links request their screen", ()
     window.removeEventListener("academic-os-open", onOpen);
   }
 });
+
+test("only the overflowing right edge fades, and clears after scrolling to the end", () => {
+  const view = render(<StudyDock />);
+  const row = view.getByRole("navigation", { name: "Study tools" });
+  expect(row.style.maskImage).toBe("");
+  Object.defineProperties(row, {
+    scrollWidth: { value: 500 },
+    clientWidth: { value: 358 },
+  });
+  fireEvent.scroll(row);
+  expect(row.getAttribute("data-overflow")).toBe("true");
+  expect(row.style.maskImage).toContain("linear-gradient");
+  row.scrollLeft = 142;
+  fireEvent.scroll(row);
+  expect(row.getAttribute("data-overflow")).toBe("false");
+  expect(row.style.maskImage).toBe("");
+});

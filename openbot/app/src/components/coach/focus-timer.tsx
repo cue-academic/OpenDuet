@@ -79,8 +79,10 @@ function chime() {
 export function FocusOverlay({
   breakMin,
   onEarned,
+  timeZone,
 }: {
   breakMin: number;
+  timeZone?: string;
   onEarned: (earned: Achievement[]) => void;
 }) {
   const timer = useTimer();
@@ -106,6 +108,8 @@ export function FocusOverlay({
           timer.assignmentId,
           timer.lengthMin,
           new Date(timer.startedAt),
+          new Date(),
+          timeZone,
         ),
       );
       const start = new Date();
@@ -119,7 +123,7 @@ export function FocusOverlay({
     } else {
       setTimer(null);
     }
-  }, [timer, now, breakMin, onEarned]);
+  }, [timer, now, breakMin, onEarned, timeZone]);
 
   if (!timer) return null;
   const left = msLeft(timer, now);
@@ -136,7 +140,15 @@ export function FocusOverlay({
     if (t.phase === "focus") {
       const minutes = elapsedFocusMin(t, Date.now());
       if (minutes >= 1)
-        onEarned(logSession(t.assignmentId, minutes, new Date(t.startedAt)));
+        onEarned(
+          logSession(
+            t.assignmentId,
+            minutes,
+            new Date(t.startedAt),
+            new Date(),
+            timeZone,
+          ),
+        );
     }
     setTimer(null);
   };

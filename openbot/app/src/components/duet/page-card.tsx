@@ -63,9 +63,9 @@ export function PageCard({
     ),
     children: (
       <DuetCard
+        flat={size === "grid"}
         className={cn(
           "transition-transform motion-safe:group-active:scale-[0.985]",
-          size === "grid" && "rounded-[var(--duet-radius-card)]",
         )}
         // Before the link navigates: the sheet it opens reads this as it mounts.
         onClick={(event) => rememberOpenedFrom(event.currentTarget, page, size)}

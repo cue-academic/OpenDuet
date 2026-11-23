@@ -12,6 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { DuetIcon } from "@/components/duet/icons";
+import { coachFormat, coachParts, coachInstant } from "@/lib/coach/clock";
 import {
   type Assignment,
   type CoachState,
@@ -22,6 +23,7 @@ import {
   type HelpLevel,
   isOverdue,
   remainingMin,
+  addDays,
 } from "@/lib/coach/model";
 import { workload, workloadAdvice } from "@/lib/coach/plan";
 import { ACHIEVEMENTS, type Achievement } from "@/lib/coach/progress";
@@ -82,7 +84,7 @@ export function WorkloadRadar({
           className="absolute inset-x-0 border-duet-red/60 border-t border-dashed"
           style={{ top: H - (cap / top) * H }}
         >
-          <span className="type-caption -top-4 absolute right-0 bg-duet-card px-1 text-duet-red">
+          <span className="type-caption -top-4 absolute right-0 text-duet-red">
             your {formatMinutes(cap)}
           </span>
         </div>
@@ -91,7 +93,7 @@ export function WorkloadRadar({
             const label =
               i === 0
                 ? "Today"
-                : d.date.toLocaleDateString("en-US", { weekday: "short" });
+                : coachFormat(d.date, { weekday: "short" }, state.timeZone);
             return (
               <li
                 aria-label={`${label}: ${formatMinutes(d.spreadMin)} planned, ${d.due.length} due`}
@@ -142,7 +144,7 @@ export function WorkloadRadar({
       </p>
       {advice ? (
         <p
-          className="type-sub mt-2 rounded-[var(--duet-radius-card)] bg-duet-amber-soft px-3 py-2 font-medium text-duet-amber"
+          className="type-sub mt-2 text-duet-ink-2"
           data-testid="workload-advice"
         >
           {advice}
@@ -179,7 +181,10 @@ export function AssignmentsCard({
       ? Math.min(1, a.spentMin / a.estimateMin)
       : 0;
     return (
-      <li className="flex items-center gap-2 py-2" key={a.id}>
+      <li
+        className="flex items-center gap-2 border-duet-hair border-b py-3 last:border-b-0"
+        key={a.id}
+      >
         <button
           aria-label={
             a.status === "done"
@@ -188,13 +193,15 @@ export function AssignmentsCard({
           }
           aria-pressed={a.status === "done"}
           className={cn(
-            "grid size-8 shrink-0 place-items-center rounded-full transition-colors",
+            "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
             a.status === "done"
               ? "bg-duet-green text-white"
               : "shadow-[inset_0_0_0_2px_var(--duet-hair-2)] hover:bg-duet-tile",
           )}
           onClick={() =>
-            onEarned(setDone(a.id, a.status !== "done", new Date()))
+            onEarned(
+              setDone(a.id, a.status !== "done", new Date(), state.timeZone),
+            )
           }
           type="button"
         >
@@ -217,8 +224,11 @@ export function AssignmentsCard({
           </span>
           <span className="type-caption flex items-center gap-1.5 text-duet-ink-2">
             <ClassPill color={cls.color} name={cls.name} />
+            <span aria-hidden>·</span>
             <span className={late ? "font-semibold text-duet-red" : ""}>
-              {a.status === "done" ? "Done" : `Due ${formatDue(a.dueAt, now)}`}
+              {a.status === "done"
+                ? "Done"
+                : `Due ${formatDue(a.dueAt, now, state.timeZone)}`}
             </span>
             {a.status !== "done" ? (
               <span>· {HELP_LABEL[a.helpLevel]}</span>
@@ -279,10 +289,10 @@ export function AssignmentsCard({
   );
 }
 
-function toLocalInput(iso: string): string {
-  const d = new Date(iso);
+function toLocalInput(iso: string, timeZone?: string): string {
+  const d = coachParts(new Date(iso), timeZone);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.year}-${pad(d.month)}-${pad(d.day)}T${pad(d.hour)}:${pad(d.minute)}`;
 }
 
 function AssignmentSheet({
@@ -298,14 +308,21 @@ function AssignmentSheet({
   onClose: () => void;
   onEarned: (earned: Achievement[]) => void;
 }) {
-  const tomorrow = new Date(now.getTime() + 86_400_000);
-  tomorrow.setHours(23, 59, 0, 0);
+  const tomorrow = coachInstant(
+    {
+      ...coachParts(addDays(now, 1, state.timeZone), state.timeZone),
+      hour: 23,
+      minute: 59,
+      second: 0,
+    },
+    state.timeZone,
+  );
   const [title, setTitle] = useState(assignment?.title ?? "");
   const [classId, setClassId] = useState(
     assignment?.classId ?? state.classes[0]?.id ?? "other",
   );
   const [due, setDue] = useState(
-    toLocalInput(assignment?.dueAt ?? tomorrow.toISOString()),
+    toLocalInput(assignment?.dueAt ?? tomorrow.toISOString(), state.timeZone),
   );
   const [estimate, setEstimate] = useState(assignment?.estimateMin ?? 60);
   const [points, setPoints] = useState(assignment?.points ?? 20);
@@ -329,7 +346,17 @@ function AssignmentSheet({
               id: assignment?.id,
               title: title.trim(),
               classId,
-              dueAt: new Date(due).toISOString(),
+              dueAt: coachInstant(
+                {
+                  year: Number(due.slice(0, 4)),
+                  month: Number(due.slice(5, 7)),
+                  day: Number(due.slice(8, 10)),
+                  hour: Number(due.slice(11, 13)),
+                  minute: Number(due.slice(14, 16)),
+                  second: 0,
+                },
+                state.timeZone,
+              ).toISOString(),
               estimateMin: estimate,
               points,
               helpLevel: help,
@@ -447,44 +474,58 @@ function AssignmentSheet({
 
 /** The badges: earned ones in colour, the rest waiting with how to get them. */
 export function AchievementsCard({ state }: { state: CoachState }) {
+  const [showAll, setShowAll] = useState(false);
   const earned = ACHIEVEMENTS.filter((a) => state.unlocked[a.id]).length;
   return (
     <Card aria-label="Achievements">
       <CardTitle>
-        Badges · {earned}/{ACHIEVEMENTS.length}
+        Badges {earned} of {ACHIEVEMENTS.length}
       </CardTitle>
-      <ul className="grid grid-cols-5 gap-2">
-        {ACHIEVEMENTS.map((a) => {
-          const on = Boolean(state.unlocked[a.id]);
-          return (
-            <li
-              aria-label={`${a.title}: ${on ? "earned" : a.description}`}
-              className="flex flex-col items-center text-center"
-              key={a.id}
-              title={`${a.title}: ${a.description}`}
-            >
-              <span
-                className={cn(
-                  "grid size-12 place-items-center rounded-full text-2xl",
-                  on
-                    ? "bg-duet-amber-soft"
-                    : "bg-duet-tile opacity-40 grayscale",
-                )}
+      <ul className="flex flex-wrap gap-x-5 gap-y-3 [&_svg]:size-4">
+        {ACHIEVEMENTS.filter((a) => showAll || state.unlocked[a.id]).map(
+          (a) => {
+            const on = Boolean(state.unlocked[a.id]);
+            return (
+              <li
+                aria-label={`${a.title}: ${on ? "earned" : a.description}`}
+                className="type-caption inline-flex items-center gap-1.5"
+                key={a.id}
+                title={`${a.title}: ${a.description}`}
               >
-                <BadgeIcon achievement={a} />
-              </span>
-              <span
-                className={cn(
-                  "type-caption mt-1 leading-tight",
-                  on ? "font-semibold" : "text-duet-ink-3",
-                )}
-              >
-                {a.title}
-              </span>
-            </li>
-          );
-        })}
+                <span
+                  className={cn(
+                    "inline-flex",
+                    on ? "text-duet-ink" : "text-duet-ink-3",
+                  )}
+                >
+                  <BadgeIcon achievement={a} />
+                </span>
+                <span
+                  className={cn(
+                    "type-caption leading-tight",
+                    on ? "font-semibold" : "text-duet-ink-3",
+                  )}
+                >
+                  {a.title}
+                </span>
+              </li>
+            );
+          },
+        )}
       </ul>
+      {earned === 0 && !showAll ? (
+        <p className="type-caption text-duet-ink-2">
+          Your first study session starts the collection.
+        </p>
+      ) : null}
+      <button
+        aria-expanded={showAll}
+        className="type-caption mt-3 min-h-11 font-medium text-duet-ink-2 hover:text-duet-ink"
+        onClick={() => setShowAll(!showAll)}
+        type="button"
+      >
+        {showAll ? "Show earned" : "Show all"}
+      </button>
     </Card>
   );
 }
